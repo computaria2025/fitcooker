@@ -1,225 +1,338 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Star, Users, Award, ChefHat, Heart, ArrowLeft, Calendar, MapPin } from 'lucide-react';
+import { ChefHat, Users, BookOpen, Star, MapPin, Calendar, Heart } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { topCooks, featuredRecipes } from '@/data/mockData';
+import { useProfiles } from '@/hooks/useProfiles';
+import { useRecipes } from '@/hooks/useRecipes';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import RecipeCard from '@/components/ui/RecipeCard';
-import LoginPrompt from '@/components/add-recipe/LoginPrompt';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const CookProfile: React.FC = () => {
-  const { id } = useParams();
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+const CookProfile = () => {
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const { getProfile, toggleFollow, isFollowing } = useProfiles();
+  const { fetchRecipes } = useRecipes();
   
-  // Mock auth state - in a real app, this would come from context
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  
-  // Extended cook data (same as in Cooks.tsx)
-  const extendedCooks = topCooks.map(cook => ({
-    ...cook,
-    specialty: cook.id === 1 ? "Receitas High Protein" : 
-              cook.id === 2 ? "Bulking Saudável" : 
-              cook.id === 3 ? "Receitas Vegetarianas" : "Sobremesas Fitness",
-    followers: cook.followers,
-    recipes: cook.recipes,
-    verified: true,
-    avatar: cook.avatarUrl,
-    description: cook.bio,
-    achievements: cook.id === 1 ? ["Top Chef 2023", "Mais de 12K seguidores", "Certificação Nutricional"] :
-                 cook.id === 2 ? ["Nutricionista Esportivo", "Top Recipes 2023", "Certificação Internacional"] :
-                 cook.id === 3 ? ["Chef Vegana do Ano", "Receitas Inovadoras", "Certificação Plant-Based"] :
-                 ["Especialista em Fitness", "Baixa Caloria Expert", "Certificação Culinary"],
-    joinDate: "Janeiro 2023",
-    location: "São Paulo, Brasil",
-    about: "Apaixonado pela arte culinária e pela vida saudável, dedico minha carreira a criar receitas que unem sabor e nutrição. Acredito que comer bem é um ato de amor próprio e quero inspirar outras pessoas nessa jornada."
-  }));
+  const [profile, setProfile] = useState<any>(null);
+  const [recipes, setRecipes] = useState<any[]>([]);
+  const [following, setFollowing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [recipesLoading, setRecipesLoading] = useState(true);
 
-  const cook = extendedCooks.find(c => c.id === parseInt(id || ''));
-  
-  // Filter recipes by author (for demo purposes, showing all featured recipes)
-  const cookRecipes = featuredRecipes.filter(recipe => recipe.author.id === parseInt(id || ''));
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!id) return;
+      
+      setLoading(true);
+      const profileData = await getProfile(id);
+      setProfile(profileData);
+      
+      if (user) {
+        const followStatus = await isFollowing(id);
+        setFollowing(followStatus);
+      }
+      
+      setLoading(false);
+    };
 
-  if (!cook) {
+    const loadRecipes = async () => {
+      if (!id) return;
+      
+      setRecipesLoading(true);
+      // Note: This would need to be implemented in useRecipes hook
+      // For now, we'll use an empty array
+      setRecipes([]);
+      setRecipesLoading(false);
+    };
+
+    loadProfile();
+    loadRecipes();
+  }, [id, getProfile, isFollowing, user]);
+
+  const handleFollow = async () => {
+    if (!user || !id) return;
+    
+    const newFollowState = await toggleFollow(id);
+    if (newFollowState !== undefined) {
+      setFollowing(newFollowState);
+      if (profile) {
+        setProfile({
+          ...profile,
+          seguidores_count: newFollowState
+            ? profile.seguidores_count + 1
+            : profile.seguidores_count - 1
+        });
+      }
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Chef não encontrado</h2>
-          <Link to="/cooks" className="text-fitcooker-orange hover:underline">
-            Voltar para lista de chefs
-          </Link>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="pt-24 pb-12">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="max-w-4xl mx-auto">
+              {/* Profile Header Skeleton */}
+              <Card className="mb-8">
+                <CardContent className="p-8">
+                  <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+                    <Skeleton className="w-32 h-32 rounded-full" />
+                    <div className="flex-1 text-center md:text-left">
+                      <Skeleton className="h-8 w-48 mx-auto md:mx-0 mb-2" />
+                      <Skeleton className="h-4 w-32 mx-auto md:mx-0 mb-4" />
+                      <Skeleton className="h-16 w-full mb-4" />
+                      <div className="flex justify-center md:justify-start gap-4 mb-4">
+                        <Skeleton className="h-6 w-20" />
+                        <Skeleton className="h-6 w-20" />
+                        <Skeleton className="h-6 w-20" />
+                      </div>
+                      <Skeleton className="h-10 w-32" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Content Skeleton */}
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-32 w-full" />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
-  const handleFollow = () => {
-    if (!isLoggedIn) {
-      setShowLoginPrompt(true);
-      return;
-    }
-    setIsFollowing(!isFollowing);
-  };
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="pt-24 pb-12">
+          <div className="container mx-auto px-4 md:px-6 text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Perfil não encontrado</h1>
+            <Link to="/cooks">
+              <Button>Voltar para Chefs</Button>
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="container mx-auto px-4 md:px-6 py-8">
-        {/* Back Button */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="mb-6"
-        >
-          <Link
-            to="/cooks"
-            className="inline-flex items-center text-fitcooker-orange hover:text-fitcooker-orange/80 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Voltar para chefs
-          </Link>
-        </motion.div>
-
-        {/* Profile Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8"
-        >
-          <div className="bg-gradient-to-r from-fitcooker-orange to-fitcooker-yellow h-32"></div>
-          
-          <div className="px-8 pb-8">
-            <div className="relative -mt-16 mb-6">
-              <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
-                <img
-                  src={cook.avatar}
-                  alt={cook.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {cook.verified && (
-                <div className="absolute bottom-2 right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Award className="w-5 h-5 text-white" />
+      <div className="pt-24 pb-12">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="max-w-4xl mx-auto">
+            {/* Profile Header */}
+            <Card className="mb-8">
+              <CardContent className="p-8">
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+                  <div className="relative">
+                    <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
+                      <AvatarImage src={profile.avatar_url} alt={profile.nome} />
+                      <AvatarFallback className="text-4xl font-bold bg-fitcooker-orange text-white">
+                        {profile.nome.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {profile.is_chef && (
+                      <div className="absolute -bottom-2 -right-2">
+                        <Badge className="bg-fitcooker-orange text-white">
+                          <ChefHat size={14} className="mr-1" />
+                          Chef
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 text-center md:text-left">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                      {profile.nome}
+                    </h1>
+                    
+                    <div className="flex items-center justify-center md:justify-start text-gray-600 mb-4">
+                      <Calendar size={16} className="mr-2" />
+                      <span>Membro desde {new Date(profile.data_cadastro).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    
+                    {profile.bio && (
+                      <p className="text-gray-600 mb-6 max-w-2xl">
+                        {profile.bio}
+                      </p>
+                    )}
+                    
+                    <div className="flex justify-center md:justify-start gap-6 mb-6">
+                      <div className="text-center">
+                        <div className="flex items-center justify-center text-fitcooker-orange">
+                          <BookOpen size={20} className="mr-1" />
+                          <span className="text-2xl font-bold">{profile.receitas_count}</span>
+                        </div>
+                        <span className="text-gray-500 text-sm">Receitas</span>
+                      </div>
+                      
+                      <div className="text-center">
+                        <div className="flex items-center justify-center text-fitcooker-orange">
+                          <Users size={20} className="mr-1" />
+                          <span className="text-2xl font-bold">{profile.seguidores_count}</span>
+                        </div>
+                        <span className="text-gray-500 text-sm">Seguidores</span>
+                      </div>
+                      
+                      <div className="text-center">
+                        <div className="flex items-center justify-center text-fitcooker-orange">
+                          <Heart size={20} className="mr-1" />
+                          <span className="text-2xl font-bold">{profile.seguindo_count}</span>
+                        </div>
+                        <span className="text-gray-500 text-sm">Seguindo</span>
+                      </div>
+                    </div>
+                    
+                    {user && user.id !== profile.id && (
+                      <Button
+                        onClick={handleFollow}
+                        className={`${
+                          following
+                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            : 'bg-fitcooker-orange hover:bg-fitcooker-orange/90 text-white'
+                        }`}
+                      >
+                        {following ? 'Seguindo' : 'Seguir Chef'}
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{cook.name}</h1>
-                <p className="text-xl text-fitcooker-orange font-medium mb-4">{cook.specialty}</p>
-                
-                <div className="flex flex-wrap items-center gap-6 mb-6">
-                  <div className="flex items-center">
-                    <Star className="w-5 h-5 text-yellow-500 mr-2" />
-                    <span className="font-semibold">{cook.rating}</span>
-                    <span className="text-gray-500 ml-1">avaliação</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Users className="w-5 h-5 text-gray-500 mr-2" />
-                    <span className="font-semibold">{cook.followers.toLocaleString()}</span>
-                    <span className="text-gray-500 ml-1">seguidores</span>
-                  </div>
-                  <div className="flex items-center">
-                    <ChefHat className="w-5 h-5 text-gray-500 mr-2" />
-                    <span className="font-semibold">{cook.recipes}</span>
-                    <span className="text-gray-500 ml-1">receitas</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6">
-                  <div className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    <span>Membro desde {cook.joinDate}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    <span>{cook.location}</span>
-                  </div>
-                </div>
-
-                <p className="text-gray-600 leading-relaxed">{cook.about}</p>
-              </div>
-
-              <div className="lg:w-auto">
-                <Button
-                  onClick={handleFollow}
-                  size="lg"
-                  className={`w-full lg:w-auto px-8 ${
-                    isFollowing
-                      ? "bg-red-500 hover:bg-red-600 text-white"
-                      : "bg-gradient-to-r from-fitcooker-orange to-fitcooker-yellow text-white hover:shadow-lg"
-                  }`}
-                >
-                  <Heart className={`w-5 h-5 mr-2 ${isFollowing ? "fill-current" : ""}`} />
-                  {isFollowing ? "Seguindo" : "Seguir Chef"}
-                </Button>
-              </div>
-            </div>
+            {/* Content Tabs */}
+            <Tabs defaultValue="recipes" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="recipes">Receitas</TabsTrigger>
+                <TabsTrigger value="about">Sobre</TabsTrigger>
+                <TabsTrigger value="reviews">Avaliações</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="recipes" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Receitas do Chef</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {recipesLoading ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[...Array(4)].map((_, i) => (
+                          <Skeleton key={i} className="h-32 w-full" />
+                        ))}
+                      </div>
+                    ) : recipes.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="text-4xl mb-4">🍳</div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma receita ainda</h3>
+                        <p className="text-gray-600">
+                          {profile.nome} ainda não publicou nenhuma receita.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {recipes.map((recipe) => (
+                          <Link key={recipe.id} to={`/recipe/${recipe.id}`}>
+                            <Card className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex gap-4">
+                                  {recipe.imagem_url ? (
+                                    <img
+                                      src={recipe.imagem_url}
+                                      alt={recipe.titulo}
+                                      className="w-16 h-16 object-cover rounded-lg"
+                                    />
+                                  ) : (
+                                    <div className="w-16 h-16 bg-fitcooker-orange rounded-lg flex items-center justify-center">
+                                      <span className="text-2xl">🍽️</span>
+                                    </div>
+                                  )}
+                                  <div className="flex-1">
+                                    <h4 className="font-semibold text-gray-900 mb-1">
+                                      {recipe.titulo}
+                                    </h4>
+                                    <p className="text-sm text-gray-600 line-clamp-2">
+                                      {recipe.descricao}
+                                    </p>
+                                    <div className="flex items-center mt-2 text-xs text-gray-500">
+                                      <Star size={12} className="mr-1 fill-yellow-400 text-yellow-400" />
+                                      {recipe.nota_media || 0}
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="about" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Sobre {profile.nome}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {profile.bio ? (
+                      <div className="prose max-w-none">
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                          {profile.bio}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="text-4xl mb-4">👤</div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Sem informações ainda</h3>
+                        <p className="text-gray-600">
+                          {profile.nome} ainda não adicionou informações sobre si.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="reviews" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Avaliações Recebidas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <div className="text-4xl mb-4">⭐</div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Em breve</h3>
+                      <p className="text-gray-600">
+                        Sistema de avaliações de chefs em desenvolvimento.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
-        </motion.div>
-
-        {/* Achievements */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-8"
-        >
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Conquistas & Certificações</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {cook.achievements.map((achievement, index) => (
-              <div key={index} className="flex items-center p-4 bg-gray-50 rounded-xl">
-                <Award className="w-6 h-6 text-fitcooker-orange mr-3" />
-                <span className="font-medium text-gray-900">{achievement}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Recipes Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Receitas do Chef</h2>
-            <span className="text-gray-500">{cookRecipes.length} receita{cookRecipes.length !== 1 ? 's' : ''}</span>
-          </div>
-
-          {cookRecipes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {cookRecipes.map((recipe) => (
-                <motion.div
-                  key={recipe.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * recipe.id }}
-                >
-                  <RecipeCard recipe={recipe} />
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-white rounded-2xl shadow-lg border border-gray-100">
-              <ChefHat className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">Nenhuma receita encontrada</h3>
-              <p className="text-gray-500">Este chef ainda não publicou receitas em nossa plataforma.</p>
-            </div>
-          )}
-        </motion.div>
+        </div>
       </div>
-
-      {/* Login Prompt Dialog */}
-      <LoginPrompt 
-        showLoginPrompt={showLoginPrompt}
-        setShowLoginPrompt={setShowLoginPrompt}
-      />
-
+      
       <Footer />
     </div>
   );
