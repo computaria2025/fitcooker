@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';
 import Recipes from './pages/Recipes';
 import RecipeDetail from './pages/RecipeDetail';
@@ -21,30 +21,28 @@ import TermosDeUso from './pages/TermosDeUso';
 
 function App() {
   return (
-    <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/recipes" element={<Recipes />} />
-          <Route path="/recipe/:id" element={<RecipeDetail />} />
-          <Route path="/cooks" element={<Cooks />} />
-          <Route path="/cook/:id" element={<CookProfile />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contato />} />
-          <Route path="/contato" element={<Contato />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/add-recipe" element={<AddRecipe />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/alimentacao-saudavel" element={<AlimentacaoSaudavel />} />
-          <Route path="/destaques" element={<FeaturedPage />} />
-          <Route path="/quem-somos" element={<QuemSomos />} />
-          <Route path="/privacidade" element={<Privacidade />} />
-          <Route path="/termos-de-uso" element={<TermosDeUso />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </div>
-    </Router>
+    <div className="App">
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/recipes" element={<Recipes />} />
+        <Route path="/recipe/:id" element={<RecipeDetail />} />
+        <Route path="/cooks" element={<Cooks />} />
+        <Route path="/cook/:id" element={<CookProfile />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contato />} />
+        <Route path="/contato" element={<Contato />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/add-recipe" element={<AddRecipe />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/alimentacao-saudavel" element={<AlimentacaoSaudavel />} />
+        <Route path="/destaques" element={<FeaturedPage />} />
+        <Route path="/quem-somos" element={<QuemSomos />} />
+        <Route path="/privacidade" element={<Privacidade />} />
+        <Route path="/termos-de-uso" element={<TermosDeUso />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
   );
 }
 
