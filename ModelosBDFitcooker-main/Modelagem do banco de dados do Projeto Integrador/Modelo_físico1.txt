@@ -1,0 +1,64 @@
+/* Site_receitas_logico - Corrigido*/
+
+CREATE TABLE Usuario (
+    id_usuario VARCHAR(30) PRIMARY KEY,
+    email_usuario VARCHAR(255) UNIQUE NOT NULL,
+    senha VARCHAR(60) NOT NULL,
+    nome_usuario VARCHAR(60) NOT NULL
+);
+
+CREATE TABLE Site (
+    id_site INT AUTO_INCREMENT PRIMARY KEY,
+    nome_site VARCHAR(150) NOT NULL,
+    url VARCHAR(225) UNIQUE NOT NULL,
+    descricao_site TEXT NOT NULL,
+    data_site DATE NOT NULL,
+    fk_Usuario_id_usuario VARCHAR(30) NOT NULL,
+    FOREIGN KEY (fk_Usuario_id_usuario) REFERENCES Usuario (id_usuario)
+);
+
+CREATE TABLE Receitas (
+    id_receita INT AUTO_INCREMENT PRIMARY KEY,
+    categoria VARCHAR(100) NOT NULL,
+    ingredientes TEXT NOT NULL,
+    nome_receita VARCHAR(30) NOT NULL,
+    descricao_receita TEXT NOT NULL,
+    armazenamento_ftvd VARCHAR(150) NOT NULL,
+    data_receita DATE NOT NULL,
+    fk_Site_id_site INT NOT NULL,
+    fk_Usuario_id_usuario VARCHAR(30) NOT NULL,
+    FOREIGN KEY (fk_Site_id_site) REFERENCES Site (id_site),
+    FOREIGN KEY (fk_Usuario_id_usuario) REFERENCES Usuario (id_usuario)
+);
+
+CREATE TABLE feedback (
+    id_feedback INT AUTO_INCREMENT PRIMARY KEY,
+    comentario TEXT NOT NULL,
+    avaliacao TINYINT NOT NULL CHECK (avaliacao BETWEEN 1 AND 5),
+    data_feedback DATE NOT NULL,
+    qtd_curtidas INT DEFAULT 0 NOT NULL,
+    fk_Receitas_id_receita INT NOT NULL,
+    fk_Usuario_id_usuario VARCHAR(30) NOT NULL,
+    FOREIGN KEY (fk_Receitas_id_receita) REFERENCES Receitas (id_receita),
+    FOREIGN KEY (fk_Usuario_id_usuario) REFERENCES Usuario (id_usuario)
+);
+
+CREATE TABLE Informacao_Nutricional (
+    id_info INT AUTO_INCREMENT PRIMARY KEY,
+    carboidratos DECIMAL(8,2) NOT NULL,
+    proteinas DECIMAL(8,2) NOT NULL,
+    sodio DECIMAL(8,2) NOT NULL,
+    gorduras_trans DECIMAL(8,2) NOT NULL,
+    gordura_saturada DECIMAL(8,2) NOT NULL,
+    fibra_alimentar DECIMAL(8,2) NOT NULL,
+    fk_Receitas_id_receita INT NOT NULL,
+    FOREIGN KEY (fk_Receitas_id_receita) REFERENCES Receitas (id_receita)
+);
+
+CREATE TABLE Receitas_Salvas_Salvam (
+    fk_Receitas_id_receita INT NOT NULL,
+    fk_Usuario_id_usuario VARCHAR(30) NOT NULL,
+    PRIMARY KEY (fk_Receitas_id_receita, fk_Usuario_id_usuario),
+    FOREIGN KEY (fk_Receitas_id_receita) REFERENCES Receitas (id_receita),
+    FOREIGN KEY (fk_Usuario_id_usuario) REFERENCES Usuario (id_usuario)
+);
