@@ -50,7 +50,7 @@ export const useUserStats = (userId?: string) => {
 
       if (evaluations && evaluations.length > 0) {
         avaliacoes_count = evaluations.length;
-        const total = evaluations.reduce((sum, eval) => sum + eval.nota, 0);
+        const total = evaluations.reduce((sum, evaluation) => sum + evaluation.nota, 0);
         nota_media = total / evaluations.length;
       }
 

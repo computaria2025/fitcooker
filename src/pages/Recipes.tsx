@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChefHat } from 'lucide-react';
@@ -87,7 +86,16 @@ const Recipes: React.FC = () => {
     setServingsRange([1, 12]);
   };
 
-  const hasActiveFilters = searchTerm || selectedCategory !== 'all' || selectedDifficulty !== 'all' || sortBy !== 'newest' || timeRange[0] !== 5 || timeRange[1] !== 180 || servingsRange[0] !== 1 || servingsRange[1] !== 12;
+  const hasActiveFilters = Boolean(
+    searchTerm || 
+    selectedCategory !== 'all' || 
+    selectedDifficulty !== 'all' || 
+    sortBy !== 'newest' || 
+    timeRange[0] !== 5 || 
+    timeRange[1] !== 180 || 
+    servingsRange[0] !== 1 || 
+    servingsRange[1] !== 12
+  );
 
   if (error) {
     return (

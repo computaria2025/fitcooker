@@ -22,10 +22,10 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: { message: string } } | { error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: { message: string } } | { error: any }>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<any>;
+  signIn: (email: string, password: string) => Promise<any>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: { message: string } } | { error: any }>;
+  resetPassword: (email: string) => Promise<any>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
   checkProfileComplete: (userId: string) => Promise<boolean>;
 }
@@ -87,7 +87,7 @@ export const useAuth = (): AuthContextType => {
 
   const signUp = async (email: string, password: string, metadata?: any) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const result = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -95,11 +95,7 @@ export const useAuth = (): AuthContextType => {
         },
       });
 
-      if (error) {
-        return { error };
-      }
-
-      return { data };
+      return result;
     } catch (error) {
       return { error: { message: 'Erro inesperado ao criar conta' } };
     }
@@ -107,16 +103,12 @@ export const useAuth = (): AuthContextType => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const result = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        return { error };
-      }
-
-      return { data };
+      return result;
     } catch (error) {
       return { error: { message: 'Erro inesperado ao fazer login' } };
     }
@@ -128,13 +120,8 @@ export const useAuth = (): AuthContextType => {
 
   const resetPassword = async (email: string) => {
     try {
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email);
-
-      if (error) {
-        return { error };
-      }
-
-      return { data };
+      const result = await supabase.auth.resetPasswordForEmail(email);
+      return result;
     } catch (error) {
       return { error: { message: 'Erro inesperado ao resetar senha' } };
     }
