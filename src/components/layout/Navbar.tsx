@@ -49,49 +49,60 @@ const Navbar: React.FC = () => {
   ];
 
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-700 ease-in-out ${
       scrolled 
-        ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100' 
-        : 'bg-transparent'
+        ? 'bg-white/95 backdrop-blur-lg shadow-xl border-b border-gray-200 h-16' 
+        : 'bg-transparent h-20'
     }`}>
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="flex justify-between items-center h-16">
+      <div className="container mx-auto px-4 md:px-6 h-full">
+        <div className="flex justify-between items-center h-full">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className={`w-10 h-10 bg-gradient-to-r from-fitcooker-orange to-orange-500 rounded-lg flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 ${
-              !scrolled ? 'animate-pulse' : ''
-            }`}>
-              <ChefHat className={`w-6 h-6 text-white transition-transform duration-300 ${
-                !scrolled ? 'animate-bounce' : ''
-              }`} />
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className={`relative transition-all duration-700 ease-in-out ${
+              scrolled ? 'w-10 h-10' : 'w-12 h-12'
+            } bg-gradient-to-br from-fitcooker-orange via-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl`}>
+              <ChefHat className={`text-white transition-all duration-500 ${
+                scrolled ? 'w-5 h-5' : 'w-6 h-6'
+              } group-hover:rotate-12 group-hover:scale-110`} />
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
-            <span className={`text-2xl font-bold transition-colors duration-300 ${
-              scrolled 
-                ? 'bg-gradient-to-r from-fitcooker-orange to-orange-500 bg-clip-text text-transparent' 
-                : 'text-orange-600 drop-shadow-lg'
-            }`}>
-              FitCooker
-            </span>
+            <div className="flex flex-col">
+              <span className={`font-black tracking-tight transition-all duration-700 ease-in-out ${
+                scrolled 
+                  ? 'text-2xl bg-gradient-to-r from-fitcooker-orange via-orange-500 to-orange-600 bg-clip-text text-transparent' 
+                  : 'text-3xl text-white drop-shadow-2xl'
+              } group-hover:scale-105`}>
+                FitCooker
+              </span>
+              {!scrolled && (
+                <span className="text-xs text-orange-100 opacity-90 tracking-widest uppercase font-medium">
+                  Culinária Saudável
+                </span>
+              )}
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-300 hover:scale-105 ${
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-500 group relative overflow-hidden ${
                     isActive(item.path)
                       ? 'bg-fitcooker-orange text-white shadow-lg transform scale-105'
                       : scrolled
                         ? 'text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50'
-                        : 'text-orange-600 hover:text-orange-700 hover:bg-white/20 backdrop-blur-sm'
+                        : 'text-white hover:text-orange-200 hover:bg-white/10 backdrop-blur-sm'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span className="font-medium">{item.name}</span>
+                  <Icon className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
+                  <span className="font-semibold tracking-wide">{item.name}</span>
+                  {!isActive(item.path) && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-fitcooker-orange/20 to-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                  )}
                 </Link>
               );
             })}
@@ -101,22 +112,22 @@ const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <>
-                <Button asChild variant="outline" className={`transition-all duration-300 hover:scale-105 ${
+                <Button asChild variant="outline" className={`transition-all duration-500 font-semibold group relative overflow-hidden ${
                   scrolled
                     ? 'border-fitcooker-orange text-fitcooker-orange hover:bg-fitcooker-orange hover:text-white'
-                    : 'border-orange-600 text-orange-600 bg-white/20 backdrop-blur-sm hover:bg-orange-600 hover:text-white'
+                    : 'border-white text-white bg-white/10 backdrop-blur-sm hover:bg-white hover:text-fitcooker-orange'
                 }`}>
                   <Link to="/add-recipe">
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:rotate-90" />
                     Adicionar Receita
                   </Link>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:scale-110 transition-transform duration-300">
-                      <Avatar className="h-10 w-10 border-2 border-fitcooker-orange/20">
+                    <Button variant="ghost" className="relative h-11 w-11 rounded-full hover:scale-110 transition-all duration-300 group">
+                      <Avatar className="h-11 w-11 border-2 border-fitcooker-orange/30 group-hover:border-fitcooker-orange transition-colors duration-300">
                         <AvatarImage src={profile?.avatar_url} alt={profile?.nome} />
-                        <AvatarFallback className="bg-fitcooker-orange text-white">
+                        <AvatarFallback className="bg-gradient-to-br from-fitcooker-orange to-orange-500 text-white font-bold">
                           {profile?.nome?.[0] || user.email?.[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -154,17 +165,17 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <div className="flex items-center space-x-3">
-                <Button asChild variant="outline" className={`transition-all duration-300 hover:scale-105 ${
+                <Button asChild variant="outline" className={`transition-all duration-500 font-semibold ${
                   scrolled
                     ? 'border-fitcooker-orange text-fitcooker-orange hover:bg-fitcooker-orange hover:text-white'
-                    : 'border-orange-600 text-orange-600 bg-white/20 backdrop-blur-sm hover:bg-orange-600 hover:text-white'
+                    : 'border-white text-white bg-white/10 backdrop-blur-sm hover:bg-white hover:text-fitcooker-orange'
                 }`}>
                   <Link to="/login">Entrar</Link>
                 </Button>
-                <Button asChild className={`transition-all duration-300 hover:scale-105 ${
+                <Button asChild className={`transition-all duration-500 font-semibold hover:scale-105 ${
                   scrolled
-                    ? 'bg-fitcooker-orange hover:bg-fitcooker-orange/90'
-                    : 'bg-orange-600 hover:bg-orange-700'
+                    ? 'bg-gradient-to-r from-fitcooker-orange to-orange-500 hover:from-orange-500 hover:to-orange-600'
+                    : 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800'
                 }`}>
                   <Link to="/signup">Cadastrar</Link>
                 </Button>
@@ -179,7 +190,7 @@ const Navbar: React.FC = () => {
               size="sm"
               onClick={() => setIsOpen(!isOpen)}
               className={`p-2 transition-colors duration-300 ${
-                scrolled ? 'text-gray-700' : 'text-orange-600'
+                scrolled ? 'text-gray-700' : 'text-white'
               }`}
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

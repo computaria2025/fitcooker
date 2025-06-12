@@ -314,7 +314,7 @@ const Profile: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
       
-      <main className="py-8 pt-24">
+      <main className="py-8 pt-32">
         <div className="container mx-auto px-4 md:px-6">
           {/* Profile Header */}
           <motion.div
@@ -388,7 +388,7 @@ const Profile: React.FC = () => {
               <TabsTrigger value="perfil">Perfil</TabsTrigger>
               <TabsTrigger value="receitas">Minhas Receitas</TabsTrigger>
               <TabsTrigger value="favoritas">Favoritas</TabsTrigger>
-              <TabsTrigger value="seguidores">Conexões</TabsTrigger>
+              <TabsTrigger value="conexoes">Conexões</TabsTrigger>
               <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
             </TabsList>
 
@@ -584,8 +584,8 @@ const Profile: React.FC = () => {
               </Card>
             </TabsContent>
 
-            {/* Followers Tab */}
-            <TabsContent value="seguidores">
+            {/* Connections Tab */}
+            <TabsContent value="conexoes">
               <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader>
@@ -671,6 +671,7 @@ const Profile: React.FC = () => {
         type="following"
         data={following}
         onFetch={() => user && fetchFollowing(user.id)}
+        onUpdate={refetchStats}
       />
       
       <Footer />
