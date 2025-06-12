@@ -129,7 +129,7 @@ const Cooks: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow flex items-center justify-center pt-28">
+        <main className="flex-grow flex items-center justify-center pt-36">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-fitcooker-orange mx-auto mb-4"></div>
             <p className="text-gray-600">Carregando chefs...</p>
@@ -144,7 +144,7 @@ const Cooks: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
       
-      <main className="py-12 pt-32">
+      <main className="py-12 pt-40">
         <div className="container mx-auto px-4 md:px-6">
           <SectionTitle 
             title="Nossos Chefs Talentosos"
@@ -179,9 +179,28 @@ const Cooks: React.FC = () => {
                       </h3>
 
                       {chef.bio && (
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                           {chef.bio}
                         </p>
+                      )}
+
+                      {/* Preferências */}
+                      {chef.preferencias && chef.preferencias.length > 0 && (
+                        <div className="flex flex-wrap gap-1 justify-center mb-4">
+                          {chef.preferencias.slice(0, 3).map((pref: string, index: number) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full"
+                            >
+                              {pref}
+                            </span>
+                          ))}
+                          {chef.preferencias.length > 3 && (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                              +{chef.preferencias.length - 3}
+                            </span>
+                          )}
+                        </div>
                       )}
 
                       <div className="flex justify-center space-x-4 mb-4 text-sm">

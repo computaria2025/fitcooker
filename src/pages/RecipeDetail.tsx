@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChefHat, Clock, Users, TrendingUp, BookOpen, ShoppingCart } from 'lucide-react';
+import { ChefHat, Clock, Users, TrendingUp, BookOpen, ShoppingCart, Star } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/layout/Navbar';
@@ -20,12 +20,14 @@ const RecipeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const [recipe, setRecipe] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
       fetchRecipe();
+      fetchReviews();
     }
   }, [id]);
 
@@ -70,6 +72,24 @@ const RecipeDetail: React.FC = () => {
     }
   };
 
+  const fetchReviews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('avaliacoes')
+        .select(`
+          *,
+          profiles(nome, avatar_url)
+        `)
+        .eq('receita_id', id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setReviews(data || []);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
+
   const macros = recipe?.informacao_nutricional?.[0] ? {
     calories: Math.round(recipe.informacao_nutricional[0].calorias_totais / recipe.porcoes),
     protein: Math.round(recipe.informacao_nutricional[0].proteinas_totais / recipe.porcoes),
@@ -81,7 +101,7 @@ const RecipeDetail: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow flex items-center justify-center pt-16">
+        <main className="flex-grow flex items-center justify-center pt-24">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-fitcooker-orange mx-auto mb-4"></div>
             <p className="text-gray-600">Carregando receita...</p>
@@ -96,7 +116,7 @@ const RecipeDetail: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow flex items-center justify-center pt-16">
+        <main className="flex-grow flex items-center justify-center pt-24">
           <div className="text-center">
             <ChefHat className="w-20 h-20 text-gray-300 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Erro ao carregar receita</h2>
@@ -112,7 +132,7 @@ const RecipeDetail: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
       
-      <main className="py-8 pt-32">
+      <main className="py-8 pt-40">
         <div className="container mx-auto px-4 md:px-6">
           <div className="max-w-6xl mx-auto">
             {/* Recipe Header */}
@@ -281,8 +301,9 @@ const RecipeDetail: React.FC = () => {
                 )}
               </div>
 
-              {/* Right Column - Instructions */}
-              <div className="lg:col-span-2">
+              {/* Right Column - Instructions and Reviews */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Instructions */}
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -313,6 +334,56 @@ const RecipeDetail: React.FC = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
+
+                {/* Reviews Section */}
+                {reviews.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+                      <CardHeader className="bg-gradient-to-r from-fitcooker-orange/10 to-orange-100">
+                        <CardTitle className="flex items-center space-x-2">
+                          <Star className="w-5 h-5 text-fitcooker-orange" />
+                          <span>Avaliações ({reviews.length})</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <div className="space-y-6">
+                          {reviews.map((review: any, index: number) => (
+                            <div key={index} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
+                              <div className="flex items-start space-x-4">
+                                <Avatar className="w-10 h-10">
+                                  <AvatarImage src={review.profiles?.avatar_url} />
+                                  <AvatarFallback className="bg-fitcooker-orange text-white text-sm">
+                                    {review.profiles?.nome?.[0] || <ChefHat className="w-4 h-4" />}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-3 mb-2">
+                                    <span className="font-semibold text-gray-900">
+                                      {review.profiles?.nome || 'Usuário'}
+                                    </span>
+                                    <RatingStars initialRating={review.nota} readOnly size="sm" />
+                                    <span className="text-sm text-gray-500">
+                                      {new Date(review.created_at).toLocaleDateString('pt-BR')}
+                                    </span>
+                                  </div>
+                                  {review.comentario && (
+                                    <p className="text-gray-700 leading-relaxed">
+                                      {review.comentario}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
               </div>
             </div>
           </div>

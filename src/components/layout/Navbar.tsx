@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User, LogOut, Settings, ChefHat, BookOpen, Users, Plus, Utensils, Info, Mail } from 'lucide-react';
@@ -52,30 +51,31 @@ const Navbar: React.FC = () => {
     <nav className={`fixed top-0 w-full z-50 transition-all duration-700 ease-in-out ${
       scrolled 
         ? 'bg-white/95 backdrop-blur-lg shadow-xl border-b border-gray-200 h-16' 
-        : 'bg-transparent h-20'
+        : 'bg-transparent h-24'
     }`}>
       <div className="container mx-auto px-4 md:px-6 h-full">
         <div className="flex justify-between items-center h-full">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className={`relative transition-all duration-700 ease-in-out ${
-              scrolled ? 'w-10 h-10' : 'w-12 h-12'
-            } bg-gradient-to-br from-fitcooker-orange via-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl`}>
+              scrolled ? 'w-10 h-10' : 'w-14 h-14'
+            } bg-gradient-to-br from-fitcooker-orange via-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl overflow-hidden`}>
               <ChefHat className={`text-white transition-all duration-500 ${
-                scrolled ? 'w-5 h-5' : 'w-6 h-6'
-              } group-hover:rotate-12 group-hover:scale-110`} />
+                scrolled ? 'w-5 h-5' : 'w-7 h-7'
+              } group-hover:rotate-6 group-hover:scale-110 z-10`} />
               <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-fitcooker-orange via-orange-500 to-orange-600 rounded-xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
             </div>
             <div className="flex flex-col">
               <span className={`font-black tracking-tight transition-all duration-700 ease-in-out ${
                 scrolled 
-                  ? 'text-2xl bg-gradient-to-r from-fitcooker-orange via-orange-500 to-orange-600 bg-clip-text text-transparent' 
-                  : 'text-3xl text-white drop-shadow-2xl'
-              } group-hover:scale-105`}>
+                  ? 'text-2xl text-gray-900' 
+                  : 'text-3xl text-gray-900'
+              } group-hover:scale-105 bg-gradient-to-r from-fitcooker-orange via-orange-500 to-orange-600 bg-clip-text text-transparent`}>
                 FitCooker
               </span>
               {!scrolled && (
-                <span className="text-xs text-orange-100 opacity-90 tracking-widest uppercase font-medium">
+                <span className="text-xs text-gray-600 opacity-80 tracking-widest uppercase font-medium">
                   Culinária Saudável
                 </span>
               )}
@@ -93,9 +93,7 @@ const Navbar: React.FC = () => {
                   className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-500 group relative overflow-hidden ${
                     isActive(item.path)
                       ? 'bg-fitcooker-orange text-white shadow-lg transform scale-105'
-                      : scrolled
-                        ? 'text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50'
-                        : 'text-white hover:text-orange-200 hover:bg-white/10 backdrop-blur-sm'
+                      : 'text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50'
                   }`}
                 >
                   <Icon className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
@@ -112,11 +110,7 @@ const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <>
-                <Button asChild variant="outline" className={`transition-all duration-500 font-semibold group relative overflow-hidden ${
-                  scrolled
-                    ? 'border-fitcooker-orange text-fitcooker-orange hover:bg-fitcooker-orange hover:text-white'
-                    : 'border-white text-white bg-white/10 backdrop-blur-sm hover:bg-white hover:text-fitcooker-orange'
-                }`}>
+                <Button asChild variant="outline" className="transition-all duration-500 font-semibold group relative overflow-hidden border-fitcooker-orange text-fitcooker-orange hover:bg-fitcooker-orange hover:text-white">
                   <Link to="/add-recipe">
                     <Plus className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:rotate-90" />
                     Adicionar Receita
@@ -165,18 +159,10 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <div className="flex items-center space-x-3">
-                <Button asChild variant="outline" className={`transition-all duration-500 font-semibold ${
-                  scrolled
-                    ? 'border-fitcooker-orange text-fitcooker-orange hover:bg-fitcooker-orange hover:text-white'
-                    : 'border-white text-white bg-white/10 backdrop-blur-sm hover:bg-white hover:text-fitcooker-orange'
-                }`}>
+                <Button asChild variant="outline" className="transition-all duration-500 font-semibold border-fitcooker-orange text-fitcooker-orange hover:bg-fitcooker-orange hover:text-white">
                   <Link to="/login">Entrar</Link>
                 </Button>
-                <Button asChild className={`transition-all duration-500 font-semibold hover:scale-105 ${
-                  scrolled
-                    ? 'bg-gradient-to-r from-fitcooker-orange to-orange-500 hover:from-orange-500 hover:to-orange-600'
-                    : 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800'
-                }`}>
+                <Button asChild className="transition-all duration-500 font-semibold hover:scale-105 bg-gradient-to-r from-fitcooker-orange to-orange-500 hover:from-orange-500 hover:to-orange-600">
                   <Link to="/signup">Cadastrar</Link>
                 </Button>
               </div>
@@ -189,9 +175,7 @@ const Navbar: React.FC = () => {
               variant="ghost"
               size="sm"
               onClick={() => setIsOpen(!isOpen)}
-              className={`p-2 transition-colors duration-300 ${
-                scrolled ? 'text-gray-700' : 'text-white'
-              }`}
+              className="p-2 transition-colors duration-300 text-gray-700"
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </Button>
