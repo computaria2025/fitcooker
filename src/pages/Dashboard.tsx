@@ -1,95 +1,95 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { ChefHat, Star, TrendingUp, BookOpen, Users, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useRecipes } from '@/hooks/useRecipes';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import RecipeCard from '@/components/ui/RecipeCard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChefHat, Heart, BookOpen, Users, TrendingUp, PlusCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import RecipeCard from '@/components/ui/RecipeCard';
 import { Recipe } from '@/types/recipe';
 
+interface DashboardStats {
+  totalRecipes: number;
+  userRecipes: number;
+  followers: number;
+  following: number;
+}
+
+interface FeaturedChef {
+  id: string;
+  nome: string;
+  avatar_url: string;
+  receitas_count: number;
+  seguidores_count: number;
+  nota_media: number;
+}
+
 const Dashboard: React.FC = () => {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  const [userStats, setUserStats] = useState({
-    recipesCount: 0,
-    savedRecipesCount: 0,
-    totalViews: 0
+  const { user } = useAuth();
+  const { data: allRecipes, loading: recipesLoading } = useRecipes();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalRecipes: 0,
+    userRecipes: 0,
+    followers: 0,
+    following: 0
   });
   const [userRecipes, setUserRecipes] = useState<Recipe[]>([]);
-  const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
-  const [featuredChefs, setFeaturedChefs] = useState<any[]>([]);
-  const [recommendedRecipes, setRecommendedRecipes] = useState<Recipe[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [featuredRecipes, setFeaturedRecipes] = useState<Recipe[]>([]);
+  const [featuredChefs, setFeaturedChefs] = useState<FeaturedChef[]>([]);
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login');
-      return;
-    }
-
     if (user) {
       fetchDashboardData();
+      checkIfNewUser();
     }
-  }, [user, loading, navigate]);
+  }, [user, allRecipes]);
+
+  const checkIfNewUser = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('data_cadastro')
+        .eq('id', user.id)
+        .single();
+
+      if (error) return;
+
+      // Check if user was created in the last 24 hours
+      const createdAt = new Date(data.data_cadastro);
+      const now = new Date();
+      const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      
+      setIsNewUser(hoursDiff < 24);
+    } catch (error) {
+      console.error('Error checking new user status:', error);
+    }
+  };
 
   const fetchDashboardData = async () => {
     if (!user) return;
 
     try {
-      // Fetch user statistics
-      const [recipesCountResult, savedCountResult, userRecipesResult] = await Promise.all([
-        supabase
-          .from('receitas')
-          .select('*', { count: 'exact', head: true })
-          .eq('usuario_id', user.id),
-        supabase
-          .from('receitas_salvas')
-          .select('*', { count: 'exact', head: true })
-          .eq('usuario_id', user.id),
-        supabase
-          .from('receitas')
-          .select(`
-            *,
-            profiles(nome, avatar_url),
-            receita_categorias(categorias(nome)),
-            informacao_nutricional(*)
-          `)
-          .eq('usuario_id', user.id)
-          .eq('status', 'ativa')
-          .order('created_at', { ascending: false })
-          .limit(3)
-      ]);
+      setLoading(true);
 
-      // Fetch saved recipes
-      const { data: savedRecipesData } = await supabase
-        .from('receitas_salvas')
-        .select(`
-          receita_id,
-          receitas(
-            *,
-            profiles(nome, avatar_url),
-            receita_categorias(categorias(nome)),
-            informacao_nutricional(*)
-          )
-        `)
-        .eq('usuario_id', user.id)
-        .limit(3);
-
-      // Fetch featured chefs
-      const { data: chefsData } = await supabase
+      // Fetch user profile stats
+      const { data: profile } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('is_chef', true)
-        .order('receitas_count', { ascending: false })
-        .limit(3);
+        .select('receitas_count, seguidores_count, seguindo_count')
+        .eq('id', user.id)
+        .single();
 
-      // Fetch recommended recipes
-      const { data: recommendedData } = await supabase
+      // Fetch user's recipes
+      const { data: recipes } = await supabase
         .from('receitas')
         .select(`
           *,
@@ -97,142 +97,110 @@ const Dashboard: React.FC = () => {
           receita_categorias(categorias(nome)),
           informacao_nutricional(*)
         `)
+        .eq('usuario_id', user.id)
         .eq('status', 'ativa')
-        .neq('usuario_id', user.id)
-        .order('nota_media', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(6);
 
-      setUserStats({
-        recipesCount: recipesCountResult.count || 0,
-        savedRecipesCount: savedCountResult.count || 0,
-        totalViews: 0 // Calculate from views if needed
-      });
-
-      // Format user recipes
-      const formattedUserRecipes = (userRecipesResult.data || []).map((recipe: any) => ({
+      // Transform user recipes
+      const transformedUserRecipes = recipes?.map(recipe => ({
         id: recipe.id,
         titulo: recipe.titulo,
         title: recipe.titulo,
         descricao: recipe.descricao,
         description: recipe.descricao,
-        imagem_url: recipe.imagem_url || '/placeholder.svg',
-        imageUrl: recipe.imagem_url || '/placeholder.svg',
+        imagem_url: recipe.imagem_url,
+        imageUrl: recipe.imagem_url,
         tempo_preparo: recipe.tempo_preparo,
         preparationTime: recipe.tempo_preparo,
         porcoes: recipe.porcoes,
         servings: recipe.porcoes,
         dificuldade: recipe.dificuldade,
         difficulty: recipe.dificuldade,
-        nota_media: recipe.nota_media || 0,
-        rating: recipe.nota_media || 0,
-        avaliacoes_count: recipe.avaliacoes_count || 0,
+        nota_media: recipe.nota_media,
+        rating: recipe.nota_media,
+        avaliacoes_count: recipe.avaliacoes_count,
         created_at: recipe.created_at,
         usuario_id: recipe.usuario_id,
+        status: recipe.status,
         author: {
-          id: recipe.usuario_id,
+          id: recipe.profiles?.id || recipe.usuario_id,
           name: recipe.profiles?.nome || 'Chef Anônimo',
-          avatarUrl: recipe.profiles?.avatar_url || '/placeholder.svg'
+          avatarUrl: recipe.profiles?.avatar_url || '',
         },
         categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
-        macros: {
-          calories: recipe.informacao_nutricional?.[0]?.calorias_totais || 0,
-          protein: recipe.informacao_nutricional?.[0]?.proteinas_totais || 0,
-          carbs: recipe.informacao_nutricional?.[0]?.carboidratos_totais || 0,
-          fat: recipe.informacao_nutricional?.[0]?.gorduras_totais || 0
-        }
-      }));
+        macros: recipe.informacao_nutricional?.[0] ? {
+          calories: Math.round(recipe.informacao_nutricional[0].calorias_totais / recipe.porcoes),
+          protein: Math.round(recipe.informacao_nutricional[0].proteinas_totais / recipe.porcoes),
+          carbs: Math.round(recipe.informacao_nutricional[0].carboidratos_totais / recipe.porcoes),
+          fat: Math.round(recipe.informacao_nutricional[0].gorduras_totais / recipe.porcoes),
+        } : { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      })) || [];
 
-      // Format saved recipes
-      const formattedSavedRecipes = (savedRecipesData || []).map((item: any) => {
-        const recipe = item.receitas;
-        return {
-          id: recipe.id,
-          titulo: recipe.titulo,
-          title: recipe.titulo,
-          descricao: recipe.descricao,
-          description: recipe.descricao,
-          imagem_url: recipe.imagem_url || '/placeholder.svg',
-          imageUrl: recipe.imagem_url || '/placeholder.svg',
-          tempo_preparo: recipe.tempo_preparo,
-          preparationTime: recipe.tempo_preparo,
-          porcoes: recipe.porcoes,
-          servings: recipe.porcoes,
-          dificuldade: recipe.dificuldade,
-          difficulty: recipe.dificuldade,
-          nota_media: recipe.nota_media || 0,
-          rating: recipe.nota_media || 0,
-          avaliacoes_count: recipe.avaliacoes_count || 0,
-          created_at: recipe.created_at,
-          usuario_id: recipe.usuario_id,
-          author: {
-            id: recipe.usuario_id,
-            name: recipe.profiles?.nome || 'Chef Anônimo',
-            avatarUrl: recipe.profiles?.avatar_url || '/placeholder.svg'
-          },
-          categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
-          macros: {
-            calories: recipe.informacao_nutricional?.[0]?.calorias_totais || 0,
-            protein: recipe.informacao_nutricional?.[0]?.proteinas_totais || 0,
-            carbs: recipe.informacao_nutricional?.[0]?.carboidratos_totais || 0,
-            fat: recipe.informacao_nutricional?.[0]?.gorduras_totais || 0
+      // Get featured recipes (highest rated)
+      const featured = allRecipes
+        .filter(recipe => recipe.nota_media > 0)
+        .sort((a, b) => (b.nota_media || 0) - (a.nota_media || 0))
+        .slice(0, 6);
+
+      // Fetch featured chefs
+      const { data: chefs } = await supabase
+        .from('profiles')
+        .select('id, nome, avatar_url, receitas_count, seguidores_count')
+        .eq('is_chef', true)
+        .gt('receitas_count', 0)
+        .order('seguidores_count', { ascending: false })
+        .limit(6);
+
+      // Calculate average ratings for chefs
+      const chefsWithRatings = await Promise.all(
+        (chefs || []).map(async (chef) => {
+          const { data: chefRecipes } = await supabase
+            .from('receitas')
+            .select('nota_media')
+            .eq('usuario_id', chef.id)
+            .not('nota_media', 'is', null);
+
+          let averageRating = 0;
+          if (chefRecipes && chefRecipes.length > 0) {
+            const validRatings = chefRecipes.filter(r => r.nota_media > 0);
+            if (validRatings.length > 0) {
+              averageRating = validRatings.reduce((sum, recipe) => sum + recipe.nota_media, 0) / validRatings.length;
+            }
           }
-        };
+
+          return {
+            ...chef,
+            nota_media: Number(averageRating.toFixed(1))
+          };
+        })
+      );
+
+      setStats({
+        totalRecipes: allRecipes.length,
+        userRecipes: profile?.receitas_count || 0,
+        followers: profile?.seguidores_count || 0,
+        following: profile?.seguindo_count || 0
       });
-
-      // Format recommended recipes
-      const formattedRecommended = (recommendedData || []).map((recipe: any) => ({
-        id: recipe.id,
-        titulo: recipe.titulo,
-        title: recipe.titulo,
-        descricao: recipe.descricao,
-        description: recipe.descricao,
-        imagem_url: recipe.imagem_url || '/placeholder.svg',
-        imageUrl: recipe.imagem_url || '/placeholder.svg',
-        tempo_preparo: recipe.tempo_preparo,
-        preparationTime: recipe.tempo_preparo,
-        porcoes: recipe.porcoes,
-        servings: recipe.porcoes,
-        dificuldade: recipe.dificuldade,
-        difficulty: recipe.dificuldade,
-        nota_media: recipe.nota_media || 0,
-        rating: recipe.nota_media || 0,
-        avaliacoes_count: recipe.avaliacoes_count || 0,
-        created_at: recipe.created_at,
-        usuario_id: recipe.usuario_id,
-        author: {
-          id: recipe.usuario_id,
-          name: recipe.profiles?.nome || 'Chef Anônimo',
-          avatarUrl: recipe.profiles?.avatar_url || '/placeholder.svg'
-        },
-        categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
-        macros: {
-          calories: recipe.informacao_nutricional?.[0]?.calorias_totais || 0,
-          protein: recipe.informacao_nutricional?.[0]?.proteinas_totais || 0,
-          carbs: recipe.informacao_nutricional?.[0]?.carboidratos_totais || 0,
-          fat: recipe.informacao_nutricional?.[0]?.gorduras_totais || 0
-        }
-      }));
-
-      setUserRecipes(formattedUserRecipes);
-      setSavedRecipes(formattedSavedRecipes);
-      setFeaturedChefs(chefsData || []);
-      setRecommendedRecipes(formattedRecommended);
-
+      
+      setUserRecipes(transformedUserRecipes);
+      setFeaturedRecipes(featured);
+      setFeaturedChefs(chefsWithRatings);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  if (loading || isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-fitcooker-orange mx-auto mb-4"></div>
-            <p className="text-gray-600">Carregando seu dashboard...</p>
+            <p className="text-gray-600">Carregando dashboard...</p>
           </div>
         </main>
         <Footer />
@@ -240,72 +208,109 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-orange-50/20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
       
-      <main className="flex-grow">
-        {/* Hero Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-fitcooker-orange via-orange-500 to-orange-600 text-white py-16"
-        >
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center">
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-4xl md:text-5xl font-bold mb-4"
-              >
-                Bem-vindo de volta, {user.user_metadata?.nome || user.email?.split('@')[0]}!
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-xl text-orange-100 mb-8"
-              >
-                Seu mundo culinário te espera
-              </motion.p>
+      <main className="py-8">
+        <div className="container mx-auto px-4 md:px-6">
+          {/* Welcome Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-fitcooker-orange/20 to-orange-500/20 blur-3xl rounded-full transform scale-150"></div>
+              <div className="relative bg-gradient-to-r from-fitcooker-orange via-orange-500 to-orange-600 rounded-3xl p-8 text-white overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                <div className="absolute -bottom-5 -left-5 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+                
+                <div className="relative">
+                  {isNewUser ? (
+                    <div className="text-center">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.2, type: "spring" }}
+                        className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4"
+                      >
+                        <ChefHat className="w-10 h-10 text-white" />
+                      </motion.div>
+                      <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                        Bem-vindo ao FitCooker, {user?.user_metadata?.nome || user?.email?.split('@')[0]}! 🎉
+                      </h1>
+                      <p className="text-orange-100 text-lg max-w-2xl mx-auto">
+                        Agora você é um chef! Cozinhe, poste suas receitas incríveis ou simplesmente explore e se inspire com nossa comunidade culinária.
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                        Olá, Chef {user?.user_metadata?.nome || user?.email?.split('@')[0]}! 👨‍🍳
+                      </h1>
+                      <p className="text-orange-100 text-lg">
+                        Bem-vindo de volta! Vamos cozinhar algo incrível hoje?
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        <div className="container mx-auto px-4 md:px-6 py-12">
-          {/* Statistics Cards */}
+          {/* Stats Cards */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
           >
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-              <CardContent className="p-6 text-center">
-                <ChefHat className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                <p className="text-3xl font-bold text-blue-700 mb-2">{userStats.recipesCount}</p>
-                <p className="text-blue-600">Suas Receitas</p>
+            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-100 text-sm">Total de Receitas</p>
+                    <p className="text-3xl font-bold">{stats.totalRecipes}</p>
+                  </div>
+                  <BookOpen className="w-8 h-8 text-blue-200" />
+                </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-pink-50 to-pink-100 border-pink-200">
-              <CardContent className="p-6 text-center">
-                <Heart className="w-12 h-12 text-pink-600 mx-auto mb-4" />
-                <p className="text-3xl font-bold text-pink-700 mb-2">{userStats.savedRecipesCount}</p>
-                <p className="text-pink-600">Receitas Salvas</p>
+            <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-green-100 text-sm">Minhas Receitas</p>
+                    <p className="text-3xl font-bold">{stats.userRecipes}</p>
+                  </div>
+                  <ChefHat className="w-8 h-8 text-green-200" />
+                </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-              <CardContent className="p-6 text-center">
-                <TrendingUp className="w-12 h-12 text-green-600 mx-auto mb-4" />
-                <p className="text-3xl font-bold text-green-700 mb-2">{userStats.totalViews}</p>
-                <p className="text-green-600">Total de Visualizações</p>
+            <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-purple-100 text-sm">Seguidores</p>
+                    <p className="text-3xl font-bold">{stats.followers}</p>
+                  </div>
+                  <Users className="w-8 h-8 text-purple-200" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-orange-100 text-sm">Seguindo</p>
+                    <p className="text-3xl font-bold">{stats.following}</p>
+                  </div>
+                  <TrendingUp className="w-8 h-8 text-orange-200" />
+                </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -315,200 +320,189 @@ const Dashboard: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="mb-12"
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"
           >
-            <Card className="bg-gradient-to-r from-fitcooker-orange to-orange-500 text-white">
-              <CardContent className="p-8">
-                <div className="flex flex-col md:flex-row items-center justify-between">
-                  <div className="text-center md:text-left mb-6 md:mb-0">
-                    <h3 className="text-2xl font-bold mb-2">Pronto para criar algo delicioso?</h3>
-                    <p className="text-orange-100">Compartilhe uma nova receita com a comunidade</p>
+            <Card className="bg-gradient-to-br from-fitcooker-orange/10 to-orange-100 border-fitcooker-orange/20">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">Adicionar Nova Receita</h3>
+                    <p className="text-gray-600 mb-4">Compartilhe suas criações culinárias com a comunidade</p>
+                    <Button asChild className="bg-fitcooker-orange hover:bg-fitcooker-orange/90">
+                      <a href="/add-recipe">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Criar Receita
+                      </a>
+                    </Button>
                   </div>
-                  <Button
-                    onClick={() => navigate('/add-recipe')}
-                    className="bg-white text-fitcooker-orange hover:bg-orange-50"
-                    size="lg"
-                  >
-                    <PlusCircle className="w-5 h-5 mr-2" />
-                    Nova Receita
-                  </Button>
+                  <ChefHat className="w-16 h-16 text-fitcooker-orange/50" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">Explorar Receitas</h3>
+                    <p className="text-gray-600 mb-4">Descubra novas receitas da nossa comunidade de chefs</p>
+                    <Button asChild variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                      <a href="/recipes">
+                        <BookOpen className="w-4 h-4 mr-2" />
+                        Ver Receitas
+                      </a>
+                    </Button>
+                  </div>
+                  <Star className="w-16 h-16 text-blue-300" />
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* User's Recipes */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mb-12"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Suas Receitas</h2>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/profile')}
-                className="hover:bg-fitcooker-orange hover:text-white"
-              >
-                Ver Todas
-              </Button>
-            </div>
-            {userRecipes.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {userRecipes.map((recipe, index) => (
-                  <motion.div
-                    key={recipe.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + (index * 0.1) }}
-                  >
-                    <RecipeCard recipe={recipe} />
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <Card className="text-center py-12">
+          {/* Content Sections */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* My Recent Recipes */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Minhas Receitas Recentes</span>
+                    <Button asChild variant="outline" size="sm">
+                      <a href="/profile">Ver Todas</a>
+                    </Button>
+                  </CardTitle>
+                  <CardDescription>
+                    Suas últimas criações culinárias
+                  </CardDescription>
+                </CardHeader>
                 <CardContent>
-                  <ChefHat className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-4">Você ainda não criou nenhuma receita</p>
-                  <Button
-                    onClick={() => navigate('/add-recipe')}
-                    className="bg-fitcooker-orange hover:bg-fitcooker-orange/90"
-                  >
-                    Criar Primeira Receita
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </motion.div>
-
-          {/* Saved Recipes */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mb-12"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Receitas Salvas</h2>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/profile')}
-                className="hover:bg-fitcooker-orange hover:text-white"
-              >
-                Ver Todas
-              </Button>
-            </div>
-            {savedRecipes.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {savedRecipes.map((recipe, index) => (
-                  <motion.div
-                    key={recipe.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 + (index * 0.1) }}
-                  >
-                    <RecipeCard recipe={recipe} />
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-4">Você ainda não salvou nenhuma receita</p>
-                  <Button
-                    onClick={() => navigate('/recipes')}
-                    className="bg-fitcooker-orange hover:bg-fitcooker-orange/90"
-                  >
-                    Explorar Receitas
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </motion.div>
-
-          {/* Featured Chefs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mb-12"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Chefs em Destaque</h2>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/cooks')}
-                className="hover:bg-fitcooker-orange hover:text-white"
-              >
-                Ver Todos
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredChefs.map((chef, index) => (
-                <motion.div
-                  key={chef.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 + (index * 0.1) }}
-                >
-                  <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer">
-                    <CardContent className="p-6 text-center">
-                      <div className="w-20 h-20 bg-gradient-to-r from-fitcooker-orange to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        {chef.avatar_url ? (
+                  {userRecipes.length > 0 ? (
+                    <div className="space-y-4">
+                      {userRecipes.slice(0, 3).map((recipe) => (
+                        <div key={recipe.id} className="flex items-center space-x-4 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                           <img
-                            src={chef.avatar_url}
-                            alt={chef.nome}
-                            className="w-full h-full rounded-full object-cover"
+                            src={recipe.imagem_url || '/placeholder.svg'}
+                            alt={recipe.titulo}
+                            className="w-16 h-16 rounded-lg object-cover"
                           />
-                        ) : (
-                          <Users className="w-10 h-10 text-white" />
-                        )}
-                      </div>
-                      <h3 className="font-bold text-lg mb-2">{chef.nome}</h3>
-                      <p className="text-gray-600 text-sm mb-3">{chef.bio || 'Chef apaixonado pela culinária'}</p>
-                      <div className="flex justify-center space-x-4 text-sm text-gray-500">
-                        <span>{chef.receitas_count || 0} receitas</span>
-                        <span>{chef.seguidores_count || 0} seguidores</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900">{recipe.titulo}</h4>
+                            <p className="text-sm text-gray-600 line-clamp-1">{recipe.descricao}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Badge variant="outline" className="text-xs">{recipe.dificuldade}</Badge>
+                              <span className="text-xs text-gray-500">{recipe.tempo_preparo} min</span>
+                            </div>
+                          </div>
+                          <Button asChild size="sm" variant="ghost">
+                            <a href={`/recipe/${recipe.id}`}>Ver</a>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <ChefHat className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500 mb-4">Você ainda não criou nenhuma receita</p>
+                      <Button asChild size="sm" className="bg-fitcooker-orange hover:bg-fitcooker-orange/90">
+                        <a href="/add-recipe">Criar Primeira Receita</a>
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
 
-          {/* Recommended Recipes */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Receitas Recomendadas</h2>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/recipes')}
-                className="hover:bg-fitcooker-orange hover:text-white"
-              >
-                Ver Mais
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendedRecipes.slice(0, 6).map((recipe, index) => (
-                <motion.div
-                  key={recipe.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 + (index * 0.1) }}
-                >
-                  <RecipeCard recipe={recipe} />
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+            {/* Featured Chefs */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Chefs em Destaque</span>
+                    <Button asChild variant="outline" size="sm">
+                      <a href="/cooks">Ver Todos</a>
+                    </Button>
+                  </CardTitle>
+                  <CardDescription>
+                    Os chefs mais populares da comunidade
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {featuredChefs.length > 0 ? (
+                    <div className="space-y-4">
+                      {featuredChefs.slice(0, 3).map((chef) => (
+                        <div key={chef.id} className="flex items-center space-x-4 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={chef.avatar_url || ''} />
+                            <AvatarFallback><ChefHat className="w-6 h-6" /></AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900">{chef.nome}</h4>
+                            <div className="flex items-center space-x-3 text-sm text-gray-600">
+                              <span>{chef.receitas_count} receitas</span>
+                              <span>{chef.seguidores_count} seguidores</span>
+                              {chef.nota_media > 0 && (
+                                <div className="flex items-center space-x-1">
+                                  <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                                  <span>{chef.nota_media}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <Button asChild size="sm" variant="ghost">
+                            <a href={`/cook/${chef.id}`}>Ver Perfil</a>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500">Nenhum chef em destaque ainda</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
+          {/* Featured Recipes */}
+          {featuredRecipes.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mt-8"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Receitas em Destaque</span>
+                    <Button asChild variant="outline" size="sm">
+                      <a href="/recipes">Ver Todas</a>
+                    </Button>
+                  </CardTitle>
+                  <CardDescription>
+                    As receitas mais bem avaliadas da comunidade
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {featuredRecipes.slice(0, 3).map((recipe) => (
+                      <RecipeCard key={recipe.id} recipe={recipe} />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
         </div>
       </main>
       

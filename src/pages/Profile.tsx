@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Settings, BookOpen, Heart, Save, Edit, Trash2, MapPin, Calendar } from 'lucide-react';
+import { User, Settings, BookOpen, Heart, Save, Edit, Trash2, MapPin, Calendar, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
+import { useFollowers } from '@/hooks/useFollowers';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import RecipeCard from '@/components/ui/RecipeCard';
 import ProfilePictureUpload from '@/components/ui/ProfilePictureUpload';
+import FollowersDialog from '@/components/ui/FollowersDialog';
 import { Recipe } from '@/types/recipe';
 
 interface ProfileStats {
@@ -33,12 +34,15 @@ interface SavedRecipe {
 const Profile: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { followers, following, fetchFollowers, fetchFollowing } = useFollowers();
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState<ProfileStats>({ receitas_count: 0, seguidores_count: 0, seguindo_count: 0 });
   const [userRecipes, setUserRecipes] = useState<Recipe[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
+  const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     bio: '',
@@ -348,14 +352,20 @@ const Profile: React.FC = () => {
                     <div className="text-2xl font-bold">{stats.receitas_count}</div>
                     <div className="text-orange-200 text-sm">Receitas</div>
                   </div>
-                  <div className="text-center">
+                  <button
+                    onClick={() => setFollowersDialogOpen(true)}
+                    className="text-center hover:bg-white/10 rounded-lg p-2 transition-colors"
+                  >
                     <div className="text-2xl font-bold">{stats.seguidores_count}</div>
                     <div className="text-orange-200 text-sm">Seguidores</div>
-                  </div>
-                  <div className="text-center">
+                  </button>
+                  <button
+                    onClick={() => setFollowingDialogOpen(true)}
+                    className="text-center hover:bg-white/10 rounded-lg p-2 transition-colors"
+                  >
                     <div className="text-2xl font-bold">{stats.seguindo_count}</div>
                     <div className="text-orange-200 text-sm">Seguindo</div>
-                  </div>
+                  </button>
                 </div>
 
                 {profile?.preferencias && profile.preferencias.length > 0 && (
@@ -474,14 +484,6 @@ const Profile: React.FC = () => {
                         <div key={recipe.id} className="relative group">
                           <RecipeCard recipe={recipe} />
                           <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="bg-white/90"
-                              onClick={() => window.open(`/recipe/edit/${recipe.id}`, '_blank')}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
                             <Button
                               size="sm"
                               variant="destructive"
@@ -603,6 +605,24 @@ const Profile: React.FC = () => {
           </Tabs>
         </div>
       </main>
+
+      {/* Followers Dialog */}
+      <FollowersDialog
+        open={followersDialogOpen}
+        onOpenChange={setFollowersDialogOpen}
+        type="followers"
+        data={followers}
+        onFetch={() => user && fetchFollowers(user.id)}
+      />
+
+      {/* Following Dialog */}
+      <FollowersDialog
+        open={followingDialogOpen}
+        onOpenChange={setFollowingDialogOpen}
+        type="following"
+        data={following}
+        onFetch={() => user && fetchFollowing(user.id)}
+      />
       
       <Footer />
     </div>

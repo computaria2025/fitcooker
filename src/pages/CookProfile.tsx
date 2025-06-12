@@ -1,9 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChefHat, Users, Star, Award, ArrowLeft, Calendar, MapPin } from 'lucide-react';
+import { ChefHat, Users, Star, Award, ArrowLeft, Calendar, UserPlus, UserMinus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useFollowers } from '@/hooks/useFollowers';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +31,8 @@ interface ChefProfile {
 const CookProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isFollowing, loading: followLoading, toggleFollow } = useFollowers(id);
   const [chef, setChef] = useState<ChefProfile | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,6 +183,8 @@ const CookProfile: React.FC = () => {
     );
   }
 
+  const isOwnProfile = user?.id === chef.id;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
@@ -259,6 +264,34 @@ const CookProfile: React.FC = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Follow Button */}
+                {user && !isOwnProfile && (
+                  <div className="mb-6">
+                    <Button
+                      onClick={toggleFollow}
+                      disabled={followLoading}
+                      className={`${
+                        isFollowing 
+                          ? 'bg-white/20 border-white/30 text-white hover:bg-white/30' 
+                          : 'bg-white text-fitcooker-orange hover:bg-white/90'
+                      } border`}
+                      variant={isFollowing ? 'outline' : 'default'}
+                    >
+                      {isFollowing ? (
+                        <>
+                          <UserMinus className="w-4 h-4 mr-2" />
+                          Deixar de Seguir
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Seguir
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
 
                 {chef.preferencias && chef.preferencias.length > 0 && (
                   <div>

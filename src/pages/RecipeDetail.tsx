@@ -7,12 +7,13 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import SaveRecipeButton from '@/components/recipe/SaveRecipeButton';
 import RateRecipeButton from '@/components/recipe/RateRecipeButton';
+import ImageCarousel from '@/components/ui/ImageCarousel';
+import NutritionDisplay from '@/components/ui/NutritionDisplay';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import MacroDisplay from '@/components/ui/MacroDisplay';
 
 interface RecipeData {
   id: number;
@@ -46,6 +47,11 @@ interface RecipeData {
     categorias: {
       nome: string;
     };
+  }>;
+  receita_midias: Array<{
+    url: string;
+    tipo: string;
+    ordem: number;
   }>;
   informacao_nutricional: Array<{
     calorias_totais: number;
@@ -95,6 +101,7 @@ const RecipeDetail: React.FC = () => {
           ),
           receita_passos(ordem, descricao),
           receita_categorias(categorias(nome)),
+          receita_midias(url, tipo, ordem),
           informacao_nutricional(*),
           avaliacoes(
             nota, comentario, created_at,
@@ -181,19 +188,23 @@ const RecipeDetail: React.FC = () => {
   const steps = recipe.receita_passos?.sort((a, b) => a.ordem - b.ordem) || [];
   const categories = recipe.receita_categorias?.map(rc => rc.categorias?.nome).filter(Boolean) || [];
   const reviews = recipe.avaliacoes || [];
+  
+  // Get all media URLs for carousel
+  const mediaUrls = recipe.receita_midias
+    ?.sort((a, b) => a.ordem - b.ordem)
+    ?.map(media => media.url) || [];
+  
+  // If no media from receita_midias, use the main image
+  const images = mediaUrls.length > 0 ? mediaUrls : [recipe.imagem_url].filter(Boolean);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
       
       <main className="flex-grow">
-        {/* Hero Section */}
+        {/* Hero Section with Image Carousel */}
         <div className="relative h-96 overflow-hidden">
-          <img
-            src={recipe.imagem_url || '/placeholder.svg'}
-            alt={recipe.titulo}
-            className="w-full h-full object-cover"
-          />
+          <ImageCarousel images={images} title={recipe.titulo} />
           <div className="absolute inset-0 bg-black bg-opacity-40"></div>
           <div className="absolute inset-0 flex items-end">
             <div className="container mx-auto px-4 md:px-6 pb-8">
@@ -423,20 +434,12 @@ const RecipeDetail: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <Card className="shadow-lg border-0">
-                    <CardHeader className="bg-gradient-to-r from-fitcooker-orange/10 to-orange-100">
-                      <CardTitle>Informações Nutricionais</CardTitle>
-                      <p className="text-sm text-gray-600">Por porção</p>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <MacroDisplay
-                        calories={Math.round(nutrition.calorias_totais / recipe.porcoes)}
-                        protein={Math.round(nutrition.proteinas_totais / recipe.porcoes)}
-                        carbs={Math.round(nutrition.carboidratos_totais / recipe.porcoes)}
-                        fat={Math.round(nutrition.gorduras_totais / recipe.porcoes)}
-                      />
-                    </CardContent>
-                  </Card>
+                  <NutritionDisplay
+                    calories={Math.round(nutrition.calorias_totais / recipe.porcoes)}
+                    protein={Math.round(nutrition.proteinas_totais / recipe.porcoes)}
+                    carbs={Math.round(nutrition.carboidratos_totais / recipe.porcoes)}
+                    fat={Math.round(nutrition.gorduras_totais / recipe.porcoes)}
+                  />
                 </motion.div>
               )}
 
