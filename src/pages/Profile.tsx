@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { User, Settings, BookOpen, Heart, Save, Edit, Trash2, MapPin, Calendar, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFollowers } from '@/hooks/useFollowers';
+import { useUserStats } from '@/hooks/useUserStats';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/layout/Navbar';
@@ -19,12 +20,6 @@ import ProfilePictureUpload from '@/components/ui/ProfilePictureUpload';
 import FollowersDialog from '@/components/ui/FollowersDialog';
 import { Recipe } from '@/types/recipe';
 
-interface ProfileStats {
-  receitas_count: number;
-  seguidores_count: number;
-  seguindo_count: number;
-}
-
 interface SavedRecipe {
   id: number;
   created_at: string;
@@ -35,8 +30,8 @@ const Profile: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { followers, following, fetchFollowers, fetchFollowing } = useFollowers();
+  const { stats, loading: statsLoading, refetch: refetchStats } = useUserStats(user?.id);
   const [profile, setProfile] = useState<any>(null);
-  const [stats, setStats] = useState<ProfileStats>({ receitas_count: 0, seguidores_count: 0, seguindo_count: 0 });
   const [userRecipes, setUserRecipes] = useState<Recipe[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,11 +66,6 @@ const Profile: React.FC = () => {
       if (error) throw error;
 
       setProfile(data);
-      setStats({
-        receitas_count: data.receitas_count || 0,
-        seguidores_count: data.seguidores_count || 0,
-        seguindo_count: data.seguindo_count || 0,
-      });
       setFormData({
         nome: data.nome || '',
         bio: data.bio || '',
@@ -201,6 +191,7 @@ const Profile: React.FC = () => {
       });
 
       fetchProfile();
+      refetchStats();
     } catch (error) {
       toast({
         title: "Erro",
@@ -269,7 +260,7 @@ const Profile: React.FC = () => {
       });
 
       fetchUserRecipes();
-      fetchProfile(); // Update recipe count
+      refetchStats();
     } catch (error) {
       toast({
         title: "Erro",
@@ -304,11 +295,11 @@ const Profile: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading || statsLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow flex items-center justify-center">
+        <main className="flex-grow flex items-center justify-center pt-16">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-fitcooker-orange mx-auto mb-4"></div>
             <p className="text-gray-600">Carregando perfil...</p>
@@ -323,7 +314,7 @@ const Profile: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
       
-      <main className="py-8">
+      <main className="py-8 pt-24">
         <div className="container mx-auto px-4 md:px-6">
           {/* Profile Header */}
           <motion.div
@@ -366,6 +357,16 @@ const Profile: React.FC = () => {
                     <div className="text-2xl font-bold">{stats.seguindo_count}</div>
                     <div className="text-orange-200 text-sm">Seguindo</div>
                   </button>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{stats.avaliacoes_count}</div>
+                    <div className="text-orange-200 text-sm">Avaliações</div>
+                  </div>
+                  {stats.nota_media && (
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{stats.nota_media}⭐</div>
+                      <div className="text-orange-200 text-sm">Nota Média</div>
+                    </div>
+                  )}
                 </div>
 
                 {profile?.preferencias && profile.preferencias.length > 0 && (
@@ -383,10 +384,11 @@ const Profile: React.FC = () => {
 
           {/* Tabs */}
           <Tabs defaultValue="perfil" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="perfil">Perfil</TabsTrigger>
               <TabsTrigger value="receitas">Minhas Receitas</TabsTrigger>
               <TabsTrigger value="favoritas">Favoritas</TabsTrigger>
+              <TabsTrigger value="seguidores">Conexões</TabsTrigger>
               <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
             </TabsList>
 
@@ -580,6 +582,53 @@ const Profile: React.FC = () => {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Followers Tab */}
+            <TabsContent value="seguidores">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Users className="w-5 h-5" />
+                      <span>Seguidores ({stats.seguidores_count})</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Pessoas que seguem você
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button 
+                      onClick={() => setFollowersDialogOpen(true)}
+                      variant="outline" 
+                      className="w-full"
+                    >
+                      Ver Todos os Seguidores
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Heart className="w-5 h-5" />
+                      <span>Seguindo ({stats.seguindo_count})</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Chefs que você segue
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button 
+                      onClick={() => setFollowingDialogOpen(true)}
+                      variant="outline" 
+                      className="w-full"
+                    >
+                      Ver Quem Você Segue
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Settings Tab */}

@@ -1,143 +1,188 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useAuth = () => {
+interface Profile {
+  id: string;
+  nome: string;
+  email: string;
+  avatar_url?: string;
+  bio?: string;
+  is_chef: boolean;
+  receitas_count: number;
+  seguidores_count: number;
+  seguindo_count: number;
+  preferencias?: string[];
+  data_cadastro: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  profile: Profile | null;
+  loading: boolean;
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: { message: string } } | { error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: { message: string } } | { error: any }>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: { message: string } } | { error: any }>;
+  updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  checkProfileComplete: (userId: string) => Promise<boolean>;
+}
+
+export const useAuth = (): AuthContextType => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // Then check for existing session
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Existing session:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkEmailExists = async (email: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('email', email)
-      .single();
-    
-    return { exists: !!data, error };
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+      } else {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signUp = async (email: string, password: string, metadata?: any) => {
-    console.log('Attempting sign up for:', email);
-    
-    // Check if email already exists
-    const { exists } = await checkEmailExists(email);
-    if (exists) {
-      return { error: { message: 'Este email já está cadastrado' } };
-    }
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata,
+        },
+      });
 
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: metadata
+      if (error) {
+        return { error };
       }
-    });
-    
-    if (error) {
-      console.error('Sign up error:', error);
-      if (error.message === 'User already registered') {
-        return { error: { message: 'Este email já está cadastrado' } };
-      }
-    } else {
-      console.log('Sign up successful');
+
+      return { data };
+    } catch (error) {
+      return { error: { message: 'Erro inesperado ao criar conta' } };
     }
-    
-    return { error };
   };
 
   const signIn = async (email: string, password: string) => {
-    console.log('Attempting sign in for:', email);
-    
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    
-    if (error) {
-      console.error('Sign in error:', error);
-    } else {
-      console.log('Sign in successful');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { error };
+      }
+
+      return { data };
+    } catch (error) {
+      return { error: { message: 'Erro inesperado ao fazer login' } };
     }
-    
-    return { error };
   };
 
   const signOut = async () => {
-    console.log('Attempting sign out');
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      console.error('Sign out error:', error);
-    } else {
-      console.log('Sign out successful');
-    }
-    
-    return { error };
+    await supabase.auth.signOut();
   };
 
   const resetPassword = async (email: string) => {
-    console.log('Attempting password reset for:', email);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    
-    if (error) {
-      console.error('Password reset error:', error);
-    } else {
-      console.log('Password reset email sent');
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+
+      if (error) {
+        return { error };
+      }
+
+      return { data };
+    } catch (error) {
+      return { error: { message: 'Erro inesperado ao resetar senha' } };
     }
-    
-    return { error };
   };
 
-  const checkProfileComplete = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('bio, nome')
-      .eq('id', userId)
-      .single();
-    
-    if (error) return false;
-    
-    return !!(data?.bio && data?.bio.trim() !== '' && data?.nome && data?.nome.trim() !== '');
+  const updateProfile = async (updates: Partial<Profile>) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      await fetchProfile(user.id);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
+  };
+
+  const checkProfileComplete = async (userId: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('nome, bio')
+        .eq('id', userId)
+        .single();
+
+      if (error) return false;
+
+      return !!(data?.nome && data?.bio);
+    } catch (error) {
+      return false;
+    }
   };
 
   return {
     user,
     session,
+    profile,
     loading,
     signUp,
     signIn,
     signOut,
     resetPassword,
-    checkEmailExists,
-    checkProfileComplete
+    updateProfile,
+    checkProfileComplete,
   };
 };

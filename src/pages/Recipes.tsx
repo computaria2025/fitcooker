@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, ChefHat } from 'lucide-react';
+import { ChefHat } from 'lucide-react';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useCategories } from '@/hooks/useCategories';
 import Navbar from '@/components/layout/Navbar';
@@ -9,10 +9,8 @@ import Footer from '@/components/layout/Footer';
 import SectionTitle from '@/components/ui/SectionTitle';
 import RecipeCard from '@/components/ui/RecipeCard';
 import RecipeCardSkeleton from '@/components/ui/RecipeCardSkeleton';
-import { Input } from '@/components/ui/input';
+import RecipeFilters from '@/components/recipes/RecipeFilters';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 
 const Recipes: React.FC = () => {
   const { data: recipes, loading, error } = useRecipes();
@@ -22,6 +20,8 @@ const Recipes: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('newest');
+  const [timeRange, setTimeRange] = useState<number[]>([5, 180]);
+  const [servingsRange, setServingsRange] = useState<number[]>([1, 12]);
 
   useEffect(() => {
     let filtered = [...recipes];
@@ -49,6 +49,16 @@ const Recipes: React.FC = () => {
       );
     }
 
+    // Apply time range filter
+    filtered = filtered.filter(recipe =>
+      recipe.tempo_preparo >= timeRange[0] && recipe.tempo_preparo <= timeRange[1]
+    );
+
+    // Apply servings range filter
+    filtered = filtered.filter(recipe =>
+      recipe.porcoes >= servingsRange[0] && recipe.porcoes <= servingsRange[1]
+    );
+
     // Apply sorting
     switch (sortBy) {
       case 'newest':
@@ -66,22 +76,24 @@ const Recipes: React.FC = () => {
     }
 
     setFilteredRecipes(filtered);
-  }, [recipes, searchTerm, selectedCategory, selectedDifficulty, sortBy]);
+  }, [recipes, searchTerm, selectedCategory, selectedDifficulty, sortBy, timeRange, servingsRange]);
 
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedCategory('all');
     setSelectedDifficulty('all');
     setSortBy('newest');
+    setTimeRange([5, 180]);
+    setServingsRange([1, 12]);
   };
 
-  const hasActiveFilters = searchTerm || selectedCategory !== 'all' || selectedDifficulty !== 'all' || sortBy !== 'newest';
+  const hasActiveFilters = searchTerm || selectedCategory !== 'all' || selectedDifficulty !== 'all' || sortBy !== 'newest' || timeRange[0] !== 5 || timeRange[1] !== 180 || servingsRange[0] !== 1 || servingsRange[1] !== 12;
 
   if (error) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow flex items-center justify-center">
+        <main className="flex-grow flex items-center justify-center pt-16">
           <div className="text-center">
             <ChefHat className="w-20 h-20 text-gray-300 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Erro ao carregar receitas</h2>
@@ -97,110 +109,47 @@ const Recipes: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
       
-      <main className="py-12">
+      <main className="py-12 pt-24">
         <div className="container mx-auto px-4 md:px-6">
           <SectionTitle 
             title="Receitas Deliciosas"
             subtitle="Explore nossa coleção de receitas saudáveis e saborosas criadas por chefs apaixonados pela gastronomia."
           />
 
-          {/* Filters */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 mb-8 shadow-lg border border-white/20"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {/* Search */}
-              <div className="lg:col-span-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    type="text"
-                    placeholder="Buscar receitas..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 border-2 border-gray-200 focus:border-fitcooker-orange rounded-xl"
-                  />
-                </div>
-              </div>
-
-              {/* Category Filter */}
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="border-2 border-gray-200 focus:border-fitcooker-orange rounded-xl">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as categorias</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.nome}>
-                      {category.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Difficulty Filter */}
-              <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                <SelectTrigger className="border-2 border-gray-200 focus:border-fitcooker-orange rounded-xl">
-                  <SelectValue placeholder="Dificuldade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as dificuldades</SelectItem>
-                  <SelectItem value="Fácil">Fácil</SelectItem>
-                  <SelectItem value="Médio">Médio</SelectItem>
-                  <SelectItem value="Difícil">Difícil</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Sort */}
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="border-2 border-gray-200 focus:border-fitcooker-orange rounded-xl">
-                  <SelectValue placeholder="Ordenar por" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Mais recentes</SelectItem>
-                  <SelectItem value="oldest">Mais antigas</SelectItem>
-                  <SelectItem value="rating">Melhor avaliadas</SelectItem>
-                  <SelectItem value="time">Tempo de preparo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Active Filters */}
-            {hasActiveFilters && (
-              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200">
-                <span className="text-sm text-gray-600">Filtros ativos:</span>
-                {searchTerm && (
-                  <Badge variant="outline" className="bg-fitcooker-orange/10 border-fitcooker-orange text-fitcooker-orange">
-                    Busca: {searchTerm}
-                  </Badge>
-                )}
-                {selectedCategory !== 'all' && (
-                  <Badge variant="outline" className="bg-fitcooker-orange/10 border-fitcooker-orange text-fitcooker-orange">
-                    {selectedCategory}
-                  </Badge>
-                )}
-                {selectedDifficulty !== 'all' && (
-                  <Badge variant="outline" className="bg-fitcooker-orange/10 border-fitcooker-orange text-fitcooker-orange">
-                    {selectedDifficulty}
-                  </Badge>
-                )}
-                <Button onClick={clearFilters} variant="ghost" size="sm" className="ml-auto">
-                  Limpar filtros
-                </Button>
-              </div>
-            )}
-          </motion.div>
+          {/* Enhanced Filters */}
+          <RecipeFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedDifficulty={selectedDifficulty}
+            setSelectedDifficulty={setSelectedDifficulty}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            categories={categories}
+            clearFilters={clearFilters}
+            hasActiveFilters={hasActiveFilters}
+            timeRange={timeRange}
+            setTimeRange={setTimeRange}
+            servingsRange={servingsRange}
+            setServingsRange={setServingsRange}
+          />
 
           {/* Results Count */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mb-6"
+            className="mb-6 mt-8"
           >
-            <p className="text-gray-600">
-              {loading ? 'Carregando...' : `${filteredRecipes.length} receita${filteredRecipes.length !== 1 ? 's' : ''} encontrada${filteredRecipes.length !== 1 ? 's' : ''}`}
+            <p className="text-gray-600 text-lg">
+              {loading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-fitcooker-orange"></div>
+                  <span>Carregando receitas...</span>
+                </div>
+              ) : (
+                `${filteredRecipes.length} receita${filteredRecipes.length !== 1 ? 's' : ''} encontrada${filteredRecipes.length !== 1 ? 's' : ''}`
+              )}
             </p>
           </motion.div>
 
