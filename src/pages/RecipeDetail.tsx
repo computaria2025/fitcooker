@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -8,8 +9,8 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import CategoryBadge from '@/components/ui/CategoryBadge';
 import RatingStars from '@/components/ui/RatingStars';
-import SaveRecipeButton from '@/components/recipes/SaveRecipeButton';
-import RateRecipeButton from '@/components/recipes/RateRecipeButton';
+import SaveRecipeButton from '@/components/recipe/SaveRecipeButton';
+import RateRecipeButton from '@/components/recipe/RateRecipeButton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ImageCarousel from '@/components/ui/ImageCarousel';
@@ -124,7 +125,10 @@ const RecipeDetail: React.FC = () => {
                 {/* Image Section */}
                 <div className="relative">
                   {recipe.receita_midias && recipe.receita_midias.length > 0 ? (
-                    <ImageCarousel images={recipe.receita_midias} />
+                    <ImageCarousel 
+                      images={recipe.receita_midias.map((media: any) => media.url)} 
+                      title={recipe.titulo}
+                    />
                   ) : recipe.imagem_url ? (
                     <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
                       <img 
@@ -185,7 +189,7 @@ const RecipeDetail: React.FC = () => {
                       {recipe.nota_media && (
                         <div className="flex items-center space-x-2">
                           <div className="flex">
-                            <RatingStars rating={recipe.nota_media} />
+                            <RatingStars initialRating={recipe.nota_media} readOnly />
                           </div>
                           <span className="text-lg font-semibold text-gray-700">
                             {recipe.nota_media} ({recipe.avaliacoes_count} avaliações)
@@ -198,8 +202,9 @@ const RecipeDetail: React.FC = () => {
                       <SaveRecipeButton recipeId={recipe.id} />
                       {user && (
                         <RateRecipeButton 
-                          recipeId={recipe.id} 
-                          onRatingSubmitted={fetchRecipe}
+                          recipeId={recipe.id}
+                          currentRating={recipe.nota_media || 0}
+                          onRatingUpdate={fetchRecipe}
                         />
                       )}
                     </div>
