@@ -6,7 +6,6 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { RecipeCategory } from "@/data/mockData";
 
 interface BasicInformationProps {
   title: string;
@@ -25,6 +24,7 @@ interface BasicInformationProps {
   setShowNewCategoryDialog: (show: boolean) => void;
   servingsOptions: string[];
   difficultyOptions: string[];
+  categories: any[];
 }
 
 const BasicInformation: React.FC<BasicInformationProps> = ({
@@ -43,14 +43,12 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
   showNewCategoryDialog,
   setShowNewCategoryDialog,
   servingsOptions,
-  difficultyOptions
+  difficultyOptions,
+  categories
 }) => {
-  // Create an array from the RecipeCategory enum values
-  const recipeCategories = Object.values(RecipeCategory);
-  
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Informações Básicas</h2>
+    <div className="bg-white rounded-xl shadow-sm p-6">
+      <h2 className="text-xl font-bold mb-4">Informações Básicas *</h2>
       
       <div className="space-y-6">
         <div>
@@ -125,19 +123,19 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
         <div>
           <label className="block font-medium mb-1">Categorias *</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-2">
-            {recipeCategories.map((category) => (
+            {categories.map((category) => (
               <button
-                key={category}
+                key={category.id}
                 type="button"
-                onClick={() => toggleCategory(category)}
+                onClick={() => toggleCategory(category.id.toString())}
                 className={`
                   transition-all duration-200 rounded-full px-4 py-2.5 flex items-center justify-center text-sm
-                  ${selectedCategories.includes(category)
+                  ${selectedCategories.includes(category.id.toString())
                     ? 'bg-fitcooker-orange text-white' 
                     : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}
                 `}
               >
-                {category}
+                {category.nome}
               </button>
             ))}
           </div>
@@ -159,18 +157,21 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
             <div className="mt-4">
               <p className="text-sm font-medium mb-2">Categorias selecionadas:</p>
               <div className="flex flex-wrap gap-1">
-                {selectedCategories.map((category) => (
-                  <Badge key={category} variant="category" className="px-3 py-1.5 text-sm">
-                    {category}
-                    <button 
-                      type="button"
-                      onClick={() => toggleCategory(category)}
-                      className="ml-1.5 hover:text-red-500 transition-colors"
-                    >
-                      ×
-                    </button>
-                  </Badge>
-                ))}
+                {selectedCategories.map((categoryId) => {
+                  const category = categories.find(c => c.id.toString() === categoryId);
+                  return (
+                    <Badge key={categoryId} variant="secondary" className="px-3 py-1.5 text-sm">
+                      {category?.nome}
+                      <button 
+                        type="button"
+                        onClick={() => toggleCategory(categoryId)}
+                        className="ml-1.5 hover:text-red-500 transition-colors"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  );
+                })}
               </div>
             </div>
           )}

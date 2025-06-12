@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +27,8 @@ interface RecipePreviewProps {
     title: string;
     isValid: boolean;
   }[];
+  isSubmitting: boolean;
+  categories: any[];
 }
 
 const RecipePreview: React.FC<RecipePreviewProps> = ({
@@ -44,7 +45,9 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
   ingredientsCount,
   stepsCount,
   validationProgress,
-  validationItems
+  validationItems,
+  isSubmitting,
+  categories
 }) => {
   const previewTitle = title || 'Nome da sua receita';
   const previewDesc = description || 'Descrição da sua receita, conte uma pequena história ou dê dicas sobre o prato.';
@@ -79,9 +82,12 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
 
         <div className="flex flex-wrap gap-1">
           {selectedCategories.length > 0 ? (
-            selectedCategories.map((category) => (
-              <Badge key={category} variant="category">{category}</Badge>
-            ))
+            selectedCategories.map((categoryId) => {
+              const category = categories.find(c => c.id.toString() === categoryId);
+              return (
+                <Badge key={categoryId} variant="secondary">{category?.nome}</Badge>
+              );
+            })
           ) : (
             <Badge variant="outline">Selecione categorias</Badge>
           )}
@@ -194,9 +200,10 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
             type="button" 
             className="w-full bg-fitcooker-orange hover:bg-fitcooker-orange/90 px-6 py-4 h-auto"
             onClick={checkLoginBeforeSubmit}
+            disabled={isSubmitting}
           >
             <Check className="mr-2 h-5 w-5" />
-            Publicar Receita
+            {isSubmitting ? "Publicando..." : "Publicar Receita"}
           </Button>
         ) : (
           <Button 

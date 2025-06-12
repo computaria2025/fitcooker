@@ -1,0 +1,66 @@
+[33m3639d12[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix: Type error in useRecipes.tsx
+[33m13a6a29[m Apply SQL changes to Supabase
+[33m74223a4[m Connect to Supabase project
+[33m087b5da[m Teste- ver se o lovable aceita
+[33ma7bd7e8[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m conexao banco de dados
+[33m34df8b4[m teste gemini
+[33m11dbdb7[m[33m ([m[1;31morigin/copia-de-seguranca[m[33m)[m Fix: Recipe card loading performance
+[33ma5e7f49[m Fix: Implement login requirement for following cooks and add missing routes
+[33m2d782c1[m Fix: Ensure all pages are accessible via routes
+[33m6a074fc[m Fix: Resolve module import error
+[33mf57ff71[m Feat: Implement cooks page features
+[33m7baf01c[m Fix: Resolve TypeScript error in Recipes.tsx
+[33mf323839[m Refactor: Improve Recipes page design and Featured page content
+[33m9c8e843[m feat: Add "Why Healthy Eating?" page
+[33mb69be4e[m Refactor: Improve recipe preview image size and video upload
+[33m6233d1d[m Refactor: Improve "How it Works" section
+[33mecfccc0[m ajustes de cor
+[33me4045e2[m Refactor: Improve Cooks page title and "How it Works" section
+[33m29c121d[m Refactor UI and add features
+[33m0a14c19[m Fix: Import recipe categories
+[33mb89b358[m Fix UI/UX and add features
+[33m322440f[m Fix: Resolve import and type errors in Cooks and FeaturedPage
+[33maa43211[m Refactor: Improve UI/UX and add new features
+[33m42abfde[m Refactor: Improve UI/UX and implement new features
+[33m67817f5[m Refactor: Implement new Home page and rename old one
+[33mdf42998[m implementando copia de segurança
+[33m37bc6c4[m pastas corretas
+[33ma0e6cc6[m adicionando pastas de BD teste do antigo repo
+[33m40f7995[m teste fotos
+[33m9ee2634[m adicionando imagens
+[33m3c616da[m teste foto erick
+[33m21f8e44[m feat: Update hero background image to enhance visual appeal
+[33m8a9fb8e[m melhorando o nome de elementos na homepage
+[33m39bed92[m Fix: Import lucide-react icons
+[33ma62d22d[m Refactor: Improve UI and UX
+[33me102b61[m feat: Improve page animations and recipe preview
+[33mc16891d[m feat: Update hero background image and replace team member image
+[33ma40fd2c[m alterando imagens dos membros da equipe
+[33mb137f80[m teste nome cozinheiro
+[33m6e36d36[m alteração pagina sobre
+[33ma711796[m feat: Implement search dialog and improve about page
+[33m776b79a[m feat: Implement search functionality and fix Plus icon
+[33mb198372[m Refactor: Break down AddRecipe page into smaller components
+[33m3e8164b[m feat: Implement recipe rating and add recipe features
+[33m6534a4a[m Refactor: Improve About page and home page
+[33m321d57a[m Fix: Import and use ChefHat icon
+[33m5b13799[m Fix: About page styling and team section
+[33mf20667e[m Fix: RecipeDetail page errors and team section
+[33m01db5e1[m Fix: Improve RecipeDetail and other pages
+[33m7535ccd[m Fix: RecipeDetail category type error
+[33mc350f10[m Fix: RecipeDetail category type error
+[33mf008cdd[m Fix: RecipeDetail type error
+[33med10698[m Fix: Improve UI and add animations
+[33m6b5769c[m Fix: Improve UI and add About page
+[33m022c969[m ajuste de ICO e nome site
+[33m44aae31[m Fix: RecipeDetail category type error
+[33m9f67594[m Refactor: Implement recipe creation UI improvements
+[33mef5374e[m Fix: RecipeDetail type errors
+[33m1449a0b[m Fix: RecipeDetail page improvements
+[33m2eaedcc[m Fix: Resolve TypeScript errors
+[33md78bf52[m Refactor: Implement recipe features and UI improvements
+[33m3dc8893[m feat: Implement ingredient selection and recipe rating
+[33m28d8022[m feat: Implement recipe features and UI improvements
+[33m8f306e4[m feat: Implement new features and improve design
+[33m72d50cc[m Refactor: Implement initial project structure
+[33m77ba464[m Use tech stack vite_react_shadcn_ts [skip gpt_engineer]

@@ -19,6 +19,7 @@ interface IngredientInput {
 interface IngredientsProps {
   ingredients: IngredientInput[];
   updateIngredientQuantity: (id: string, quantity: number) => void;
+  updateIngredientUnit: (id: string, unit: string) => void;
   removeIngredient: (id: string) => void;
   addIngredient: () => void;
   openIngredientSelector: (index: number) => void;
@@ -28,6 +29,7 @@ interface IngredientsProps {
 const Ingredients: React.FC<IngredientsProps> = ({
   ingredients,
   updateIngredientQuantity,
+  updateIngredientUnit,
   removeIngredient,
   addIngredient,
   openIngredientSelector,
@@ -57,11 +59,11 @@ const Ingredients: React.FC<IngredientsProps> = ({
                 <Label htmlFor={`ingredient-name-${ingredient.id}`}>Nome *</Label>
                 <div className="relative">
                   <div 
-                    className="flex items-center border border-input rounded-md bg-background cursor-pointer"
+                    className="flex items-center border border-input rounded-md bg-background cursor-pointer hover:bg-gray-50"
                     onClick={() => openIngredientSelector(index)}
                   >
                     <div className="flex-grow p-2 px-3 text-sm">
-                      {ingredient.name || 'Selecione um ingrediente'}
+                      {ingredient.name || 'Buscar ingrediente...'}
                     </div>
                     <div className="border-l border-input p-2 text-gray-400">
                       <Search size={16} />
@@ -91,13 +93,7 @@ const Ingredients: React.FC<IngredientsProps> = ({
                   <Label htmlFor={`ingredient-unit-${ingredient.id}`}>Unidade</Label>
                   <Select
                     value={ingredient.unit}
-                    onValueChange={(value) => {
-                      // Using a direct approach since no setter function was passed
-                      const newIngredients = [...ingredients];
-                      newIngredients[index].unit = value;
-                      // This would normally call setIngredients, but we don't have access to that here
-                      // The parent component will need to handle this
-                    }}
+                    onValueChange={(value) => updateIngredientUnit(ingredient.id, value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione" />

@@ -152,6 +152,7 @@ export type Database = {
           id: string
           is_chef: boolean | null
           nome: string
+          preferencias: string[] | null
           receitas_count: number | null
           seguidores_count: number | null
           seguindo_count: number | null
@@ -164,6 +165,7 @@ export type Database = {
           id: string
           is_chef?: boolean | null
           nome: string
+          preferencias?: string[] | null
           receitas_count?: number | null
           seguidores_count?: number | null
           seguindo_count?: number | null
@@ -176,6 +178,7 @@ export type Database = {
           id?: string
           is_chef?: boolean | null
           nome?: string
+          preferencias?: string[] | null
           receitas_count?: number | null
           seguidores_count?: number | null
           seguindo_count?: number | null

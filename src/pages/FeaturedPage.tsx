@@ -6,27 +6,25 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import RecipeCard from '@/components/ui/RecipeCard';
 import RecipeCardSkeleton from '@/components/ui/RecipeCardSkeleton';
-import { featuredRecipes } from '@/data/mockData';
+import { useRecipes } from '@/hooks/useRecipes';
 
 const FeaturedPage: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
   const [loadedRecipes, setLoadedRecipes] = useState<number[]>([]);
+  const { recipes, loading } = useRecipes();
+  
+  // Get first 9 recipes as featured
+  const featuredRecipes = recipes.slice(0, 9);
 
-  // Simulate loading with staggered effect
+  // Stagger the appearance of recipes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 600);
-
-    // Stagger the appearance of recipes
-    featuredRecipes.forEach((_, index) => {
-      setTimeout(() => {
-        setLoadedRecipes(prev => [...prev, index]);
-      }, 100 + index * 80);
-    });
-
-    return () => clearTimeout(timer);
-  }, []);
+    if (!loading && featuredRecipes.length > 0) {
+      featuredRecipes.forEach((_, index) => {
+        setTimeout(() => {
+          setLoadedRecipes(prev => [...prev, index]);
+        }, 100 + index * 80);
+      });
+    }
+  }, [loading, featuredRecipes.length]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -106,7 +104,7 @@ const FeaturedPage: React.FC = () => {
                 }}
                 className="will-change-transform"
               >
-                {isLoading && !loadedRecipes.includes(index) ? (
+                {loading && !loadedRecipes.includes(index) ? (
                   <RecipeCardSkeleton />
                 ) : (
                   <RecipeCard recipe={recipe} />

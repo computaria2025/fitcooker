@@ -1,12 +1,13 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Check, X } from 'lucide-react';
+import { Search, Plus, Check, X, Loader2 } from 'lucide-react';
+import { useUSDAIngredients } from '@/hooks/useUSDAIngredients';
 
-interface IngredientDatabase {
+interface ProcessedIngredient {
   name: string;
   protein: number;
   carbs: number;
@@ -20,8 +21,7 @@ interface IngredientSelectorProps {
   setShowIngredientSelector: (show: boolean) => void;
   ingredientSearchTerm: string;
   setIngredientSearchTerm: (term: string) => void;
-  filteredIngredients: IngredientDatabase[];
-  handleSelectIngredient: (index: number, ingredient: IngredientDatabase) => void;
+  handleSelectIngredient: (index: number, ingredient: ProcessedIngredient) => void;
   currentIngredientIndex: number;
   showAddIngredientForm: boolean;
   setShowAddIngredientForm: (show: boolean) => void;
@@ -35,7 +35,6 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
   setShowIngredientSelector,
   ingredientSearchTerm,
   setIngredientSearchTerm,
-  filteredIngredients,
   handleSelectIngredient,
   currentIngredientIndex,
   showAddIngredientForm,
@@ -44,13 +43,53 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
   setNewIngredientName,
   handleAddCustomIngredient
 }) => {
+  const { searchUSDAIngredients, addCustomIngredient, isLoading } = useUSDAIngredients();
+  const [searchResults, setSearchResults] = useState<ProcessedIngredient[]>([]);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Buscar ingredientes quando o termo de busca mudar
+  useEffect(() => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    if (ingredientSearchTerm.trim().length >= 2) {
+      const timeout = setTimeout(async () => {
+        const results = await searchUSDAIngredients(ingredientSearchTerm);
+        setSearchResults(results);
+      }, 500); // Debounce de 500ms
+      
+      setSearchTimeout(timeout);
+    } else {
+      setSearchResults([]);
+    }
+
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [ingredientSearchTerm, searchUSDAIngredients]);
+
+  const handleCustomIngredientSubmit = async () => {
+    if (!newIngredientName.trim()) return;
+    
+    const newIngredient = await addCustomIngredient(newIngredientName);
+    if (newIngredient) {
+      handleSelectIngredient(currentIngredientIndex, newIngredient);
+      setShowAddIngredientForm(false);
+      setNewIngredientName('');
+      setShowIngredientSelector(false);
+    }
+  };
+
   return (
     <Dialog open={showIngredientSelector} onOpenChange={setShowIngredientSelector}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Selecionar Ingrediente</DialogTitle>
           <DialogDescription>
-            Escolha um ingrediente da nossa base de dados ou adicione um novo.
+            Busque ingredientes em nossa base de dados ou na API USDA. Você também pode adicionar ingredientes personalizados.
           </DialogDescription>
         </DialogHeader>
         
@@ -63,26 +102,43 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
             onChange={(e) => setIngredientSearchTerm(e.target.value)}
             autoFocus
           />
+          {isLoading && (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 animate-spin" size={18} />
+          )}
         </div>
         
         <div className="max-h-60 overflow-auto">
-          {filteredIngredients.length > 0 ? (
+          {isLoading ? (
+            <div className="py-6 text-center">
+              <Loader2 className="animate-spin mx-auto mb-2" />
+              <p className="text-gray-500">Buscando ingredientes...</p>
+            </div>
+          ) : searchResults.length > 0 ? (
             <div className="space-y-1">
-              {filteredIngredients.map((ing) => (
+              {searchResults.map((ingredient, index) => (
                 <button
-                  key={ing.name}
+                  key={`${ingredient.name}-${index}`}
                   type="button"
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 rounded-md flex justify-between"
-                  onClick={() => handleSelectIngredient(currentIngredientIndex, ing)}
+                  className="w-full text-left px-4 py-3 text-sm hover:bg-gray-100 rounded-md flex justify-between items-start border border-gray-100"
+                  onClick={() => handleSelectIngredient(currentIngredientIndex, ingredient)}
                 >
-                  <span>{ing.name}</span>
-                  <span className="text-gray-500">{ing.calories} kcal/100{ing.unit}</span>
+                  <div className="flex-1">
+                    <span className="font-medium">{ingredient.name}</span>
+                    <div className="text-xs text-gray-500 mt-1">
+                      P: {ingredient.protein.toFixed(1)}g | C: {ingredient.carbs.toFixed(1)}g | G: {ingredient.fat.toFixed(1)}g
+                    </div>
+                  </div>
+                  <span className="text-gray-500 text-xs">{ingredient.calories.toFixed(0)} kcal/100g</span>
                 </button>
               ))}
             </div>
-          ) : (
+          ) : ingredientSearchTerm.trim().length >= 2 ? (
             <div className="py-6 text-center">
               <p className="text-gray-500">Nenhum ingrediente encontrado</p>
+            </div>
+          ) : (
+            <div className="py-6 text-center">
+              <p className="text-gray-500">Digite pelo menos 2 caracteres para buscar</p>
             </div>
           )}
         </div>
@@ -99,7 +155,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
               }}
             >
               <Plus size={16} className="mr-2" />
-              Adicionar novo ingrediente
+              Adicionar ingrediente personalizado
             </Button>
           ) : (
             <div className="space-y-4">
@@ -110,13 +166,16 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
                   value={newIngredientName}
                   onChange={(e) => setNewIngredientName(e.target.value)}
                   className="mt-1"
-                  placeholder="Ex: Quinoa"
+                  placeholder="Ex: Quinoa orgânica"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Você poderá adicionar os valores nutricionais após selecionar o ingrediente
+                </p>
               </div>
               <div className="flex space-x-2">
                 <Button
                   type="button"
-                  onClick={handleAddCustomIngredient}
+                  onClick={handleCustomIngredientSubmit}
                   className="flex-1"
                   disabled={!newIngredientName.trim()}
                 >

@@ -1,74 +1,43 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { Category } from '@/types/recipe';
 
-export interface Category {
-  id: number;
-  nome: string;
-  descricao?: string;
-  ativa: boolean;
-}
-
-export function useCategories() {
+export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const fetchCategories = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('categorias')
         .select('*')
         .eq('ativa', true)
         .order('nome');
 
-      if (error) {
-        console.error('Error fetching categories:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       setCategories(data || []);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast.error('Erro ao carregar categorias');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar categorias');
+      console.error('Erro ao buscar categorias:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const suggestCategory = async (nome: string, descricao?: string) => {
-    try {
-      const { error } = await supabase
-        .from('categorias')
-        .insert({
-          nome,
-          descricao,
-          ativa: false // Categoria sugerida fica inativa até aprovação
-        });
-
-      if (error) {
-        console.error('Error suggesting category:', error);
-        throw error;
-      }
-
-      toast.success('Sugestão de categoria enviada com sucesso!');
-      return { error: null };
-    } catch (error) {
-      console.error('Error suggesting category:', error);
-      toast.error('Erro ao enviar sugestão de categoria');
-      return { error };
-    }
-  };
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
   return {
+    data: categories,
     categories,
     loading,
-    fetchCategories,
-    suggestCategory
+    isLoading: loading,
+    error,
+    refetch: fetchCategories
   };
-}
+};

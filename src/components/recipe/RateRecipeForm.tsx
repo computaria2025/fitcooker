@@ -1,7 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import RatingStars from '@/components/ui/RatingStars';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { 
   Dialog,
@@ -14,9 +16,6 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Star, AlertCircle } from 'lucide-react';
-import { useRatings } from '@/hooks/useRatings';
-import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
 
 interface RateRecipeFormProps {
   recipeId: string;
@@ -31,88 +30,63 @@ const RateRecipeForm: React.FC<RateRecipeFormProps> = ({
   isLoggedIn = false,
   prominentDisplay = false
 }) => {
+  const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { addRating, getUserRating, loading } = useRatings();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const [existingRating, setExistingRating] = useState<any>(null);
-  const [hoveredStar, setHoveredStar] = useState(0);
-  
-  useEffect(() => {
-    const loadUserRating = async () => {
-      if (user && recipeId) {
-        const userRating = await getUserRating(parseInt(recipeId));
-        if (userRating) {
-          setExistingRating(userRating);
-          setRating(userRating.nota);
-          setComment(userRating.comentario || '');
-        }
-      }
-    };
-
-    loadUserRating();
-  }, [user, recipeId, getUserRating]);
   
   const handleRatingChange = (newRating: number) => {
     setRating(newRating);
   };
   
   const handleLoginRedirect = () => {
-    toast.error('Faça login para avaliar receitas');
+    toast({
+      title: "Login necessário",
+      description: "Faça login para avaliar receitas",
+      variant: "destructive",
+    });
     setIsOpen(false);
+    // Redirect to login page after a short delay
     setTimeout(() => {
       navigate('/login', { state: { returnUrl: `/recipe/${recipeId}` } });
     }, 500);
   };
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) {
+    if (!isLoggedIn) {
       handleLoginRedirect();
       return;
     }
     
     if (rating === 0) {
-      toast.error('Por favor, dê uma nota para a receita.');
+      toast({
+        title: "Avaliação necessária",
+        description: "Por favor, dê uma nota para a receita.",
+        variant: "destructive",
+      });
       return;
     }
     
-    const { error } = await addRating(parseInt(recipeId), rating, comment);
+    // Here you would typically send the data to your backend
+    console.log({
+      recipeId,
+      rating,
+      comment,
+      timestamp: new Date(),
+    });
     
-    if (!error) {
-      setIsOpen(false);
-      // Reload the page to show updated rating
-      window.location.reload();
-    }
-  };
-
-  const renderStars = () => {
-    return (
-      <div className="flex justify-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            className="focus:outline-none"
-            onMouseEnter={() => setHoveredStar(star)}
-            onMouseLeave={() => setHoveredStar(0)}
-            onClick={() => handleRatingChange(star)}
-          >
-            <Star
-              size={32}
-              className={`transition-colors ${
-                star <= (hoveredStar || rating)
-                  ? 'fill-yellow-400 text-yellow-400'
-                  : 'text-gray-300 hover:text-yellow-400'
-              }`}
-            />
-          </button>
-        ))}
-      </div>
-    );
+    toast({
+      title: "Avaliação enviada!",
+      description: `Você deu ${rating} estrelas para ${recipeName}. Obrigado pelo feedback!`,
+    });
+    
+    // Reset form and close dialog
+    setRating(0);
+    setComment('');
+    setIsOpen(false);
   };
   
   return (
@@ -125,7 +99,7 @@ const RateRecipeForm: React.FC<RateRecipeFormProps> = ({
             size="lg"
           >
             <Star className="w-5 h-5 fill-white" />
-            {existingRating ? 'Atualizar Avaliação' : 'Avalie Esta Receita'}
+            Avalie Esta Receita
           </Button>
         ) : (
           <Button 
@@ -133,24 +107,19 @@ const RateRecipeForm: React.FC<RateRecipeFormProps> = ({
             className="flex items-center gap-2 bg-black text-white hover:bg-fitcooker-orange hover:text-white transition-all duration-300"
           >
             <Star className="w-4 h-4" />
-            {existingRating ? 'Editar Avaliação' : 'Avaliar Receita'}
+            Avaliar Receita
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-xl">
-            {existingRating ? 'Atualizar Avaliação' : 'Avaliar Receita'}
-          </DialogTitle>
+          <DialogTitle className="text-xl">Avaliar Receita</DialogTitle>
           <DialogDescription>
-            {existingRating 
-              ? 'Atualize sua avaliação para esta receita.'
-              : 'Sua avaliação ajuda outros usuários a encontrar receitas de qualidade.'
-            }
+            Sua avaliação ajuda outros usuários a encontrar receitas de qualidade.
           </DialogDescription>
         </DialogHeader>
         
-        {!user ? (
+        {!isLoggedIn ? (
           <div className="p-4 bg-amber-50 text-amber-700 rounded-lg flex items-start gap-3 my-4">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <div>
@@ -174,17 +143,12 @@ const RateRecipeForm: React.FC<RateRecipeFormProps> = ({
             <div className="flex flex-col items-center">
               <p className="text-center mb-3 text-lg">O que você achou de <span className="font-medium text-fitcooker-orange">{recipeName}</span>?</p>
               <div className="bg-gray-50 p-4 rounded-lg w-full flex justify-center">
-                {renderStars()}
+                <RatingStars 
+                  initialRating={rating} 
+                  onRatingChange={handleRatingChange} 
+                  size="lg"
+                />
               </div>
-              {rating > 0 && (
-                <p className="text-sm text-gray-600 mt-2">
-                  {rating === 1 && 'Muito ruim'}
-                  {rating === 2 && 'Ruim'}
-                  {rating === 3 && 'Regular'}
-                  {rating === 4 && 'Bom'}
-                  {rating === 5 && 'Excelente'}
-                </p>
-              )}
             </div>
             
             <div>
@@ -204,10 +168,9 @@ const RateRecipeForm: React.FC<RateRecipeFormProps> = ({
             <DialogFooter className="pt-2">
               <Button 
                 type="submit"
-                disabled={loading || rating === 0}
                 className="w-full sm:w-auto bg-fitcooker-orange hover:bg-fitcooker-orange/90 text-white"
               >
-                {loading ? 'Enviando...' : (existingRating ? 'Atualizar Avaliação' : 'Enviar Avaliação')}
+                Enviar Avaliação
               </Button>
             </DialogFooter>
           </form>

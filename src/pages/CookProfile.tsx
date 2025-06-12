@@ -1,337 +1,326 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ChefHat, Users, BookOpen, Star, MapPin, Calendar, Heart } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { ChefHat, Users, Star, Award, ArrowLeft, Calendar, MapPin } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { useProfiles } from '@/hooks/useProfiles';
-import { useRecipes } from '@/hooks/useRecipes';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import RecipeCard from '@/components/ui/RecipeCard';
+import { Recipe } from '@/types/recipe';
 
-const CookProfile = () => {
+interface ChefProfile {
+  id: string;
+  nome: string;
+  bio: string | null;
+  avatar_url: string | null;
+  data_cadastro: string;
+  is_chef: boolean;
+  preferencias: string[] | null;
+  receitas_count: number;
+  seguidores_count: number;
+  seguindo_count: number;
+  nota_media: number | null;
+}
+
+const CookProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  const { getProfile, toggleFollow, isFollowing } = useProfiles();
-  const { fetchRecipes } = useRecipes();
-  
-  const [profile, setProfile] = useState<any>(null);
-  const [recipes, setRecipes] = useState<any[]>([]);
-  const [following, setFollowing] = useState(false);
+  const navigate = useNavigate();
+  const [chef, setChef] = useState<ChefProfile | null>(null);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
-  const [recipesLoading, setRecipesLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadProfile = async () => {
-      if (!id) return;
-      
-      setLoading(true);
-      const profileData = await getProfile(id);
-      setProfile(profileData);
-      
-      if (user) {
-        const followStatus = await isFollowing(id);
-        setFollowing(followStatus);
+    if (id) {
+      fetchChefProfile();
+      fetchChefRecipes();
+    }
+  }, [id]);
+
+  const fetchChefProfile = async () => {
+    if (!id) return;
+
+    try {
+      console.log('Fetching chef profile for ID:', id);
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching chef profile:', error);
+        setError('Chef não encontrado');
+        return;
       }
-      
+
+      // Calculate average rating for this chef based on their recipes
+      const { data: recipes } = await supabase
+        .from('receitas')
+        .select('nota_media')
+        .eq('usuario_id', id)
+        .not('nota_media', 'is', null);
+
+      let averageRating = null;
+      if (recipes && recipes.length > 0) {
+        const validRatings = recipes.filter(r => r.nota_media > 0);
+        if (validRatings.length > 0) {
+          averageRating = validRatings.reduce((sum, recipe) => sum + recipe.nota_media, 0) / validRatings.length;
+        }
+      }
+
+      setChef({
+        ...data,
+        nota_media: averageRating ? Number(averageRating.toFixed(1)) : null
+      });
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      setError('Erro ao carregar perfil do chef');
+    }
+  };
+
+  const fetchChefRecipes = async () => {
+    if (!id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('receitas')
+        .select(`
+          *,
+          profiles(nome, avatar_url),
+          receita_categorias(categorias(nome)),
+          informacao_nutricional(*)
+        `)
+        .eq('usuario_id', id)
+        .eq('status', 'ativa')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const transformedRecipes = data?.map(recipe => ({
+        id: recipe.id,
+        titulo: recipe.titulo,
+        title: recipe.titulo,
+        descricao: recipe.descricao,
+        description: recipe.descricao,
+        imagem_url: recipe.imagem_url,
+        imageUrl: recipe.imagem_url,
+        tempo_preparo: recipe.tempo_preparo,
+        preparationTime: recipe.tempo_preparo,
+        porcoes: recipe.porcoes,
+        servings: recipe.porcoes,
+        dificuldade: recipe.dificuldade,
+        difficulty: recipe.dificuldade,
+        nota_media: recipe.nota_media,
+        rating: recipe.nota_media,
+        avaliacoes_count: recipe.avaliacoes_count,
+        created_at: recipe.created_at,
+        usuario_id: recipe.usuario_id,
+        status: recipe.status,
+        author: {
+          id: recipe.profiles?.id || recipe.usuario_id,
+          name: recipe.profiles?.nome || 'Chef Anônimo',
+          avatarUrl: recipe.profiles?.avatar_url || '',
+        },
+        categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
+        macros: recipe.informacao_nutricional?.[0] ? {
+          calories: Math.round(recipe.informacao_nutricional[0].calorias_totais / recipe.porcoes),
+          protein: Math.round(recipe.informacao_nutricional[0].proteinas_totais / recipe.porcoes),
+          carbs: Math.round(recipe.informacao_nutricional[0].carboidratos_totais / recipe.porcoes),
+          fat: Math.round(recipe.informacao_nutricional[0].gorduras_totais / recipe.porcoes),
+        } : { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      })) || [];
+
+      setRecipes(transformedRecipes);
+    } catch (error) {
+      console.error('Error fetching chef recipes:', error);
+    } finally {
       setLoading(false);
-    };
-
-    const loadRecipes = async () => {
-      if (!id) return;
-      
-      setRecipesLoading(true);
-      // Note: This would need to be implemented in useRecipes hook
-      // For now, we'll use an empty array
-      setRecipes([]);
-      setRecipesLoading(false);
-    };
-
-    loadProfile();
-    loadRecipes();
-  }, [id, getProfile, isFollowing, user]);
-
-  const handleFollow = async () => {
-    if (!user || !id) return;
-    
-    const newFollowState = await toggleFollow(id);
-    if (newFollowState !== undefined) {
-      setFollowing(newFollowState);
-      if (profile) {
-        setProfile({
-          ...profile,
-          seguidores_count: newFollowState
-            ? profile.seguidores_count + 1
-            : profile.seguidores_count - 1
-        });
-      }
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="pt-24 pb-12">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="max-w-4xl mx-auto">
-              {/* Profile Header Skeleton */}
-              <Card className="mb-8">
-                <CardContent className="p-8">
-                  <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-                    <Skeleton className="w-32 h-32 rounded-full" />
-                    <div className="flex-1 text-center md:text-left">
-                      <Skeleton className="h-8 w-48 mx-auto md:mx-0 mb-2" />
-                      <Skeleton className="h-4 w-32 mx-auto md:mx-0 mb-4" />
-                      <Skeleton className="h-16 w-full mb-4" />
-                      <div className="flex justify-center md:justify-start gap-4 mb-4">
-                        <Skeleton className="h-6 w-20" />
-                        <Skeleton className="h-6 w-20" />
-                        <Skeleton className="h-6 w-20" />
-                      </div>
-                      <Skeleton className="h-10 w-32" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Content Skeleton */}
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <Skeleton key={i} className="h-32 w-full" />
-                ))}
-              </div>
-            </div>
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-fitcooker-orange mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando perfil do chef...</p>
           </div>
-        </div>
+        </main>
         <Footer />
       </div>
     );
   }
 
-  if (!profile) {
+  if (error || !chef) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="pt-24 pb-12">
-          <div className="container mx-auto px-4 md:px-6 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Perfil não encontrado</h1>
-            <Link to="/cooks">
-              <Button>Voltar para Chefs</Button>
-            </Link>
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <ChefHat className="w-20 h-20 text-gray-300 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{error || 'Chef não encontrado'}</h2>
+            <p className="text-gray-600 mb-8">O perfil que você está procurando não existe ou foi removido.</p>
+            <Button onClick={() => navigate('/cooks')} className="bg-fitcooker-orange hover:bg-fitcooker-orange/90">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar aos Chefs
+            </Button>
           </div>
-        </div>
+        </main>
         <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
       
-      <div className="pt-24 pb-12">
+      <main className="py-8">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="max-w-4xl mx-auto">
-            {/* Profile Header */}
-            <Card className="mb-8">
-              <CardContent className="p-8">
-                <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-                  <div className="relative">
-                    <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
-                      <AvatarImage src={profile.avatar_url} alt={profile.nome} />
-                      <AvatarFallback className="text-4xl font-bold bg-fitcooker-orange text-white">
-                        {profile.nome.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {profile.is_chef && (
-                      <div className="absolute -bottom-2 -right-2">
-                        <Badge className="bg-fitcooker-orange text-white">
-                          <ChefHat size={14} className="mr-1" />
-                          Chef
-                        </Badge>
-                      </div>
-                    )}
+          {/* Back Button */}
+          <Button
+            onClick={() => navigate('/cooks')}
+            variant="outline"
+            className="mb-6"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar aos Chefs
+          </Button>
+
+          {/* Chef Profile Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-fitcooker-orange via-orange-500 to-orange-600 rounded-3xl p-8 mb-8 text-white"
+          >
+            <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
+              <div className="relative">
+                <Avatar className="w-32 h-32 border-4 border-white shadow-xl">
+                  <AvatarImage src={chef.avatar_url || ''} className="object-cover" />
+                  <AvatarFallback className="text-4xl bg-white text-fitcooker-orange">
+                    <ChefHat className="w-16 h-16" />
+                  </AvatarFallback>
+                </Avatar>
+                {chef.is_chef && (
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute -bottom-2 -right-2 w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <Award className="w-6 h-6 text-white" />
+                  </motion.div>
+                )}
+              </div>
+              
+              <div className="flex-1 text-center md:text-left">
+                <div className="flex flex-col md:flex-row md:items-center md:space-x-4 mb-4">
+                  <h1 className="text-3xl md:text-4xl font-bold">{chef.nome}</h1>
+                  {chef.is_chef && (
+                    <Badge className="bg-white/20 border-white/30 text-white">
+                      <ChefHat className="w-3 h-3 mr-1" />
+                      Chef Verificado
+                    </Badge>
+                  )}
+                </div>
+                
+                {chef.bio && (
+                  <p className="text-orange-100 text-lg mb-6">{chef.bio}</p>
+                )}
+                
+                <div className="flex flex-wrap justify-center md:justify-start gap-8 mb-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">{chef.receitas_count}</div>
+                    <div className="text-orange-200">Receitas</div>
                   </div>
-                  
-                  <div className="flex-1 text-center md:text-left">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                      {profile.nome}
-                    </h1>
-                    
-                    <div className="flex items-center justify-center md:justify-start text-gray-600 mb-4">
-                      <Calendar size={16} className="mr-2" />
-                      <span>Membro desde {new Date(profile.data_cadastro).toLocaleDateString('pt-BR')}</span>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">{chef.seguidores_count}</div>
+                    <div className="text-orange-200">Seguidores</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">{chef.seguindo_count}</div>
+                    <div className="text-orange-200">Seguindo</div>
+                  </div>
+                  {chef.nota_media && (
+                    <div className="text-center">
+                      <div className="flex items-center justify-center space-x-1">
+                        <Star className="w-6 h-6 text-yellow-300 fill-current" />
+                        <span className="text-3xl font-bold">{chef.nota_media}</span>
+                      </div>
+                      <div className="text-orange-200">Avaliação</div>
                     </div>
-                    
-                    {profile.bio && (
-                      <p className="text-gray-600 mb-6 max-w-2xl">
-                        {profile.bio}
-                      </p>
-                    )}
-                    
-                    <div className="flex justify-center md:justify-start gap-6 mb-6">
-                      <div className="text-center">
-                        <div className="flex items-center justify-center text-fitcooker-orange">
-                          <BookOpen size={20} className="mr-1" />
-                          <span className="text-2xl font-bold">{profile.receitas_count}</span>
-                        </div>
-                        <span className="text-gray-500 text-sm">Receitas</span>
-                      </div>
-                      
-                      <div className="text-center">
-                        <div className="flex items-center justify-center text-fitcooker-orange">
-                          <Users size={20} className="mr-1" />
-                          <span className="text-2xl font-bold">{profile.seguidores_count}</span>
-                        </div>
-                        <span className="text-gray-500 text-sm">Seguidores</span>
-                      </div>
-                      
-                      <div className="text-center">
-                        <div className="flex items-center justify-center text-fitcooker-orange">
-                          <Heart size={20} className="mr-1" />
-                          <span className="text-2xl font-bold">{profile.seguindo_count}</span>
-                        </div>
-                        <span className="text-gray-500 text-sm">Seguindo</span>
-                      </div>
+                  )}
+                </div>
+
+                {chef.preferencias && chef.preferencias.length > 0 && (
+                  <div>
+                    <h3 className="text-orange-200 text-sm font-medium mb-2">Preferências:</h3>
+                    <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                      {chef.preferencias.map((pref, index) => (
+                        <Badge key={index} variant="outline" className="bg-white/20 border-white/30 text-white">
+                          {pref}
+                        </Badge>
+                      ))}
                     </div>
-                    
-                    {user && user.id !== profile.id && (
-                      <Button
-                        onClick={handleFollow}
-                        className={`${
-                          following
-                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            : 'bg-fitcooker-orange hover:bg-fitcooker-orange/90 text-white'
-                        }`}
-                      >
-                        {following ? 'Seguindo' : 'Seguir Chef'}
-                      </Button>
-                    )}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-center md:justify-start space-x-4 mt-6 text-orange-200 text-sm">
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>Desde {new Date(chef.data_cadastro).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Chef's Recipes */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <ChefHat className="w-5 h-5 text-fitcooker-orange" />
+                  <span>Receitas de {chef.nome} ({recipes.length})</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recipes.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {recipes.map((recipe, index) => (
+                      <motion.div
+                        key={recipe.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 * index }}
+                      >
+                        <RecipeCard recipe={recipe} />
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <ChefHat className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">Este chef ainda não publicou nenhuma receita</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
-
-            {/* Content Tabs */}
-            <Tabs defaultValue="recipes" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="recipes">Receitas</TabsTrigger>
-                <TabsTrigger value="about">Sobre</TabsTrigger>
-                <TabsTrigger value="reviews">Avaliações</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="recipes" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Receitas do Chef</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {recipesLoading ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[...Array(4)].map((_, i) => (
-                          <Skeleton key={i} className="h-32 w-full" />
-                        ))}
-                      </div>
-                    ) : recipes.length === 0 ? (
-                      <div className="text-center py-8">
-                        <div className="text-4xl mb-4">🍳</div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma receita ainda</h3>
-                        <p className="text-gray-600">
-                          {profile.nome} ainda não publicou nenhuma receita.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {recipes.map((recipe) => (
-                          <Link key={recipe.id} to={`/recipe/${recipe.id}`}>
-                            <Card className="hover:shadow-md transition-shadow">
-                              <CardContent className="p-4">
-                                <div className="flex gap-4">
-                                  {recipe.imagem_url ? (
-                                    <img
-                                      src={recipe.imagem_url}
-                                      alt={recipe.titulo}
-                                      className="w-16 h-16 object-cover rounded-lg"
-                                    />
-                                  ) : (
-                                    <div className="w-16 h-16 bg-fitcooker-orange rounded-lg flex items-center justify-center">
-                                      <span className="text-2xl">🍽️</span>
-                                    </div>
-                                  )}
-                                  <div className="flex-1">
-                                    <h4 className="font-semibold text-gray-900 mb-1">
-                                      {recipe.titulo}
-                                    </h4>
-                                    <p className="text-sm text-gray-600 line-clamp-2">
-                                      {recipe.descricao}
-                                    </p>
-                                    <div className="flex items-center mt-2 text-xs text-gray-500">
-                                      <Star size={12} className="mr-1 fill-yellow-400 text-yellow-400" />
-                                      {recipe.nota_media || 0}
-                                    </div>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="about" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Sobre {profile.nome}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {profile.bio ? (
-                      <div className="prose max-w-none">
-                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                          {profile.bio}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <div className="text-4xl mb-4">👤</div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Sem informações ainda</h3>
-                        <p className="text-gray-600">
-                          {profile.nome} ainda não adicionou informações sobre si.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="reviews" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Avaliações Recebidas</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-8">
-                      <div className="text-4xl mb-4">⭐</div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Em breve</h3>
-                      <p className="text-gray-600">
-                        Sistema de avaliações de chefs em desenvolvimento.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </main>
       
       <Footer />
     </div>
