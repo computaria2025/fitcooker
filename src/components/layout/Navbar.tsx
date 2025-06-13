@@ -43,7 +43,7 @@ const Navbar: React.FC = () => {
     { name: 'Chefs', path: '/cooks', icon: Users },
     { name: 'Alimentação', path: '/alimentacao-saudavel', icon: Utensils },
     { name: 'Ferramentas', path: '/ferramentas', icon: Settings },
-    { name: 'Sobre', path: '/quem-somos', icon: Info },
+    { name: 'Sobre', path: '/about', icon: Info },
     { name: 'Contato', path: '/contato', icon: Mail },
   ];
 
