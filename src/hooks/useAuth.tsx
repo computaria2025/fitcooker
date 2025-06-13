@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -138,9 +137,14 @@ export const useAuth = (): AuthContextType => {
 
       if (error) throw error;
 
+      // Update local profile state
+      setProfile(prev => prev ? { ...prev, ...updates } : prev);
+      
+      // Optionally refetch profile for consistency
       await fetchProfile(user.id);
     } catch (error) {
       console.error('Error updating profile:', error);
+      throw error;
     }
   };
 

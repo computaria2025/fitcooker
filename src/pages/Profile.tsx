@@ -1,14 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, MapPin, Calendar, Users, ChefHat, Star, Trash2, Edit } from 'lucide-react';
+import { Camera, MapPin, Calendar, Users, ChefHat, Star, Trash2, Edit, Heart, UserPlus, UserMinus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useDeleteRecipe } from '@/hooks/useDeleteRecipe';
+import { useUserStats } from '@/hooks/useUserStats';
+import { useFollowers } from '@/hooks/useFollowers';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import RecipeCard from '@/components/ui/RecipeCard';
+import ProfilePictureUpload from '@/components/ui/ProfilePictureUpload';
+import FollowersDialog from '@/components/ui/FollowersDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,17 +21,31 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Recipe } from '@/types/recipe';
+import { useToast } from '@/hooks/use-toast';
 
 const Profile: React.FC = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, updateProfile } = useAuth();
   const { data: allRecipes, loading, refetch } = useRecipes();
   const { deleteRecipe, isDeleting } = useDeleteRecipe();
+  const { stats, loading: statsLoading, refetch: refetchStats } = useUserStats(user?.id);
+  const { 
+    followers, 
+    following, 
+    fetchFollowers, 
+    fetchFollowing 
+  } = useFollowers(user?.id);
+  const { toast } = useToast();
+
   const [userRecipes, setUserRecipes] = useState<Recipe[]>([]);
+  const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
+  const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
   const [profileData, setProfileData] = useState({
     nome: profile?.nome || '',
     bio: profile?.bio || '',
-    avatar_url: profile?.avatar_url || ''
+    avatar_url: profile?.avatar_url || '',
+    preferencias: profile?.preferencias || []
   });
 
   useEffect(() => {
@@ -42,18 +60,111 @@ const Profile: React.FC = () => {
       setProfileData({
         nome: profile.nome || '',
         bio: profile.bio || '',
-        avatar_url: profile.avatar_url || ''
+        avatar_url: profile.avatar_url || '',
+        preferencias: profile.preferencias || []
       });
     }
   }, [profile]);
 
+  useEffect(() => {
+    if (user) {
+      fetchSavedRecipes();
+    }
+  }, [user]);
+
+  const fetchSavedRecipes = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('receitas_salvas')
+        .select(`
+          receita_id,
+          receitas (
+            *,
+            profiles(nome, avatar_url),
+            receita_categorias(categorias(nome)),
+            informacao_nutricional(*)
+          )
+        `)
+        .eq('usuario_id', user.id);
+
+      if (error) throw error;
+
+      const formattedSavedRecipes: Recipe[] = (data || []).map((item: any) => {
+        const recipe = item.receitas;
+        return {
+          id: recipe.id,
+          titulo: recipe.titulo,
+          descricao: recipe.descricao,
+          imagem_url: recipe.imagem_url || '/placeholder.svg',
+          tempo_preparo: recipe.tempo_preparo,
+          porcoes: recipe.porcoes,
+          dificuldade: recipe.dificuldade,
+          nota_media: recipe.nota_media || 0,
+          avaliacoes_count: recipe.avaliacoes_count || 0,
+          created_at: recipe.created_at,
+          usuario_id: recipe.usuario_id,
+          title: recipe.titulo,
+          description: recipe.descricao,
+          imageUrl: recipe.imagem_url || '/placeholder.svg',
+          preparationTime: recipe.tempo_preparo,
+          servings: recipe.porcoes,
+          difficulty: recipe.dificuldade,
+          rating: recipe.nota_media || 0,
+          author: {
+            id: recipe.usuario_id,
+            name: recipe.profiles?.nome || 'Chef Anônimo',
+            avatarUrl: recipe.profiles?.avatar_url || '/placeholder.svg'
+          },
+          categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
+          macros: {
+            calories: recipe.informacao_nutricional?.[0]?.calorias_totais || 0,
+            protein: recipe.informacao_nutricional?.[0]?.proteinas_totais || 0,
+            carbs: recipe.informacao_nutricional?.[0]?.carboidratos_totais || 0,
+            fat: recipe.informacao_nutricional?.[0]?.gorduras_totais || 0
+          }
+        };
+      });
+
+      setSavedRecipes(formattedSavedRecipes);
+    } catch (error) {
+      console.error('Error fetching saved recipes:', error);
+    }
+  };
+
   const handleDeleteRecipe = async (recipeId: number) => {
     const success = await deleteRecipe(recipeId);
     if (success) {
-      // Atualizar a lista local de receitas
       setUserRecipes(prev => prev.filter(recipe => recipe.id !== recipeId));
-      // Refetch para sincronizar com o banco
       refetch();
+      refetchStats();
+    }
+  };
+
+  const handleUnsaveRecipe = async (recipeId: number) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('receitas_salvas')
+        .delete()
+        .eq('usuario_id', user.id)
+        .eq('receita_id', recipeId);
+
+      if (error) throw error;
+
+      setSavedRecipes(prev => prev.filter(recipe => recipe.id !== recipeId));
+      toast({
+        title: "Receita removida!",
+        description: "A receita foi removida dos seus favoritos.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover a receita dos favoritos.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -61,21 +172,30 @@ const Profile: React.FC = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          nome: profileData.nome,
-          bio: profileData.bio,
-          avatar_url: profileData.avatar_url
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
+      await updateProfile({
+        nome: profileData.nome,
+        bio: profileData.bio,
+        avatar_url: profileData.avatar_url,
+        preferencias: profileData.preferencias
+      });
 
       setEditingProfile(false);
+      toast({
+        title: "Perfil atualizado!",
+        description: "Suas informações foram atualizadas com sucesso.",
+      });
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o perfil.",
+        variant: "destructive",
+      });
     }
+  };
+
+  const handleAvatarUpload = (url: string) => {
+    setProfileData(prev => ({ ...prev, avatar_url: url }));
   };
 
   if (!user) {
@@ -104,14 +224,10 @@ const Profile: React.FC = () => {
           >
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
               <div className="relative">
-                <img
-                  src={profile?.avatar_url || '/placeholder.svg'}
-                  alt={profile?.nome || 'Usuário'}
-                  className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                <ProfilePictureUpload
+                  currentAvatarUrl={profile?.avatar_url}
+                  onUploadComplete={handleAvatarUpload}
                 />
-                <button className="absolute bottom-2 right-2 bg-fitcooker-orange text-white p-2 rounded-full hover:bg-orange-600 transition-colors">
-                  <Camera className="w-4 h-4" />
-                </button>
               </div>
 
               <div className="flex-1 text-center md:text-left">
@@ -178,13 +294,23 @@ const Profile: React.FC = () => {
                     <Calendar className="w-4 h-4" />
                     Membro desde {new Date(profile?.data_cadastro || '').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                   </div>
-                  <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setFollowersDialogOpen(true)}
+                    className="flex items-center gap-1 hover:text-fitcooker-orange transition-colors"
+                  >
                     <Users className="w-4 h-4" />
-                    {profile?.seguidores_count || 0} seguidores
-                  </div>
+                    {statsLoading ? '...' : stats.seguidores_count} seguidores
+                  </button>
+                  <button
+                    onClick={() => setFollowingDialogOpen(true)}
+                    className="flex items-center gap-1 hover:text-fitcooker-orange transition-colors"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    {statsLoading ? '...' : stats.seguindo_count} seguindo
+                  </button>
                   <div className="flex items-center gap-1">
                     <ChefHat className="w-4 h-4" />
-                    {userRecipes.length} receitas
+                    {statsLoading ? '...' : stats.receitas_count} receitas
                   </div>
                 </div>
 
@@ -206,7 +332,9 @@ const Profile: React.FC = () => {
               className="bg-white rounded-2xl shadow-lg p-6 text-center"
             >
               <ChefHat className="w-12 h-12 text-fitcooker-orange mx-auto mb-3" />
-              <h3 className="text-2xl font-bold text-gray-900">{userRecipes.length}</h3>
+              <h3 className="text-2xl font-bold text-gray-900">
+                {statsLoading ? '...' : stats.receitas_count}
+              </h3>
               <p className="text-gray-600">Receitas Criadas</p>
             </motion.div>
 
@@ -217,7 +345,9 @@ const Profile: React.FC = () => {
               className="bg-white rounded-2xl shadow-lg p-6 text-center"
             >
               <Users className="w-12 h-12 text-fitcooker-orange mx-auto mb-3" />
-              <h3 className="text-2xl font-bold text-gray-900">{profile?.seguidores_count || 0}</h3>
+              <h3 className="text-2xl font-bold text-gray-900">
+                {statsLoading ? '...' : stats.seguidores_count}
+              </h3>
               <p className="text-gray-600">Seguidores</p>
             </motion.div>
 
@@ -229,10 +359,7 @@ const Profile: React.FC = () => {
             >
               <Star className="w-12 h-12 text-fitcooker-orange mx-auto mb-3" />
               <h3 className="text-2xl font-bold text-gray-900">
-                {userRecipes.length > 0 
-                  ? (userRecipes.reduce((acc, recipe) => acc + (recipe.nota_media || 0), 0) / userRecipes.length).toFixed(1)
-                  : '0.0'
-                }
+                {statsLoading ? '...' : (stats.nota_media || '0.0')}
               </h3>
               <p className="text-gray-600">Avaliação Média</p>
             </motion.div>
@@ -243,7 +370,7 @@ const Profile: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-white rounded-3xl shadow-lg p-8"
+            className="bg-white rounded-3xl shadow-lg p-8 mb-8"
           >
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Minhas Receitas</h2>
             
@@ -257,7 +384,6 @@ const Profile: React.FC = () => {
                   <div key={recipe.id} className="relative group">
                     <RecipeCard recipe={recipe} />
                     
-                    {/* Delete Button Overlay */}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <button
@@ -305,6 +431,82 @@ const Profile: React.FC = () => {
               </div>
             )}
           </motion.div>
+
+          {/* Saved Recipes */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-white rounded-3xl shadow-lg p-8"
+          >
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Receitas Favoritas</h2>
+            
+            {savedRecipes.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {savedRecipes.map((recipe) => (
+                  <div key={recipe.id} className="relative group">
+                    <RecipeCard recipe={recipe} />
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          className="absolute top-3 right-3 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
+                        >
+                          <Heart className="w-4 h-4 fill-current" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remover dos Favoritos</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja remover "{recipe.titulo}" dos seus favoritos?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleUnsaveRecipe(recipe.id)}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            Remover
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <Heart className="w-20 h-20 text-gray-300 mx-auto mb-6" />
+                <h3 className="text-xl font-bold text-gray-600 mb-3">
+                  Nenhuma receita favorita
+                </h3>
+                <p className="text-gray-500">
+                  Explore receitas e adicione suas favoritas aqui!
+                </p>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Dialogs */}
+          <FollowersDialog
+            open={followersDialogOpen}
+            onOpenChange={setFollowersDialogOpen}
+            type="followers"
+            data={followers}
+            onFetch={() => fetchFollowers(user.id)}
+            onUpdate={refetchStats}
+          />
+
+          <FollowersDialog
+            open={followingDialogOpen}
+            onOpenChange={setFollowingDialogOpen}
+            type="following"
+            data={following}
+            onFetch={() => fetchFollowing(user.id)}
+            onUpdate={refetchStats}
+          />
         </div>
       </main>
       
