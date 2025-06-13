@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -51,35 +52,64 @@ const CookProfile: React.FC = () => {
     try {
       console.log('Fetching chef profile for ID:', id);
 
-      const { data, error } = await supabase
+      // Get profile data first
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) {
-        console.error('Error fetching chef profile:', error);
+      if (profileError) {
+        console.error('Error fetching chef profile:', profileError);
         setError('Chef não encontrado');
         return;
       }
 
+      // Get real recipe count
+      const { data: recipesData, error: recipesError } = await supabase
+        .from('receitas')
+        .select('id')
+        .eq('usuario_id', id)
+        .eq('status', 'ativa');
+
+      const realRecipeCount = recipesData?.length || 0;
+
+      // Get real followers count
+      const { data: followersData, error: followersError } = await supabase
+        .from('seguidores')
+        .select('id')
+        .eq('seguido_id', id);
+
+      const realFollowersCount = followersData?.length || 0;
+
+      // Get real following count
+      const { data: followingData, error: followingError } = await supabase
+        .from('seguidores')
+        .select('id')
+        .eq('seguidor_id', id);
+
+      const realFollowingCount = followingData?.length || 0;
+
       // Calculate average rating for this chef based on their recipes
-      const { data: recipes } = await supabase
+      const { data: recipeRatings } = await supabase
         .from('receitas')
         .select('nota_media')
         .eq('usuario_id', id)
         .not('nota_media', 'is', null);
 
       let averageRating = null;
-      if (recipes && recipes.length > 0) {
-        const validRatings = recipes.filter(r => r.nota_media > 0);
+      if (recipeRatings && recipeRatings.length > 0) {
+        const validRatings = recipeRatings.filter(r => r.nota_media > 0);
         if (validRatings.length > 0) {
           averageRating = validRatings.reduce((sum, recipe) => sum + recipe.nota_media, 0) / validRatings.length;
         }
       }
 
       setChef({
-        ...data,
+        ...profileData,
+        receitas_count: realRecipeCount,
+        seguidores_count: realFollowersCount,
+        seguindo_count: realFollowingCount,
         nota_media: averageRating ? Number(averageRating.toFixed(1)) : null
       });
     } catch (err) {
@@ -152,7 +182,7 @@ const CookProfile: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow flex items-center justify-center">
+        <main className="flex-grow flex items-center justify-center pt-32">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-fitcooker-orange mx-auto mb-4"></div>
             <p className="text-gray-600">Carregando perfil do chef...</p>
@@ -167,7 +197,7 @@ const CookProfile: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow flex items-center justify-center">
+        <main className="flex-grow flex items-center justify-center pt-32">
           <div className="text-center">
             <ChefHat className="w-20 h-20 text-gray-300 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-900 mb-3">{error || 'Chef não encontrado'}</h2>
@@ -189,13 +219,13 @@ const CookProfile: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
       
-      <main className="py-8">
+      <main className="py-8 pt-32">
         <div className="container mx-auto px-4 md:px-6">
           {/* Back Button */}
           <Button
             onClick={() => navigate('/cooks')}
             variant="outline"
-            className="mb-6"
+            className="mb-8"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar aos Chefs

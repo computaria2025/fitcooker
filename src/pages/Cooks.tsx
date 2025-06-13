@@ -22,6 +22,7 @@ interface Chef {
   seguindo_count: number;
   data_cadastro: string;
   is_chef: boolean;
+  preferencias: string[] | null;
 }
 
 const Cooks: React.FC = () => {

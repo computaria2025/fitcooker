@@ -32,12 +32,30 @@ export const useUserStats = (userId?: string) => {
     try {
       setLoading(true);
 
-      // Get basic profile stats
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('receitas_count, seguidores_count, seguindo_count')
-        .eq('id', userId)
-        .single();
+      // Get real recipe count
+      const { data: recipes } = await supabase
+        .from('receitas')
+        .select('id')
+        .eq('usuario_id', userId)
+        .eq('status', 'ativa');
+
+      const realRecipeCount = recipes?.length || 0;
+
+      // Get real followers count
+      const { data: followers } = await supabase
+        .from('seguidores')
+        .select('id')
+        .eq('seguido_id', userId);
+
+      const realFollowersCount = followers?.length || 0;
+
+      // Get real following count
+      const { data: following } = await supabase
+        .from('seguidores')
+        .select('id')
+        .eq('seguidor_id', userId);
+
+      const realFollowingCount = following?.length || 0;
 
       // Get total evaluations received on user's recipes
       const { data: evaluations } = await supabase
@@ -55,9 +73,9 @@ export const useUserStats = (userId?: string) => {
       }
 
       setStats({
-        receitas_count: profile?.receitas_count || 0,
-        seguidores_count: profile?.seguidores_count || 0,
-        seguindo_count: profile?.seguindo_count || 0,
+        receitas_count: realRecipeCount,
+        seguidores_count: realFollowersCount,
+        seguindo_count: realFollowingCount,
         avaliacoes_count,
         nota_media: nota_media ? Number(nota_media.toFixed(1)) : null,
       });

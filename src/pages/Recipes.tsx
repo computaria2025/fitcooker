@@ -1,213 +1,138 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChefHat } from 'lucide-react';
+import { Search, Filter, ChefHat } from 'lucide-react';
 import { useRecipes } from '@/hooks/useRecipes';
-import { useCategories } from '@/hooks/useCategories';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import SectionTitle from '@/components/ui/SectionTitle';
 import RecipeCard from '@/components/ui/RecipeCard';
 import RecipeCardSkeleton from '@/components/ui/RecipeCardSkeleton';
 import RecipeFilters from '@/components/recipes/RecipeFilters';
+import SectionTitle from '@/components/ui/SectionTitle';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const Recipes: React.FC = () => {
-  const { data: recipes, loading, error } = useRecipes();
-  const { data: categories } = useCategories();
-  const [filteredRecipes, setFilteredRecipes] = useState(recipes);
+  const { data: recipes, loading } = useRecipes();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('newest');
-  const [timeRange, setTimeRange] = useState<number[]>([5, 180]);
-  const [servingsRange, setServingsRange] = useState<number[]>([1, 12]);
+  const [filters, setFilters] = useState({
+    category: '',
+    difficulty: '',
+    preparationTime: '',
+    rating: 0
+  });
 
-  useEffect(() => {
-    let filtered = [...recipes];
+  const filteredRecipes = recipes.filter(recipe => {
+    const matchesSearch = recipe.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      recipe.descricao.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = !filters.category || 
+      recipe.categories.some(cat => cat.toLowerCase().includes(filters.category.toLowerCase()));
+    
+    const matchesDifficulty = !filters.difficulty || 
+      recipe.dificuldade.toLowerCase() === filters.difficulty.toLowerCase();
+    
+    const matchesTime = !filters.preparationTime || (() => {
+      const time = recipe.tempo_preparo;
+      switch (filters.preparationTime) {
+        case 'quick': return time <= 30;
+        case 'medium': return time > 30 && time <= 60;
+        case 'long': return time > 60;
+        default: return true;
+      }
+    })();
+    
+    const matchesRating = !filters.rating || 
+      (recipe.nota_media && recipe.nota_media >= filters.rating);
 
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(recipe =>
-        recipe.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipe.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipe.categories.some(cat => cat.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-
-    // Apply category filter
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(recipe =>
-        recipe.categories.includes(selectedCategory)
-      );
-    }
-
-    // Apply difficulty filter
-    if (selectedDifficulty !== 'all') {
-      filtered = filtered.filter(recipe =>
-        recipe.dificuldade === selectedDifficulty
-      );
-    }
-
-    // Apply time range filter
-    filtered = filtered.filter(recipe =>
-      recipe.tempo_preparo >= timeRange[0] && recipe.tempo_preparo <= timeRange[1]
-    );
-
-    // Apply servings range filter
-    filtered = filtered.filter(recipe =>
-      recipe.porcoes >= servingsRange[0] && recipe.porcoes <= servingsRange[1]
-    );
-
-    // Apply sorting
-    switch (sortBy) {
-      case 'newest':
-        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        break;
-      case 'oldest':
-        filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        break;
-      case 'rating':
-        filtered.sort((a, b) => (b.nota_media || 0) - (a.nota_media || 0));
-        break;
-      case 'time':
-        filtered.sort((a, b) => a.tempo_preparo - b.tempo_preparo);
-        break;
-    }
-
-    setFilteredRecipes(filtered);
-  }, [recipes, searchTerm, selectedCategory, selectedDifficulty, sortBy, timeRange, servingsRange]);
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('all');
-    setSelectedDifficulty('all');
-    setSortBy('newest');
-    setTimeRange([5, 180]);
-    setServingsRange([1, 12]);
-  };
-
-  const hasActiveFilters = Boolean(
-    searchTerm || 
-    selectedCategory !== 'all' || 
-    selectedDifficulty !== 'all' || 
-    sortBy !== 'newest' || 
-    timeRange[0] !== 5 || 
-    timeRange[1] !== 180 || 
-    servingsRange[0] !== 1 || 
-    servingsRange[1] !== 12
-  );
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow flex items-center justify-center pt-16">
-          <div className="text-center">
-            <ChefHat className="w-20 h-20 text-gray-300 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Erro ao carregar receitas</h2>
-            <p className="text-gray-600">{error}</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+    return matchesSearch && matchesCategory && matchesDifficulty && matchesTime && matchesRating;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
       
-      <main className="py-12 pt-24">
+      <main className="py-12 pt-40">
         <div className="container mx-auto px-4 md:px-6">
           <SectionTitle 
             title="Receitas Deliciosas"
-            subtitle="Explore nossa coleção de receitas saudáveis e saborosas criadas por chefs apaixonados pela gastronomia."
+            subtitle="Descubra pratos incríveis criados pela nossa comunidade de chefs apaixonados"
           />
 
-          {/* Enhanced Filters */}
-          <RecipeFilters
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            selectedDifficulty={selectedDifficulty}
-            setSelectedDifficulty={setSelectedDifficulty}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            categories={categories}
-            clearFilters={clearFilters}
-            hasActiveFilters={hasActiveFilters}
-            timeRange={timeRange}
-            setTimeRange={setTimeRange}
-            servingsRange={servingsRange}
-            setServingsRange={setServingsRange}
-          />
+          {/* Search and Filters */}
+          <div className="flex flex-col md:flex-row gap-4 mb-8">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                type="text"
+                placeholder="Buscar receitas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-12 border-gray-200 focus:border-fitcooker-orange focus:ring-fitcooker-orange"
+              />
+            </div>
+            
+            {/* Mobile Filter Button */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="md:hidden h-12 border-gray-200">
+                  <Filter className="w-5 h-5 mr-2" />
+                  Filtros
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80">
+                <RecipeFilters filters={filters} onFiltersChange={setFilters} />
+              </SheetContent>
+            </Sheet>
+          </div>
 
-          {/* Results Count */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-6 mt-8"
-          >
-            <p className="text-gray-600 text-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Desktop Filters Sidebar */}
+            <div className="hidden lg:block">
+              <div className="sticky top-32">
+                <RecipeFilters filters={filters} onFiltersChange={setFilters} />
+              </div>
+            </div>
+
+            {/* Recipes Grid */}
+            <div className="lg:col-span-3">
               {loading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-fitcooker-orange"></div>
-                  <span>Carregando receitas...</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {Array.from({ length: 9 }).map((_, index) => (
+                    <RecipeCardSkeleton key={index} />
+                  ))}
+                </div>
+              ) : filteredRecipes.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredRecipes.map((recipe, index) => (
+                    <motion.div
+                      key={recipe.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * (index % 9) }}
+                    >
+                      <RecipeCard recipe={recipe} />
+                    </motion.div>
+                  ))}
                 </div>
               ) : (
-                `${filteredRecipes.length} receita${filteredRecipes.length !== 1 ? 's' : ''} encontrada${filteredRecipes.length !== 1 ? 's' : ''}`
-              )}
-            </p>
-          </motion.div>
-
-          {/* Recipes Grid */}
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array.from({ length: 8 }, (_, index) => (
-                <RecipeCardSkeleton key={index} />
-              ))}
-            </div>
-          ) : filteredRecipes.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-16"
-            >
-              <ChefHat className="w-20 h-20 text-gray-300 mx-auto mb-6" />
-              <h3 className="text-2xl font-bold text-gray-600 mb-3">
-                {hasActiveFilters ? 'Nenhuma receita encontrada' : 'Nenhuma receita cadastrada ainda'}
-              </h3>
-              <p className="text-gray-500 max-w-md mx-auto mb-6">
-                {hasActiveFilters 
-                  ? 'Tente ajustar os filtros ou limpe-os para ver todas as receitas disponíveis.' 
-                  : 'Seja o primeiro a adicionar uma receita deliciosa à nossa plataforma!'
-                }
-              </p>
-              {hasActiveFilters ? (
-                <Button onClick={clearFilters} className="bg-fitcooker-orange hover:bg-fitcooker-orange/90">
-                  Limpar Filtros
-                </Button>
-              ) : (
-                <Button asChild className="bg-fitcooker-orange hover:bg-fitcooker-orange/90">
-                  <a href="/add-recipe">Adicionar Primeira Receita</a>
-                </Button>
-              )}
-            </motion.div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredRecipes.map((recipe, index) => (
                 <motion.div
-                  key={recipe.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * (index % 8) }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-16"
                 >
-                  <RecipeCard recipe={recipe} />
+                  <ChefHat className="w-20 h-20 text-gray-300 mx-auto mb-6" />
+                  <h3 className="text-2xl font-bold text-gray-600 mb-3">
+                    Nenhuma receita encontrada
+                  </h3>
+                  <p className="text-gray-500 max-w-md mx-auto">
+                    Tente ajustar seus filtros ou termos de busca para encontrar receitas deliciosas.
+                  </p>
                 </motion.div>
-              ))}
+              )}
             </div>
-          )}
+          </div>
         </div>
       </main>
       
