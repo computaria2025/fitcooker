@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Filter, ChefHat } from 'lucide-react';
 import { useRecipes } from '@/hooks/useRecipes';
+import { useCategories } from '@/hooks/useCategories';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import RecipeCard from '@/components/ui/RecipeCard';
@@ -15,39 +16,58 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const Recipes: React.FC = () => {
   const { data: recipes, loading } = useRecipes();
+  const { data: categories } = useCategories();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({
-    category: '',
-    difficulty: '',
-    preparationTime: '',
-    rating: 0
-  });
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+  const [timeRange, setTimeRange] = useState([5, 180]);
+  const [servingsRange, setServingsRange] = useState([1, 12]);
 
   const filteredRecipes = recipes.filter(recipe => {
     const matchesSearch = recipe.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       recipe.descricao.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = !filters.category || 
-      recipe.categories.some(cat => cat.toLowerCase().includes(filters.category.toLowerCase()));
+    const matchesCategory = selectedCategory === 'all' || 
+      recipe.categories.some(cat => cat.toLowerCase().includes(selectedCategory.toLowerCase()));
     
-    const matchesDifficulty = !filters.difficulty || 
-      recipe.dificuldade.toLowerCase() === filters.difficulty.toLowerCase();
+    const matchesDifficulty = selectedDifficulty === 'all' || 
+      recipe.dificuldade.toLowerCase() === selectedDifficulty.toLowerCase();
     
-    const matchesTime = !filters.preparationTime || (() => {
-      const time = recipe.tempo_preparo;
-      switch (filters.preparationTime) {
-        case 'quick': return time <= 30;
-        case 'medium': return time > 30 && time <= 60;
-        case 'long': return time > 60;
-        default: return true;
-      }
-    })();
+    const matchesTime = recipe.tempo_preparo >= timeRange[0] && recipe.tempo_preparo <= timeRange[1];
     
-    const matchesRating = !filters.rating || 
-      (recipe.nota_media && recipe.nota_media >= filters.rating);
+    const matchesServings = recipe.porcoes >= servingsRange[0] && recipe.porcoes <= servingsRange[1];
 
-    return matchesSearch && matchesCategory && matchesDifficulty && matchesTime && matchesRating;
+    return matchesSearch && matchesCategory && matchesDifficulty && matchesTime && matchesServings;
   });
+
+  // Sort filtered recipes
+  const sortedRecipes = [...filteredRecipes].sort((a, b) => {
+    switch (sortBy) {
+      case 'newest':
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case 'oldest':
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case 'rating':
+        return (b.nota_media || 0) - (a.nota_media || 0);
+      case 'time':
+        return a.tempo_preparo - b.tempo_preparo;
+      default:
+        return 0;
+    }
+  });
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setSelectedDifficulty('all');
+    setSortBy('newest');
+    setTimeRange([5, 180]);
+    setServingsRange([1, 12]);
+  };
+
+  const hasActiveFilters = searchTerm !== '' || selectedCategory !== 'all' || selectedDifficulty !== 'all' || 
+    timeRange[0] !== 5 || timeRange[1] !== 180 || servingsRange[0] !== 1 || servingsRange[1] !== 12;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
@@ -82,7 +102,23 @@ const Recipes: React.FC = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-80">
-                <RecipeFilters filters={filters} onFiltersChange={setFilters} />
+                <RecipeFilters 
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  selectedDifficulty={selectedDifficulty}
+                  setSelectedDifficulty={setSelectedDifficulty}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                  categories={categories}
+                  clearFilters={clearFilters}
+                  hasActiveFilters={hasActiveFilters}
+                  timeRange={timeRange}
+                  setTimeRange={setTimeRange}
+                  servingsRange={servingsRange}
+                  setServingsRange={setServingsRange}
+                />
               </SheetContent>
             </Sheet>
           </div>
@@ -91,7 +127,23 @@ const Recipes: React.FC = () => {
             {/* Desktop Filters Sidebar */}
             <div className="hidden lg:block">
               <div className="sticky top-32">
-                <RecipeFilters filters={filters} onFiltersChange={setFilters} />
+                <RecipeFilters 
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  selectedDifficulty={selectedDifficulty}
+                  setSelectedDifficulty={setSelectedDifficulty}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                  categories={categories}
+                  clearFilters={clearFilters}
+                  hasActiveFilters={hasActiveFilters}
+                  timeRange={timeRange}
+                  setTimeRange={setTimeRange}
+                  servingsRange={servingsRange}
+                  setServingsRange={setServingsRange}
+                />
               </div>
             </div>
 
@@ -103,9 +155,9 @@ const Recipes: React.FC = () => {
                     <RecipeCardSkeleton key={index} />
                   ))}
                 </div>
-              ) : filteredRecipes.length > 0 ? (
+              ) : sortedRecipes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredRecipes.map((recipe, index) => (
+                  {sortedRecipes.map((recipe, index) => (
                     <motion.div
                       key={recipe.id}
                       initial={{ opacity: 0, y: 20 }}
