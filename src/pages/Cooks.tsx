@@ -5,6 +5,7 @@ import { ChefHat, Users, Star, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useFollowers } from '@/hooks/useFollowers';
+import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import SectionTitle from '@/components/ui/SectionTitle';
@@ -27,9 +28,11 @@ interface Chef {
 
 const Cooks: React.FC = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [chefs, setChefs] = useState<Chef[]>([]);
   const [loading, setLoading] = useState(true);
   const [followingStates, setFollowingStates] = useState<Record<string, boolean>>({});
+  const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchChefs();
@@ -37,19 +40,44 @@ const Cooks: React.FC = () => {
 
   const fetchChefs = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch all profiles with their real stats
+      const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*')
         .order('seguidores_count', { ascending: false });
 
       if (error) throw error;
 
-      setChefs(data || []);
+      // Get real recipe counts for each chef
+      const chefsWithRealStats = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          // Get real recipe count
+          const { data: recipes } = await supabase
+            .from('receitas')
+            .select('id')
+            .eq('usuario_id', profile.id)
+            .eq('status', 'ativa');
+
+          // Get real followers count
+          const { data: followers } = await supabase
+            .from('seguidores')
+            .select('id')
+            .eq('seguido_id', profile.id);
+
+          return {
+            ...profile,
+            receitas_count: recipes?.length || 0,
+            seguidores_count: followers?.length || 0,
+          };
+        })
+      );
+
+      setChefs(chefsWithRealStats);
 
       // Check following status for each chef if user is logged in
-      if (user && data) {
+      if (user && chefsWithRealStats) {
         const followingChecks = await Promise.all(
-          data.map(async (chef) => {
+          chefsWithRealStats.map(async (chef) => {
             if (chef.id === user.id) return { id: chef.id, isFollowing: false };
             
             const { data: followData } = await supabase
@@ -78,7 +106,25 @@ const Cooks: React.FC = () => {
   };
 
   const handleFollow = async (chefId: string) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Login necessário",
+        description: "Você precisa estar logado para seguir um chef.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (chefId === user.id) {
+      toast({
+        title: "Ação inválida",
+        description: "Você não pode seguir a si mesmo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFollowLoading(prev => ({ ...prev, [chefId]: true }));
 
     try {
       const isCurrentlyFollowing = followingStates[chefId];
@@ -98,9 +144,14 @@ const Cooks: React.FC = () => {
         // Update chef's follower count
         setChefs(prev => prev.map(chef => 
           chef.id === chefId 
-            ? { ...chef, seguidores_count: chef.seguidores_count - 1 }
+            ? { ...chef, seguidores_count: Math.max(0, chef.seguidores_count - 1) }
             : chef
         ));
+
+        toast({
+          title: "Sucesso!",
+          description: "Você parou de seguir este chef.",
+        });
       } else {
         // Follow
         const { error } = await supabase
@@ -120,9 +171,21 @@ const Cooks: React.FC = () => {
             ? { ...chef, seguidores_count: chef.seguidores_count + 1 }
             : chef
         ));
+
+        toast({
+          title: "Sucesso!",
+          description: "Você agora está seguindo este chef.",
+        });
       }
     } catch (error) {
       console.error('Error toggling follow:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status de seguimento.",
+        variant: "destructive",
+      });
+    } finally {
+      setFollowLoading(prev => ({ ...prev, [chefId]: false }));
     }
   };
 
@@ -230,13 +293,14 @@ const Cooks: React.FC = () => {
                             onClick={() => handleFollow(chef.id)}
                             size="sm"
                             variant={followingStates[chef.id] ? "outline" : "default"}
+                            disabled={followLoading[chef.id]}
                             className={`${
                               followingStates[chef.id] 
                                 ? 'border-gray-300 text-gray-600 hover:bg-red-50 hover:text-red-600 hover:border-red-300' 
                                 : 'bg-fitcooker-orange hover:bg-fitcooker-orange/90 text-white'
                             } transition-colors duration-300`}
                           >
-                            {followingStates[chef.id] ? 'Seguindo' : 'Seguir'}
+                            {followLoading[chef.id] ? '...' : (followingStates[chef.id] ? 'Seguindo' : 'Seguir')}
                           </Button>
                         )}
                       </div>
