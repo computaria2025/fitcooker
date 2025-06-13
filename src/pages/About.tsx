@@ -250,7 +250,7 @@ const About: React.FC = () => {
                 >
                   <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-xl">
                     <img 
-                      src="https://images.pexels.com/photos/2130134/pexels-photo-2130134.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" 
+                      src="equipe.jpg" 
                       alt="Equipe FitCooker" 
                       className="w-full h-full object-cover"
                     />
