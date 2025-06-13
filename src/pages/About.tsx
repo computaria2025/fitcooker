@@ -21,15 +21,15 @@ const teamMembers = [
   },
   {
     name: 'Andrei Barone',
-    role: 'Designer e Desenvolvedor',
-    description: 'Combina habilidades de design, lógica e desenvolvimento para criar aplicações.',
+    role: 'Designer',
+    description: 'Criativo, idealizador da ideia do fitcooker. Combinou criatividade e designer para pensar e entregar ideias inovadoras.',
     avatar: 'andrei.png',
     icon: <PenTool className="h-10 w-10" />
   },
   {
     name: 'Ígor',
     role: 'Desenvolvedor Fullstack',
-    description: 'Responsável pelo desenvolvimento da aplicação, interface frontend e backend.',
+    description: 'Responsável por todo desenvolvimento da aplicação, interface frontend, backend e conexão com o banco de dados.',
     avatar: 'igor.png',
     icon: <Code className="h-10 w-10" />
   },
