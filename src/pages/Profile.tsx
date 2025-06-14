@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, MapPin, Calendar, Users, ChefHat, Star, Trash2, Edit, Heart, UserPlus, UserMinus } from 'lucide-react';
+import { Camera, MapPin, Calendar, Users, ChefHat, Star, Trash2, Edit, Heart, UserPlus, UserMinus, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useDeleteRecipe } from '@/hooks/useDeleteRecipe';
 import { useUserStats } from '@/hooks/useUserStats';
 import { useFollowers } from '@/hooks/useFollowers';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import RecipeCard from '@/components/ui/RecipeCard';
@@ -24,7 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import PreferencesSelector from '@/components/ui/PreferencesSelector';
 
 const Profile: React.FC = () => {
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile, updateProfile, deleteAccount } = useAuth();
   const { data: allRecipes, loading, refetch } = useRecipes();
   const { deleteRecipe, isDeleting } = useDeleteRecipe();
   const { stats, loading: statsLoading, refetch: refetchStats } = useUserStats(user?.id);
@@ -35,12 +36,16 @@ const Profile: React.FC = () => {
     fetchFollowing 
   } = useFollowers(user?.id);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [userRecipes, setUserRecipes] = useState<Recipe[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
   const [editingProfile, setEditingProfile] = useState(false);
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
+  const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
+  const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [profileData, setProfileData] = useState({
     nome: profile?.nome || '',
     bio: profile?.bio || '',
@@ -195,6 +200,47 @@ const Profile: React.FC = () => {
 
   const handleAvatarUpload = (url: string) => {
     setProfileData(prev => ({ ...prev, avatar_url: url }));
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deleteAccountPassword.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, insira sua senha.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDeletingAccount(true);
+
+    try {
+      const { error } = await deleteAccount(deleteAccountPassword);
+      
+      if (error) {
+        toast({
+          title: "Erro ao deletar conta",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Conta deletada",
+          description: "Sua conta foi excluída com sucesso.",
+        });
+        navigate('/');
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível deletar a conta. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingAccount(false);
+      setDeleteAccountDialogOpen(false);
+      setDeleteAccountPassword('');
+    }
   };
 
   if (!user) {
@@ -442,7 +488,7 @@ const Profile: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-white rounded-3xl shadow-lg p-8"
+            className="bg-white rounded-3xl shadow-lg p-8 mb-8"
           >
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Receitas Favoritas</h2>
             
@@ -492,6 +538,87 @@ const Profile: React.FC = () => {
                 </p>
               </div>
             )}
+          </motion.div>
+
+          {/* Delete Account Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-white rounded-3xl shadow-lg p-8"
+          >
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Zona de Perigo</h2>
+            <div className="border border-red-200 rounded-lg p-6 bg-red-50">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-red-900">Deletar Conta</h3>
+                  <p className="text-sm text-red-700">
+                    Esta ação é irreversível. Todos os seus dados, receitas e informações serão permanentemente excluídos.
+                  </p>
+                </div>
+              </div>
+              
+              <AlertDialog open={deleteAccountDialogOpen} onOpenChange={setDeleteAccountDialogOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Deletar Minha Conta
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-red-600">Deletar Conta Permanentemente</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      <strong className="text-red-600">ATENÇÃO:</strong> Esta ação é irreversível!
+                      <br /><br />
+                      Ao deletar sua conta, você perderá permanentemente:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Todas as suas receitas</li>
+                        <li>Seus dados de perfil</li>
+                        <li>Suas receitas favoritas</li>
+                        <li>Seus seguidores e pessoas que você segue</li>
+                        <li>Todas as avaliações que você fez</li>
+                      </ul>
+                      <br />
+                      Para confirmar, digite sua senha atual:
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="delete-password">Senha Atual</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                          id="delete-password"
+                          type="password"
+                          value={deleteAccountPassword}
+                          onChange={(e) => setDeleteAccountPassword(e.target.value)}
+                          placeholder="Digite sua senha atual"
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setDeleteAccountPassword('')}>
+                      Cancelar
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteAccount}
+                      disabled={isDeletingAccount || !deleteAccountPassword.trim()}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {isDeletingAccount ? 'Deletando...' : 'Sim, Deletar Conta'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </motion.div>
 
           {/* Dialogs */}

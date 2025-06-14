@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +26,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<any>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<any>;
+  deleteAccount: (password: string) => Promise<any>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
   checkProfileComplete: (userId: string) => Promise<boolean>;
 }
@@ -91,6 +93,7 @@ export const useAuth = (): AuthContextType => {
         password,
         options: {
           data: metadata,
+          emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
@@ -119,10 +122,41 @@ export const useAuth = (): AuthContextType => {
 
   const resetPassword = async (email: string) => {
     try {
-      const result = await supabase.auth.resetPasswordForEmail(email);
+      const result = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/`,
+      });
       return result;
     } catch (error) {
       return { error: { message: 'Erro inesperado ao resetar senha' } };
+    }
+  };
+
+  const deleteAccount = async (password: string) => {
+    if (!user || !session) {
+      return { error: { message: 'Usuário não está logado' } };
+    }
+
+    try {
+      // First verify the password by trying to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password,
+      });
+
+      if (signInError) {
+        return { error: { message: 'Senha incorreta' } };
+      }
+
+      // Delete the user account
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+      
+      if (deleteError) {
+        return { error: { message: 'Erro ao deletar conta. Tente novamente.' } };
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: { message: 'Erro inesperado ao deletar conta' } };
     }
   };
 
@@ -173,6 +207,7 @@ export const useAuth = (): AuthContextType => {
     signIn,
     signOut,
     resetPassword,
+    deleteAccount,
     updateProfile,
     checkProfileComplete,
   };
