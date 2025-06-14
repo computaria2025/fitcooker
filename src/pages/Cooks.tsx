@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChefHat, Users, Star, MapPin } from 'lucide-react';
