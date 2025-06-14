@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, MapPin, Calendar, Users, ChefHat, Star, Trash2, Edit, Heart, UserPlus, UserMinus } from 'lucide-react';
@@ -22,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Recipe } from '@/types/recipe';
 import { useToast } from '@/hooks/use-toast';
+import PreferencesSelector from '@/components/ui/PreferencesSelector';
 
 const Profile: React.FC = () => {
   const { user, profile, updateProfile } = useAuth();
@@ -175,7 +175,6 @@ const Profile: React.FC = () => {
       await updateProfile({
         nome: profileData.nome,
         bio: profileData.bio,
-        avatar_url: profileData.avatar_url,
         preferencias: profileData.preferencias
       });
 
@@ -265,15 +264,10 @@ const Profile: React.FC = () => {
                             placeholder="Conte um pouco sobre você..."
                           />
                         </div>
-                        <div>
-                          <Label htmlFor="avatar">URL da Foto</Label>
-                          <Input
-                            id="avatar"
-                            value={profileData.avatar_url}
-                            onChange={(e) => setProfileData({ ...profileData, avatar_url: e.target.value })}
-                            placeholder="https://exemplo.com/foto.jpg"
-                          />
-                        </div>
+                        <PreferencesSelector
+                          preferences={profileData.preferencias}
+                          onChange={(preferences) => setProfileData({ ...profileData, preferencias })}
+                        />
                       </div>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setEditingProfile(false)}>
@@ -288,6 +282,17 @@ const Profile: React.FC = () => {
                 </div>
 
                 <p className="text-gray-600 mb-4">{profile?.bio || 'Apaixonado por culinária e vida saudável'}</p>
+
+                {/* Display preferences */}
+                {profile?.preferencias && profile.preferencias.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {profile.preferencias.map((preference, index) => (
+                      <Badge key={index} variant="outline" className="text-fitcooker-orange border-fitcooker-orange">
+                        {preference}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
 
                 <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
                   <div className="flex items-center gap-1">
