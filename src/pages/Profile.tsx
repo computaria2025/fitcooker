@@ -294,6 +294,7 @@ const Profile: React.FC = () => {
                   </div>
                 )}
 
+                {/* ... keep existing code (rest of the profile information, stats, etc.) */}
                 <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
