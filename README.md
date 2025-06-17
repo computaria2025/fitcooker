@@ -1,7 +1,5 @@
 # FitCooker: Sua Plataforma Completa de Receitas e Nutrição 🍳💪
 
-![FitCooker Home Page](/public/equipe.jpg)
-
 <div align="center">
 
 [![React](https://img.shields.io/badge/React-18.3-%2361DAFB?logo=react)](https://react.dev/)
@@ -15,6 +13,7 @@
 **FitCooker** é uma plataforma web moderna e interativa, desenhada para entusiastas da culinária e da vida saudável. Crie, descubra e compartilhe receitas, com cálculo automático de macronutrientes, interaja com uma comunidade de chefs e organize sua jornada para uma alimentação melhor.
 
 ### ✨ [Acesse o Projeto Online clicando aqui!](https://fitcooker-v3.lovable.app)
+![FitCooker Home Page](/public/equipe.jpg)
 
 ---
 
