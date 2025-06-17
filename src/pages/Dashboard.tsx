@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChefHat, Heart, Star, Users, BookOpen, TrendingUp, Award, Plus } from 'lucide-react';
@@ -64,15 +65,59 @@ const Dashboard: React.FC = () => {
 
   const fetchFeaturedChefs = async () => {
     try {
-      const { data } = await supabase
+      // Get chefs with their average rating from their recipes
+      const { data: chefsWithRatings } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          id,
+          nome,
+          avatar_url,
+          receitas_count,
+          seguidores_count,
+          receitas!inner(nota_media)
+        `)
         .eq('is_chef', true)
-        .order('seguidores_count', { ascending: false })
-        .limit(4);
+        .gt('receitas_count', 0);
 
-      if (data) {
-        setFeaturedChefs(data);
+      if (chefsWithRatings) {
+        // Calculate average rating for each chef
+        const chefsWithAvgRating = chefsWithRatings.map(chef => {
+          const validRatings = chef.receitas
+            .map((r: any) => r.nota_media)
+            .filter((rating: number) => rating > 0);
+          
+          const avgRating = validRatings.length > 0 
+            ? validRatings.reduce((sum: number, rating: number) => sum + rating, 0) / validRatings.length
+            : 0;
+
+          return {
+            id: chef.id,
+            nome: chef.nome,
+            avatar_url: chef.avatar_url,
+            receitas_count: chef.receitas_count,
+            seguidores_count: chef.seguidores_count,
+            nota_media: avgRating > 0 ? Number(avgRating.toFixed(1)) : null,
+          };
+        });
+
+        // Sort by followers count and rating, then take top 4
+        const sortedChefs = chefsWithAvgRating.sort((a, b) => {
+          // First priority: rating (if available)
+          if (a.nota_media && b.nota_media) {
+            if (a.nota_media !== b.nota_media) {
+              return b.nota_media - a.nota_media;
+            }
+          } else if (a.nota_media && !b.nota_media) {
+            return -1;
+          } else if (!a.nota_media && b.nota_media) {
+            return 1;
+          }
+          
+          // Second priority: followers count
+          return b.seguidores_count - a.seguidores_count;
+        }).slice(0, 4);
+
+        setFeaturedChefs(sortedChefs);
       }
     } catch (error) {
       console.error('Error fetching featured chefs:', error);
