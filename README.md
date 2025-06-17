@@ -14,7 +14,7 @@
 
 **FitCooker** é uma plataforma web moderna e interativa, desenhada para entusiastas da culinária e da vida saudável. Crie, descubra e compartilhe receitas, com cálculo automático de macronutrientes, interaja com uma comunidade de chefs e organize sua jornada para uma alimentação melhor.
 
-### ✨ [Acesse o Projeto Online (se disponível)](https://SEU_LINK_AQUI)
+### ✨ [Acesse o Projeto Online clicando aqui!](https://fitcooker-v3.lovable.app)
 
 ---
 
