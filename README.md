@@ -136,7 +136,7 @@ Para rodar o projeto localmente, siga os passos abaixo.
 
 A estrutura de pastas foi organizada para facilitar a manutenção e escalabilidade do projeto.
 
-
+```
 /
 ├── public/                # Arquivos estáticos
 ├── src/
@@ -156,7 +156,7 @@ A estrutura de pastas foi organizada para facilitar a manutenção e escalabilid
 ├── .env.example           # Exemplo de variáveis de ambiente
 ├── package.json
 └── README.md
-
+```
 
 ---
 
