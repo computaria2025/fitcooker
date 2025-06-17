@@ -55,13 +55,13 @@ Esta seção lista as principais tecnologias e bibliotecas que dão vida ao FitC
 | [React](https://react.dev/) | Biblioteca principal para a construção da interface de usuário. |
 | [Vite](https://vitejs.dev/) | Ferramenta de build moderna e ultra-rápida para o desenvolvimento frontend. |
 | [TypeScript](https://www.typescriptlang.org/) | Superset do JavaScript que adiciona tipagem estática ao código. |
-| **Backend & Banco de Dados** | Supabase e typescript, Via plataforma Lovable |
+| **Backend & Banco de Dados** | Descrição |
 | [Supabase](https://supabase.io/) | Plataforma open-source que oferece banco de dados Postgres, autenticação, armazenamento e APIs. |
-| **Estilização e UI** | |
+| **Estilização e UI** | Descrição |
 | [Tailwind CSS](https://tailwindcss.com/) | Framework CSS utility-first para estilização rápida e consistente. |
 | [shadcn/ui](https://ui.shadcn.com/) | Coleção de componentes de UI reusáveis e acessíveis. |
 | [Framer Motion](https://www.framer.com/motion/) | Biblioteca para criar animações fluidas e complexas. |
-| **Gerenciamento de Dados e Estado** | |
+| **Gerenciamento de Dados e Estado** | Descrição |
 | [React Query](https://tanstack.com/query/latest) | Gerenciamento de estado de servidor, cache, e sincronização de dados. |
 | [React Router](https://reactrouter.com/) | Para gerenciamento de rotas na aplicação. |
 | [React Hook Form](https://react-hook-form.com/) | Gerenciamento de formulários performático e flexível. |
