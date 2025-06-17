@@ -50,13 +50,12 @@ O FitCooker foi criado para resolver a dificuldade de encontrar e gerenciar rece
 
 Esta seção lista as principais tecnologias e bibliotecas que dão vida ao FitCooker.
 
-| Tecnologia | Descrição |
+| Tecnologia/**Framework Principal** | Descrição |
 | :--- | :--- |
-| **Framework Principal** | |
 | [React](https://react.dev/) | Biblioteca principal para a construção da interface de usuário. |
 | [Vite](https://vitejs.dev/) | Ferramenta de build moderna e ultra-rápida para o desenvolvimento frontend. |
 | [TypeScript](https://www.typescriptlang.org/) | Superset do JavaScript que adiciona tipagem estática ao código. |
-| **Backend & Banco de Dados** | |
+| **Backend & Banco de Dados** | Supabase e typescript, Via plataforma Lovable |
 | [Supabase](https://supabase.io/) | Plataforma open-source que oferece banco de dados Postgres, autenticação, armazenamento e APIs. |
 | **Estilização e UI** | |
 | [Tailwind CSS](https://tailwindcss.com/) | Framework CSS utility-first para estilização rápida e consistente. |
