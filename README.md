@@ -1,6 +1,6 @@
 # FitCooker: Sua Plataforma Completa de Receitas e Nutrição 🍳💪
 
-![FitCooker Home Page](https://i.imgur.com/kY8p2k8.png)
+![FitCooker Home Page](![image](https://github.com/user-attachments/assets/92e88ef9-8883-4274-b6c6-60e8f2d73ecf))
 
 <div align="center">
 
