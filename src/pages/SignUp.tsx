@@ -55,6 +55,21 @@ const SignUp: React.FC = () => {
     };
   };
 
+  const checkEmailExists = async (email: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email.toLowerCase())
+        .maybeSingle();
+
+      return !!data;
+    } catch (error) {
+      console.error('Error checking email:', error);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -73,6 +88,17 @@ const SignUp: React.FC = () => {
       toast({
         title: "Email inválido",
         description: "Por favor, insira um email válido (exemplo: usuario@email.com).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Verificar se email já está em uso
+    const emailExists = await checkEmailExists(email);
+    if (emailExists) {
+      toast({
+        title: "Email já em uso",
+        description: "Este email já está cadastrado. Tente fazer login ou use outro email.",
         variant: "destructive",
       });
       return;
@@ -105,6 +131,8 @@ const SignUp: React.FC = () => {
       const { error } = await signUp(email, password, { nome: name });
       
       if (error) {
+        console.log('SignUp error:', error.message);
+        
         let errorMessage = "Erro ao criar conta.";
         
         if (error.message.includes("User already registered") || 
@@ -116,11 +144,13 @@ const SignUp: React.FC = () => {
           errorMessage = "Email inválido. Por favor, verifique o formato do email.";
         } else if (error.message.includes("Password should be") || 
                    error.message.includes("weak_password")) {
-          errorMessage = "A senha não atende aos requisitos de segurança.";
+          errorMessage = "A senha não atende aos requisitos de segurança. Use pelo menos 8 caracteres com maiúscula, minúscula, número e caractere especial.";
         } else if (error.message.includes("signup_disabled")) {
           errorMessage = "Cadastro temporariamente desabilitado.";
         } else if (error.message.includes("email_not_allowed")) {
           errorMessage = "Este domínio de email não é permitido.";
+        } else if (error.message.includes("rate_limit")) {
+          errorMessage = "Muitas tentativas de cadastro. Tente novamente mais tarde.";
         }
         
         toast({
@@ -136,6 +166,7 @@ const SignUp: React.FC = () => {
         navigate('/');
       }
     } catch (error) {
+      console.error('SignUp catch error:', error);
       toast({
         title: "Erro de conexão",
         description: "Não foi possível conectar ao servidor. Tente novamente.",

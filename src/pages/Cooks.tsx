@@ -85,7 +85,7 @@ const Cooks: React.FC = () => {
               .select('id')
               .eq('seguidor_id', user.id)
               .eq('seguido_id', chef.id)
-              .single();
+              .maybeSingle();
 
             return { id: chef.id, isFollowing: !!followData };
           })

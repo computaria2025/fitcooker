@@ -36,22 +36,26 @@ const Login: React.FC = () => {
       const { error } = await signIn(email, password);
       
       if (error) {
+        console.log('Login error:', error.message);
+        
         let errorMessage = "Erro ao fazer login.";
         
         if (error.message.includes("Invalid login credentials") || 
             error.message.includes("invalid_credentials") ||
             error.message.includes("Invalid email or password")) {
-          errorMessage = "Email ou senha incorretos. Verifique suas credenciais e tente novamente.";
+          errorMessage = "E-mail ou senha inválidos. Verifique suas credenciais e tente novamente.";
         } else if (error.message.includes("Email not confirmed")) {
           errorMessage = "Por favor, confirme seu email antes de fazer login.";
         } else if (error.message.includes("Too many requests")) {
           errorMessage = "Muitas tentativas de login. Tente novamente mais tarde.";
         } else if (error.message.includes("signup_disabled")) {
           errorMessage = "Cadastro temporariamente desabilitado.";
+        } else {
+          errorMessage = "E-mail ou senha inválidos.";
         }
         
         toast({
-          title: "Credenciais inválidas",
+          title: "E-mail ou senha inválidos",
           description: errorMessage,
           variant: "destructive",
         });
@@ -63,9 +67,10 @@ const Login: React.FC = () => {
         navigate('/');
       }
     } catch (error) {
+      console.error('Login catch error:', error);
       toast({
-        title: "Erro de conexão",
-        description: "Não foi possível conectar ao servidor. Tente novamente.",
+        title: "E-mail ou senha inválidos",
+        description: "Verifique suas credenciais e tente novamente.",
         variant: "destructive",
       });
     } finally {
