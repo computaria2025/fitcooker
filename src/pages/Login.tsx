@@ -38,16 +38,20 @@ const Login: React.FC = () => {
       if (error) {
         let errorMessage = "Erro ao fazer login.";
         
-        if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Email ou senha incorretos.";
+        if (error.message.includes("Invalid login credentials") || 
+            error.message.includes("invalid_credentials") ||
+            error.message.includes("Invalid email or password")) {
+          errorMessage = "Email ou senha incorretos. Verifique suas credenciais e tente novamente.";
         } else if (error.message.includes("Email not confirmed")) {
           errorMessage = "Por favor, confirme seu email antes de fazer login.";
         } else if (error.message.includes("Too many requests")) {
           errorMessage = "Muitas tentativas de login. Tente novamente mais tarde.";
+        } else if (error.message.includes("signup_disabled")) {
+          errorMessage = "Cadastro temporariamente desabilitado.";
         }
         
         toast({
-          title: "Erro no login",
+          title: "Credenciais inválidas",
           description: errorMessage,
           variant: "destructive",
         });
@@ -60,8 +64,8 @@ const Login: React.FC = () => {
       }
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro inesperado.",
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor. Tente novamente.",
         variant: "destructive",
       });
     } finally {

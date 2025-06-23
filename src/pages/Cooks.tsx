@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChefHat, Users, Star, MapPin } from 'lucide-react';
+import { ChefHat, Users, Star, MapPin, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useFollowers } from '@/hooks/useFollowers';
@@ -295,11 +296,20 @@ const Cooks: React.FC = () => {
                             disabled={followLoading[chef.id]}
                             className={`${
                               followingStates[chef.id] 
-                                ? 'border-gray-300 text-gray-600 hover:bg-red-50 hover:text-red-600 hover:border-red-300' 
+                                ? 'border-green-300 text-green-600 hover:bg-green-50 hover:text-green-700 hover:border-green-400' 
                                 : 'bg-fitcooker-orange hover:bg-fitcooker-orange/90 text-white'
-                            } transition-colors duration-300`}
+                            } transition-colors duration-300 min-w-[80px]`}
                           >
-                            {followLoading[chef.id] ? '...' : (followingStates[chef.id] ? 'Seguindo' : 'Seguir')}
+                            {followLoading[chef.id] ? (
+                              '...'
+                            ) : followingStates[chef.id] ? (
+                              <div className="flex items-center gap-1">
+                                <Check className="w-3 h-3" />
+                                <span className="text-xs">Seguindo</span>
+                              </div>
+                            ) : (
+                              'Seguir'
+                            )}
                           </Button>
                         )}
                       </div>

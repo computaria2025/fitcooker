@@ -21,9 +21,44 @@ const SignUp: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    if (password.length < 8) {
+      errors.push('Pelo menos 8 caracteres');
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      errors.push('Pelo menos uma letra minúscula');
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      errors.push('Pelo menos uma letra maiúscula');
+    }
+    
+    if (!/\d/.test(password)) {
+      errors.push('Pelo menos um número');
+    }
+    
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      errors.push('Pelo menos um caractere especial (!@#$%^&*...)');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Verificação de campos obrigatórios
     if (!name || !email || !password || !confirmPassword) {
       toast({
         title: "Campos obrigatórios",
@@ -33,19 +68,32 @@ const SignUp: React.FC = () => {
       return;
     }
 
-    if (password !== confirmPassword) {
+    // Validação de email
+    if (!validateEmail(email)) {
       toast({
-        title: "Senhas não coincidem",
-        description: "Por favor, verifique se as senhas são iguais.",
+        title: "Email inválido",
+        description: "Por favor, insira um email válido (exemplo: usuario@email.com).",
         variant: "destructive",
       });
       return;
     }
 
-    if (password.length < 6) {
+    // Validação de senha
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
       toast({
-        title: "Senha muito curta",
-        description: "A senha deve ter pelo menos 6 caracteres.",
+        title: "Senha não atende aos requisitos",
+        description: `A senha deve ter: ${passwordValidation.errors.join(', ')}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Verificação de confirmação de senha
+    if (password !== confirmPassword) {
+      toast({
+        title: "Senhas não coincidem",
+        description: "Por favor, verifique se as senhas são iguais.",
         variant: "destructive",
       });
       return;
@@ -59,12 +107,20 @@ const SignUp: React.FC = () => {
       if (error) {
         let errorMessage = "Erro ao criar conta.";
         
-        if (error.message.includes("User already registered")) {
-          errorMessage = "Este email já está cadastrado. Tente fazer login.";
-        } else if (error.message.includes("Invalid email")) {
-          errorMessage = "Email inválido. Por favor, verifique o formato.";
-        } else if (error.message.includes("Password should be")) {
-          errorMessage = "A senha deve ter pelo menos 6 caracteres.";
+        if (error.message.includes("User already registered") || 
+            error.message.includes("already been registered") ||
+            error.message.includes("email_address_not_authorized")) {
+          errorMessage = "Este email já está cadastrado. Tente fazer login ou use outro email.";
+        } else if (error.message.includes("Invalid email") || 
+                   error.message.includes("invalid_email")) {
+          errorMessage = "Email inválido. Por favor, verifique o formato do email.";
+        } else if (error.message.includes("Password should be") || 
+                   error.message.includes("weak_password")) {
+          errorMessage = "A senha não atende aos requisitos de segurança.";
+        } else if (error.message.includes("signup_disabled")) {
+          errorMessage = "Cadastro temporariamente desabilitado.";
+        } else if (error.message.includes("email_not_allowed")) {
+          errorMessage = "Este domínio de email não é permitido.";
         }
         
         toast({
@@ -81,8 +137,8 @@ const SignUp: React.FC = () => {
       }
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro inesperado.",
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -172,7 +228,7 @@ const SignUp: React.FC = () => {
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Mínimo 8 caracteres"
                       className="pl-10 pr-10 h-12"
                       required
                     />
@@ -188,6 +244,9 @@ const SignUp: React.FC = () => {
                       )}
                     </button>
                   </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    A senha deve ter pelo menos 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial.
+                  </p>
                 </div>
 
                 <div>
