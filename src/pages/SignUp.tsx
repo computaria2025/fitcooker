@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,7 @@ const SignUp: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const { signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -72,56 +74,37 @@ const SignUp: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
     
     // Verificação de campos obrigatórios
     if (!name || !email || !password || !confirmPassword) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos.",
-        variant: "destructive",
-      });
+      setErrorMessage('Por favor, preencha todos os campos.');
       return;
     }
 
     // Validação de email
     if (!validateEmail(email)) {
-      toast({
-        title: "Email inválido",
-        description: "Por favor, insira um email válido (exemplo: usuario@email.com).",
-        variant: "destructive",
-      });
+      setErrorMessage('Por favor, insira um email válido (exemplo: usuario@email.com).');
       return;
     }
 
     // Verificar se email já está em uso
     const emailExists = await checkEmailExists(email);
     if (emailExists) {
-      toast({
-        title: "Email já em uso",
-        description: "Este email já está cadastrado. Tente fazer login ou use outro email.",
-        variant: "destructive",
-      });
+      setErrorMessage('Este email já está cadastrado. Tente fazer login ou use outro email.');
       return;
     }
 
     // Validação de senha
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
-      toast({
-        title: "Senha não atende aos requisitos",
-        description: `A senha deve ter: ${passwordValidation.errors.join(', ')}.`,
-        variant: "destructive",
-      });
+      setErrorMessage(`A senha deve ter: ${passwordValidation.errors.join(', ')}.`);
       return;
     }
 
     // Verificação de confirmação de senha
     if (password !== confirmPassword) {
-      toast({
-        title: "Senhas não coincidem",
-        description: "Por favor, verifique se as senhas são iguais.",
-        variant: "destructive",
-      });
+      setErrorMessage('As senhas não coincidem. Por favor, verifique se as senhas são iguais.');
       return;
     }
 
@@ -133,29 +116,31 @@ const SignUp: React.FC = () => {
       if (error) {
         console.log('SignUp error:', error.message);
         
-        let errorMessage = "Erro ao criar conta.";
+        let errorMsg = "Erro ao criar conta.";
         
         if (error.message.includes("User already registered") || 
             error.message.includes("already been registered") ||
             error.message.includes("email_address_not_authorized")) {
-          errorMessage = "Este email já está cadastrado. Tente fazer login ou use outro email.";
+          errorMsg = "Este email já está cadastrado. Tente fazer login ou use outro email.";
         } else if (error.message.includes("Invalid email") || 
                    error.message.includes("invalid_email")) {
-          errorMessage = "Email inválido. Por favor, verifique o formato do email.";
+          errorMsg = "Email inválido. Por favor, verifique o formato do email.";
         } else if (error.message.includes("Password should be") || 
                    error.message.includes("weak_password")) {
-          errorMessage = "A senha não atende aos requisitos de segurança. Use pelo menos 8 caracteres com maiúscula, minúscula, número e caractere especial.";
+          errorMsg = "A senha não atende aos requisitos de segurança. Use pelo menos 8 caracteres com maiúscula, minúscula, número e caractere especial.";
         } else if (error.message.includes("signup_disabled")) {
-          errorMessage = "Cadastro temporariamente desabilitado.";
+          errorMsg = "Cadastro temporariamente desabilitado.";
         } else if (error.message.includes("email_not_allowed")) {
-          errorMessage = "Este domínio de email não é permitido.";
+          errorMsg = "Este domínio de email não é permitido.";
         } else if (error.message.includes("rate_limit")) {
-          errorMessage = "Muitas tentativas de cadastro. Tente novamente mais tarde.";
+          errorMsg = "Muitas tentativas de cadastro. Tente novamente mais tarde.";
         }
+        
+        setErrorMessage(errorMsg);
         
         toast({
           title: "Erro no cadastro",
-          description: errorMessage,
+          description: errorMsg,
           variant: "destructive",
         });
       } else {
@@ -167,9 +152,12 @@ const SignUp: React.FC = () => {
       }
     } catch (error) {
       console.error('SignUp catch error:', error);
+      const errorMsg = "Não foi possível conectar ao servidor. Tente novamente.";
+      setErrorMessage(errorMsg);
+      
       toast({
         title: "Erro de conexão",
-        description: "Não foi possível conectar ao servidor. Tente novamente.",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
@@ -311,6 +299,12 @@ const SignUp: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {errorMessage && (
+                <div className="text-red-600 text-sm text-center p-3 bg-red-50 rounded-md border border-red-200">
+                  {errorMessage}
+                </div>
+              )}
 
               <Button
                 type="submit"

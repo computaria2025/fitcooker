@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,19 +14,17 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
     
     if (!email || !password) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos.",
-        variant: "destructive",
-      });
+      setErrorMessage('Por favor, preencha todos os campos.');
       return;
     }
 
@@ -37,26 +35,11 @@ const Login: React.FC = () => {
       
       if (error) {
         console.log('Login error:', error.message);
-        
-        let errorMessage = "Erro ao fazer login.";
-        
-        if (error.message.includes("Invalid login credentials") || 
-            error.message.includes("invalid_credentials") ||
-            error.message.includes("Invalid email or password")) {
-          errorMessage = "E-mail ou senha inválidos. Verifique suas credenciais e tente novamente.";
-        } else if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Por favor, confirme seu email antes de fazer login.";
-        } else if (error.message.includes("Too many requests")) {
-          errorMessage = "Muitas tentativas de login. Tente novamente mais tarde.";
-        } else if (error.message.includes("signup_disabled")) {
-          errorMessage = "Cadastro temporariamente desabilitado.";
-        } else {
-          errorMessage = "E-mail ou senha inválidos.";
-        }
+        setErrorMessage('E-mail ou senha inválidos. Verifique suas credenciais e tente novamente.');
         
         toast({
-          title: "E-mail ou senha inválidos",
-          description: errorMessage,
+          title: "Erro no login",
+          description: "E-mail ou senha inválidos.",
           variant: "destructive",
         });
       } else {
@@ -68,9 +51,11 @@ const Login: React.FC = () => {
       }
     } catch (error) {
       console.error('Login catch error:', error);
+      setErrorMessage('E-mail ou senha inválidos. Verifique suas credenciais e tente novamente.');
+      
       toast({
-        title: "E-mail ou senha inválidos",
-        description: "Verifique suas credenciais e tente novamente.",
+        title: "Erro no login",
+        description: "E-mail ou senha inválidos.",
         variant: "destructive",
       });
     } finally {
@@ -158,6 +143,12 @@ const Login: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {errorMessage && (
+                <div className="text-red-600 text-sm text-center p-3 bg-red-50 rounded-md border border-red-200">
+                  {errorMessage}
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <Link 

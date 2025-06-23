@@ -147,6 +147,10 @@ const Profile: React.FC = () => {
     }
   };
 
+  const handleEditRecipe = (recipeId: number) => {
+    navigate(`/recipe/${recipeId}/edit`);
+  };
+
   const handleUnsaveRecipe = async (recipeId: number) => {
     if (!user) return;
 
@@ -435,35 +439,46 @@ const Profile: React.FC = () => {
                   <div key={recipe.id} className="relative group">
                     <RecipeCard recipe={recipe} />
                     
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <button
-                          className="absolute top-3 right-3 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
-                          disabled={isDeleting}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir Receita</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja excluir a receita "{recipe.titulo}"? 
-                            Esta ação não pode ser desfeita e a receita será removida permanentemente.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteRecipe(recipe.id)}
-                            className="bg-red-500 hover:bg-red-600"
+                    <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <button
+                        onClick={() => handleEditRecipe(recipe.id)}
+                        className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors"
+                        title="Editar receita"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
                             disabled={isDeleting}
+                            title="Excluir receita"
                           >
-                            {isDeleting ? 'Excluindo...' : 'Excluir'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir Receita</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir a receita "{recipe.titulo}"? 
+                              Esta ação não pode ser desfeita e a receita será removida permanentemente.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteRecipe(recipe.id)}
+                              className="bg-red-500 hover:bg-red-600"
+                              disabled={isDeleting}
+                            >
+                              {isDeleting ? 'Excluindo...' : 'Excluir'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 ))}
               </div>
