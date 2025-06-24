@@ -14,6 +14,7 @@ import SignUp from './pages/SignUp';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import AddRecipe from './pages/AddRecipe';
+import RecipeEdit from './pages/RecipeEdit';
 import ForgotPassword from './pages/ForgotPassword';
 import AlimentacaoSaudavel from './pages/AlimentacaoSaudavel';
 import FeaturedPage from './pages/FeaturedPage';
@@ -31,6 +32,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/recipes" element={<Recipes />} />
           <Route path="/recipe/:id" element={<RecipeDetail />} />
+          <Route path="/recipe/:id/edit" element={<RecipeEdit />} />
           <Route path="/cooks" element={<Cooks />} />
           <Route path="/cook/:id" element={<CookProfile />} />
           <Route path="/about" element={<About />} />

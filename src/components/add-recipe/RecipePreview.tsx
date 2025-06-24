@@ -1,8 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Flame, Check, AlertCircle, Utensils } from 'lucide-react';
+import { Clock, Flame, Check, AlertCircle, Utensils, Save } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { useLocation } from 'react-router-dom';
 
 interface RecipePreviewProps {
   title: string;
@@ -49,6 +50,9 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
   isSubmitting,
   categories
 }) => {
+  const location = useLocation();
+  const isEditing = location.pathname.includes('/edit');
+  
   const previewTitle = title || 'Nome da sua receita';
   const previewDesc = description || 'Descrição da sua receita, conte uma pequena história ou dê dicas sobre o prato.';
 
@@ -56,6 +60,12 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
   const proteinPercentage = Math.min(Math.round((totalMacros.protein || 0) / 50 * 100), 100);
   const carbsPercentage = Math.min(Math.round((totalMacros.carbs || 0) / 300 * 100), 100);
   const fatPercentage = Math.min(Math.round((totalMacros.fat || 0) / 70 * 100), 100);
+
+  const buttonText = isEditing 
+    ? (isSubmitting ? "Salvando..." : "Salvar Alterações")
+    : (isSubmitting ? "Publicando..." : "Publicar Receita");
+
+  const buttonIcon = isEditing ? Save : Check;
 
   return (
     <div className="bg-white rounded-xl shadow-lg sticky top-24 overflow-hidden">
@@ -202,8 +212,8 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
             onClick={checkLoginBeforeSubmit}
             disabled={isSubmitting}
           >
-            <Check className="mr-2 h-5 w-5" />
-            {isSubmitting ? "Publicando..." : "Publicar Receita"}
+            <buttonIcon.type {...buttonIcon.props} className="mr-2 h-5 w-5" />
+            {buttonText}
           </Button>
         ) : (
           <Button 
