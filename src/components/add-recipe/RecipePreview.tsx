@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -64,8 +65,6 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
   const buttonText = isEditing 
     ? (isSubmitting ? "Salvando..." : "Salvar Alterações")
     : (isSubmitting ? "Publicando..." : "Publicar Receita");
-
-  const buttonIcon = isEditing ? Save : Check;
 
   return (
     <div className="bg-white rounded-xl shadow-lg sticky top-24 overflow-hidden">
@@ -212,7 +211,11 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
             onClick={checkLoginBeforeSubmit}
             disabled={isSubmitting}
           >
-            <buttonIcon.type {...buttonIcon.props} className="mr-2 h-5 w-5" />
+            {isEditing ? (
+              <Save className="mr-2 h-5 w-5" />
+            ) : (
+              <Check className="mr-2 h-5 w-5" />
+            )}
             {buttonText}
           </Button>
         ) : (
