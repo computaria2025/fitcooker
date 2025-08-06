@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface Chef {
   id: string;
+  user_id: string;
   nome: string;
   avatar_url: string | null;
   bio: string | null;
@@ -23,7 +24,8 @@ interface Chef {
   seguindo_count: number;
   data_cadastro: string;
   is_chef: boolean;
-  preferencias: string[] | null;
+  preferencias?: string[] | null;
+  created_at: string;
 }
 
 const Cooks: React.FC = () => {
@@ -40,66 +42,74 @@ const Cooks: React.FC = () => {
 
   const fetchChefs = async () => {
     try {
-      // Fetch all profiles with their real stats
+      setLoading(true);
+      
+      // Fetch all profiles that have at least one recipe (making them chefs)
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('*')
-        .order('seguidores_count', { ascending: false });
+        .select('*');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching chefs:', error);
+        throw error;
+      }
 
-      // Get real recipe counts for each chef
-      const chefsWithRealStats = await Promise.all(
+      // Get additional stats for each chef and filter those with recipes
+      const chefsWithStats = await Promise.all(
         (profiles || []).map(async (profile) => {
-          // Get real recipe count
-          const { data: recipes } = await supabase
+          // Get recipe count
+          const { count: receitasCount } = await supabase
             .from('receitas')
-            .select('id')
-            .eq('usuario_id', profile.id)
+            .select('*', { count: 'exact', head: true })
+            .eq('usuario_id', profile.user_id)
             .eq('status', 'ativa');
 
-          // Get real followers count
-          const { data: followers } = await supabase
+          // Get followers count
+          const { count: seguidoresCount } = await supabase
             .from('seguidores')
-            .select('id')
-            .eq('seguido_id', profile.id);
+            .select('*', { count: 'exact', head: true })
+            .eq('seguido_id', profile.user_id);
 
-          return {
-            ...profile,
-            receitas_count: recipes?.length || 0,
-            seguidores_count: followers?.length || 0,
-          };
-        })
-      );
+          // Get following count
+          const { count: seguindoCount } = await supabase
+            .from('seguidores')
+            .select('*', { count: 'exact', head: true })
+            .eq('seguidor_id', profile.user_id);
 
-      setChefs(chefsWithRealStats);
-
-      // Check following status for each chef if user is logged in
-      if (user && chefsWithRealStats) {
-        const followingChecks = await Promise.all(
-          chefsWithRealStats.map(async (chef) => {
-            if (chef.id === user.id) return { id: chef.id, isFollowing: false };
-            
+          // Check if current user is following this chef
+          let isFollowing = false;
+          if (user) {
             const { data: followData } = await supabase
               .from('seguidores')
               .select('id')
               .eq('seguidor_id', user.id)
-              .eq('seguido_id', chef.id)
+              .eq('seguido_id', profile.user_id)
               .maybeSingle();
+            
+            isFollowing = !!followData;
+          }
 
-            return { id: chef.id, isFollowing: !!followData };
-          })
-        );
+          return {
+            ...profile,
+            receitas_count: receitasCount || 0,
+            seguidores_count: seguidoresCount || 0,
+            seguindo_count: seguindoCount || 0,
+            isFollowing,
+            is_chef: (receitasCount || 0) > 0,
+            data_cadastro: profile.created_at
+          };
+        })
+      );
 
-        const followingMap = followingChecks.reduce((acc, { id, isFollowing }) => {
-          acc[id] = isFollowing;
-          return acc;
-        }, {} as Record<string, boolean>);
+      // Filter only chefs (those with at least one recipe)
+      const activeChefs = chefsWithStats.filter(chef => chef.receitas_count > 0);
+      setChefs(activeChefs);
+      console.log('Chefs data:', activeChefs);
 
-        setFollowingStates(followingMap);
-      }
+      
     } catch (error) {
       console.error('Error fetching chefs:', error);
+      setError('Erro ao carregar chefs');
     } finally {
       setLoading(false);
     }
@@ -143,7 +153,7 @@ const Cooks: React.FC = () => {
         
         // Update chef's follower count
         setChefs(prev => prev.map(chef => 
-          chef.id === chefId 
+          chef.user_id === chefId 
             ? { ...chef, seguidores_count: Math.max(0, chef.seguidores_count - 1) }
             : chef
         ));
@@ -167,7 +177,7 @@ const Cooks: React.FC = () => {
         
         // Update chef's follower count
         setChefs(prev => prev.map(chef => 
-          chef.id === chefId 
+          chef.user_id === chefId 
             ? { ...chef, seguidores_count: chef.seguidores_count + 1 }
             : chef
         ));
@@ -285,24 +295,24 @@ const Cooks: React.FC = () => {
                           size="sm"
                           className="flex-1 border-fitcooker-orange text-fitcooker-orange hover:bg-fitcooker-orange hover:text-white transition-colors duration-300"
                         >
-                          <a href={`/cook/${chef.id}`}>Ver Perfil</a>
+                          <a href={`/cook/${chef.user_id}`}>Ver Perfil</a>
                         </Button>
                         
-                        {user && chef.id !== user.id && (
+                        {user && chef.user_id !== user.id && (
                           <Button
-                            onClick={() => handleFollow(chef.id)}
+                            onClick={() => handleFollow(chef.user_id)}
                             size="sm"
-                            variant={followingStates[chef.id] ? "outline" : "default"}
-                            disabled={followLoading[chef.id]}
+                            variant={followingStates[chef.user_id] ? "outline" : "default"}
+                            disabled={followLoading[chef.user_id]}
                             className={`${
-                              followingStates[chef.id] 
+                              followingStates[chef.user_id] 
                                 ? 'border-green-300 text-green-600 hover:bg-green-50 hover:text-green-700 hover:border-green-400' 
                                 : 'bg-fitcooker-orange hover:bg-fitcooker-orange/90 text-white'
                             } transition-colors duration-300 min-w-[80px]`}
                           >
-                            {followLoading[chef.id] ? (
+                            {followLoading[chef.user_id] ? (
                               '...'
-                            ) : followingStates[chef.id] ? (
+                            ) : followingStates[chef.user_id] ? (
                               <div className="flex items-center gap-1">
                                 <Check className="w-3 h-3" />
                                 <span className="text-xs">Seguindo</span>

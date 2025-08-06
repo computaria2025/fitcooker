@@ -5,16 +5,19 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface Profile {
   id: string;
+  user_id: string;
   nome: string;
-  email: string;
   avatar_url?: string;
   bio?: string;
-  is_chef: boolean;
-  receitas_count: number;
-  seguidores_count: number;
-  seguindo_count: number;
   preferencias?: string[];
-  data_cadastro: string;
+  created_at: string;
+  updated_at: string;
+  data_nascimento?: string;
+  peso?: number;
+  altura?: number;
+  nivel_atividade?: string;
+  objetivo?: string;
+  restricoes_alimentares?: string[];
 }
 
 interface AuthContextType {
@@ -71,7 +74,7 @@ export const useAuth = (): AuthContextType => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('user_id', userId)
         .single();
 
       if (error) {
@@ -167,7 +170,7 @@ export const useAuth = (): AuthContextType => {
       const { error } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('id', user.id);
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -187,7 +190,7 @@ export const useAuth = (): AuthContextType => {
       const { data, error } = await supabase
         .from('profiles')
         .select('nome, bio')
-        .eq('id', userId)
+        .eq('user_id', userId)
         .single();
 
       if (error) return false;

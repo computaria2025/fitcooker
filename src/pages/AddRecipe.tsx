@@ -395,7 +395,7 @@ const AddRecipe: React.FC = () => {
           .from('ingredientes')
           .select('id')
           .eq('nome', ingredient.name)
-          .single();
+          .maybeSingle();
         
         let ingredientId = existingIngredient?.id;
         
@@ -404,10 +404,10 @@ const AddRecipe: React.FC = () => {
             .from('ingredientes')
             .insert({
               nome: ingredient.name,
-              proteina: ingredient.protein,
-              carboidratos: ingredient.carbs,
-              gorduras: ingredient.fat,
-              calorias: ingredient.calories,
+              proteinas_por_100g: ingredient.protein,
+              carboidratos_por_100g: ingredient.carbs,
+              gorduras_por_100g: ingredient.fat,
+              calorias_por_100g: ingredient.calories,
               unidade_padrao: ingredient.unit
             })
             .select()
@@ -438,7 +438,7 @@ const AddRecipe: React.FC = () => {
           .from('receita_passos')
           .insert({
             receita_id: recipeId,
-            ordem: step.order,
+            numero_passo: step.order,
             descricao: step.description
           });
         
@@ -457,12 +457,18 @@ const AddRecipe: React.FC = () => {
         if (categoryError) throw categoryError;
       }
       
-      // 6. Calculate nutritional information
-      const { error: macroError } = await supabase.rpc('calcular_macros_receita', {
-        receita_id_param: recipeId
-      });
+      // 6. Calculate and update nutritional information
+      const { error: updateError } = await supabase
+        .from('receitas')
+        .update({
+          calorias_total: totalMacros.calories,
+          proteinas_total: totalMacros.protein,
+          carboidratos_total: totalMacros.carbs,
+          gorduras_total: totalMacros.fat
+        })
+        .eq('id', recipeId);
       
-      if (macroError) console.error('Erro ao calcular macros:', macroError);
+      if (updateError) console.error('Erro ao atualizar macros:', updateError);
       
       toast({
         title: "Receita criada com sucesso!",

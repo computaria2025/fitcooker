@@ -87,9 +87,8 @@ const Profile: React.FC = () => {
           receita_id,
           receitas (
             *,
-            profiles(nome, avatar_url),
-            receita_categorias(categorias(nome)),
-            informacao_nutricional(*)
+            profiles!usuario_id(nome, avatar_url),
+            receita_categorias(categorias(nome))
           )
         `)
         .eq('usuario_id', user.id);
@@ -124,10 +123,10 @@ const Profile: React.FC = () => {
           },
           categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
           macros: {
-            calories: recipe.informacao_nutricional?.[0]?.calorias_totais || 0,
-            protein: recipe.informacao_nutricional?.[0]?.proteinas_totais || 0,
-            carbs: recipe.informacao_nutricional?.[0]?.carboidratos_totais || 0,
-            fat: recipe.informacao_nutricional?.[0]?.gorduras_totais || 0
+            calories: recipe.calorias_total || 0,
+            protein: recipe.proteinas_total || 0,
+            carbs: recipe.carboidratos_total || 0,
+            fat: recipe.gorduras_total || 0
           }
         };
       });
@@ -347,7 +346,7 @@ const Profile: React.FC = () => {
                 <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    Membro desde {new Date(profile?.data_cadastro || '').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                    Membro desde {new Date(profile?.created_at || '').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                   </div>
                   <button
                     onClick={() => setFollowersDialogOpen(true)}
@@ -369,7 +368,7 @@ const Profile: React.FC = () => {
                   </div>
                 </div>
 
-                {profile?.is_chef && (
+                {(statsLoading ? false : (stats?.receitas_count || 0) > 0) && (
                   <Badge className="bg-fitcooker-orange text-white">
                     Chef Verificado
                   </Badge>

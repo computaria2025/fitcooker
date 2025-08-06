@@ -21,9 +21,8 @@ export const useRecipes = () => {
         .from('receitas')
         .select(`
           *,
-          profiles(nome, avatar_url),
-          receita_categorias(categorias(nome)),
-          informacao_nutricional(*)
+          profiles!usuario_id(nome, avatar_url),
+          receita_categorias(categorias(nome))
         `)
         .eq('status', 'ativa')
         .order('created_at', { ascending: false });
@@ -65,10 +64,10 @@ export const useRecipes = () => {
         },
         categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
         macros: {
-          calories: recipe.informacao_nutricional?.[0]?.calorias_totais || 0,
-          protein: recipe.informacao_nutricional?.[0]?.proteinas_totais || 0,
-          carbs: recipe.informacao_nutricional?.[0]?.carboidratos_totais || 0,
-          fat: recipe.informacao_nutricional?.[0]?.gorduras_totais || 0
+          calories: recipe.calorias_total || 0,
+          protein: recipe.proteinas_total || 0,
+          carbs: recipe.carboidratos_total || 0,
+          fat: recipe.gorduras_total || 0
         }
       }));
 
