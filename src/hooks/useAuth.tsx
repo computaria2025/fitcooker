@@ -167,15 +167,22 @@ export const useAuth = (): AuthContextType => {
     if (!user) return;
 
     try {
+      // Map UI field "preferencias" to DB column "restricoes_alimentares"
+      const { preferencias, ...rest } = updates as any;
+      const payload: any = { ...rest };
+      if (typeof preferencias !== 'undefined') {
+        payload.restricoes_alimentares = preferencias;
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(payload)
         .eq('user_id', user.id);
 
       if (error) throw error;
 
       // Update local profile state
-      setProfile(prev => prev ? { ...prev, ...updates } : prev);
+      setProfile(prev => prev ? { ...prev, ...payload } : prev);
       
       // Optionally refetch profile for consistency
       await fetchProfile(user.id);

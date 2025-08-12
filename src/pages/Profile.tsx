@@ -50,7 +50,7 @@ const Profile: React.FC = () => {
     nome: profile?.nome || '',
     bio: profile?.bio || '',
     avatar_url: profile?.avatar_url || '',
-    preferencias: profile?.preferencias || []
+    preferencias: (profile?.restricoes_alimentares as string[] | undefined) || []
   });
 
   useEffect(() => {
@@ -66,7 +66,7 @@ const Profile: React.FC = () => {
         nome: profile.nome || '',
         bio: profile.bio || '',
         avatar_url: profile.avatar_url || '',
-        preferencias: profile.preferencias || []
+        preferencias: (profile.restricoes_alimentares as string[] | undefined) || []
       });
     }
   }, [profile]);
@@ -183,6 +183,7 @@ const Profile: React.FC = () => {
       await updateProfile({
         nome: profileData.nome,
         bio: profileData.bio,
+        avatar_url: profileData.avatar_url,
         preferencias: profileData.preferencias
       });
 

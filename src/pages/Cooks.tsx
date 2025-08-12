@@ -97,6 +97,7 @@ const Cooks: React.FC = () => {
             seguindo_count: seguindoCount || 0,
             isFollowing,
             is_chef: (receitasCount || 0) > 0,
+            preferencias: (profile.restricoes_alimentares as string[] | undefined) || [],
             data_cadastro: profile.created_at
           };
         })

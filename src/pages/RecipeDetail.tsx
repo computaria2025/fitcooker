@@ -20,6 +20,7 @@ const RecipeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const [recipe, setRecipe] = useState<any>(null);
+  const [authorProfile, setAuthorProfile] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,12 +39,9 @@ const RecipeDetail: React.FC = () => {
         .from('receitas')
         .select(`
           *,
-          profiles(id, nome, avatar_url),
           receita_categorias(categorias(nome)),
-          receita_ingredientes(*, ingredientes(nome, unidade_padrao)),
-          receita_passos(*),
-          receita_midias(*),
-          informacao_nutricional(*)
+          receita_ingredientes(*),
+          receita_passos(*)
         `)
         .eq('id', Number(id))
         .eq('status', 'ativa')
@@ -56,10 +54,36 @@ const RecipeDetail: React.FC = () => {
         return;
       }
 
-      setRecipe(data);
+      // Enrich ingredients with names
+      let enriched = data;
+      const ingredientIds = (data.receita_ingredientes || []).map((ri: any) => ri.ingrediente_id).filter(Boolean);
+      if (ingredientIds.length > 0) {
+        const { data: ingList } = await supabase
+          .from('ingredientes')
+          .select('id, nome, unidade_padrao')
+          .in('id', ingredientIds);
+        const ingMap = Object.fromEntries((ingList || []).map((i: any) => [i.id, { nome: i.nome, unidade_padrao: i.unidade_padrao }]));
+        enriched = {
+          ...data,
+          receita_ingredientes: (data.receita_ingredientes || []).map((ri: any) => ({
+            ...ri,
+            ingredientes: ingMap[ri.ingrediente_id] || null,
+          })),
+        };
+      }
 
-      // Removido incremento de visualizações (coluna não existe)
+      setRecipe(enriched);
 
+      // Fetch author profile separately
+      const { data: author, error: authorError } = await supabase
+        .from('profiles')
+        .select('user_id, nome, avatar_url')
+        .eq('user_id', data.usuario_id)
+        .maybeSingle();
+
+      if (!authorError) {
+        setAuthorProfile(author || null);
+      }
     } catch (error) {
       console.error('Error fetching recipe:', error);
       setError('Erro ao carregar receita');
@@ -86,11 +110,11 @@ const RecipeDetail: React.FC = () => {
     }
   };
 
-  const macros = recipe?.informacao_nutricional?.[0] ? {
-    calories: Math.round(recipe.informacao_nutricional[0].calorias_totais / recipe.porcoes),
-    protein: Math.round(recipe.informacao_nutricional[0].proteinas_totais / recipe.porcoes),
-    carbs: Math.round(recipe.informacao_nutricional[0].carboidratos_totais / recipe.porcoes),
-    fat: Math.round(recipe.informacao_nutricional[0].gorduras_totais / recipe.porcoes),
+  const macros = recipe ? {
+    calories: Math.round((recipe.calorias_total || 0) / (recipe.porcoes || 1)),
+    protein: Math.round((recipe.proteinas_total || 0) / (recipe.porcoes || 1)),
+    carbs: Math.round((recipe.carboidratos_total || 0) / (recipe.porcoes || 1)),
+    fat: Math.round((recipe.gorduras_total || 0) / (recipe.porcoes || 1)),
   } : null;
 
   if (loading) {
@@ -140,12 +164,7 @@ const RecipeDetail: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Image Section */}
                 <div className="relative">
-                  {recipe.receita_midias && recipe.receita_midias.length > 0 ? (
-                    <ImageCarousel 
-                      images={recipe.receita_midias.map((media: any) => media.url)} 
-                      title={recipe.titulo}
-                    />
-                  ) : recipe.imagem_url ? (
+                  {recipe.imagem_url ? (
                     <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
                       <img 
                         src={recipe.imagem_url} 
@@ -229,16 +248,16 @@ const RecipeDetail: React.FC = () => {
                   {/* Author Info */}
                   <div 
                     className="flex items-center space-x-4 p-4 bg-white/80 rounded-2xl shadow-lg backdrop-blur-sm cursor-pointer hover:shadow-xl transition-shadow"
-                    onClick={() => window.location.href = `/cook/${recipe.profiles.id ?? recipe.usuario_id}`}
+                    onClick={() => window.location.href = `/cook/${recipe.usuario_id}`}
                   >
                     <Avatar className="w-16 h-16 border-2 border-fitcooker-orange/20">
-                      <AvatarImage src={recipe.profiles.avatar_url} />
+                      <AvatarImage src={authorProfile?.avatar_url || ''} />
                       <AvatarFallback className="bg-fitcooker-orange text-white text-lg">
-                        {recipe.profiles.nome?.[0] || <ChefHat className="w-8 h-8" />}
+                        {authorProfile?.nome?.[0] || <ChefHat className="w-8 h-8" />}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold text-lg text-gray-900">Chef {recipe.profiles.nome}</p>
+                      <p className="font-semibold text-lg text-gray-900">Chef {authorProfile?.nome || 'Anônimo'}</p>
                       <p className="text-gray-600">Clique para ver o perfil</p>
                     </div>
                   </div>
@@ -266,12 +285,12 @@ const RecipeDetail: React.FC = () => {
                     <CardContent className="p-6">
                       <ul className="space-y-3">
                         {recipe.receita_ingredientes
-                          ?.sort((a: any, b: any) => a.ordem - b.ordem)
+                          ?.sort((a: any, b: any) => (a.ordem ?? 0) - (b.ordem ?? 0))
                           .map((item: any, index: number) => (
                             <li key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-50 transition-colors">
                               <div className="w-2 h-2 bg-fitcooker-orange rounded-full flex-shrink-0"></div>
                               <span className="text-gray-700">
-                                <span className="font-semibold">{item.quantidade} {item.unidade}</span> de {item.ingredientes.nome}
+                                <span className="font-semibold">{item.quantidade} {item.unidade}</span> de {item.ingredientes?.nome || ''}
                               </span>
                             </li>
                           ))}
@@ -315,11 +334,11 @@ const RecipeDetail: React.FC = () => {
                     <CardContent className="p-6">
                       <div className="space-y-6">
                         {recipe.receita_passos
-                          ?.sort((a: any, b: any) => a.ordem - b.ordem)
+                          ?.sort((a: any, b: any) => (a.numero_passo ?? 0) - (b.numero_passo ?? 0))
                           .map((step: any, index: number) => (
                             <div key={index} className="flex space-x-4 p-4 rounded-xl bg-gradient-to-r from-orange-50 to-orange-25 hover:from-orange-100 hover:to-orange-50 transition-colors">
                               <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-fitcooker-orange to-orange-500 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
-                                {step.ordem}
+                                {step.numero_passo}
                               </div>
                               <p className="text-gray-700 leading-relaxed flex-1">
                                 {step.descricao}
@@ -351,7 +370,7 @@ const RecipeDetail: React.FC = () => {
                             <div key={index} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
                               <div className="flex items-start space-x-4">
                                 <Avatar className="w-10 h-10">
-                                  <AvatarImage src={review.profiles?.avatar_url} />
+                                  <AvatarImage src={review.profiles?.avatar_url || ''} />
                                   <AvatarFallback className="bg-fitcooker-orange text-white text-sm">
                                     {review.profiles?.nome?.[0] || <ChefHat className="w-4 h-4" />}
                                   </AvatarFallback>
