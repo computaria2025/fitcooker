@@ -42,12 +42,12 @@ export const useUSDAIngredients = () => {
       if (cachedIngredients && cachedIngredients.length > 0) {
         setIsLoading(false);
         return cachedIngredients.map(ing => ({
-          name: ing.nome,
-          protein: ing.proteina || 0,
-          carbs: ing.carboidratos || 0,
-          fat: ing.gorduras || 0,
-          calories: ing.calorias || 0,
-          unit: ing.unidade_padrao || 'g'
+          name: ing.nome as string,
+          protein: Number((ing as any).proteinas_por_100g) || 0,
+          carbs: Number((ing as any).carboidratos_por_100g) || 0,
+          fat: Number((ing as any).gorduras_por_100g) || 0,
+          calories: Number((ing as any).calorias_por_100g) || 0,
+          unit: (ing as any).unidade_padrao || 'g'
         }));
       }
 
@@ -117,10 +117,10 @@ export const useUSDAIngredients = () => {
         .from('ingredientes')
         .insert({
           nome: ingredient.name,
-          proteina: ingredient.protein,
-          carboidratos: ingredient.carbs,
-          gorduras: ingredient.fat,
-          calorias: ingredient.calories,
+          proteinas_por_100g: ingredient.protein,
+          carboidratos_por_100g: ingredient.carbs,
+          gorduras_por_100g: ingredient.fat,
+          calorias_por_100g: ingredient.calories,
           unidade_padrao: ingredient.unit
         });
 
@@ -138,10 +138,10 @@ export const useUSDAIngredients = () => {
         .from('ingredientes')
         .insert({
           nome: name,
-          proteina: macros?.protein || 0,
-          carboidratos: macros?.carbs || 0,
-          gorduras: macros?.fat || 0,
-          calorias: macros?.calories || 0,
+          proteinas_por_100g: macros?.protein || 0,
+          carboidratos_por_100g: macros?.carbs || 0,
+          gorduras_por_100g: macros?.fat || 0,
+          calorias_por_100g: macros?.calories || 0,
           unidade_padrao: macros?.unit || 'g'
         })
         .select()
@@ -155,12 +155,12 @@ export const useUSDAIngredients = () => {
       });
 
       return {
-        name: data.nome,
-        protein: data.proteina || 0,
-        carbs: data.carboidratos || 0,
-        fat: data.gorduras || 0,
-        calories: data.calorias || 0,
-        unit: data.unidade_padrao || 'g'
+        name: data.nome as string,
+        protein: Number((data as any).proteinas_por_100g) || 0,
+        carbs: Number((data as any).carboidratos_por_100g) || 0,
+        fat: Number((data as any).gorduras_por_100g) || 0,
+        calories: Number((data as any).calorias_por_100g) || 0,
+        unit: (data as any).unidade_padrao || 'g'
       };
     } catch (error) {
       console.error('Erro ao adicionar ingrediente personalizado:', error);

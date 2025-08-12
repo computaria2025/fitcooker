@@ -56,7 +56,7 @@ const CookProfile: React.FC = () => {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', id)
+        .eq('user_id', id)
         .single();
 
       if (profileError) {
@@ -106,7 +106,13 @@ const CookProfile: React.FC = () => {
       }
 
       setChef({
-        ...profileData,
+        id: profileData.user_id,
+        nome: profileData.nome,
+        bio: profileData.bio,
+        avatar_url: profileData.avatar_url,
+        data_cadastro: profileData.created_at,
+        is_chef: realRecipeCount > 0,
+        preferencias: profileData.restricoes_alimentares || [],
         receitas_count: realRecipeCount,
         seguidores_count: realFollowersCount,
         seguindo_count: realFollowingCount,
@@ -124,19 +130,14 @@ const CookProfile: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('receitas')
-        .select(`
-          *,
-          profiles(nome, avatar_url),
-          receita_categorias(categorias(nome)),
-          informacao_nutricional(*)
-        `)
+        .select('*')
         .eq('usuario_id', id)
         .eq('status', 'ativa')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const transformedRecipes = data?.map(recipe => ({
+      const transformedRecipes = data?.map((recipe: any) => ({
         id: recipe.id,
         titulo: recipe.titulo,
         title: recipe.titulo,
@@ -157,17 +158,17 @@ const CookProfile: React.FC = () => {
         usuario_id: recipe.usuario_id,
         status: recipe.status,
         author: {
-          id: recipe.profiles?.id || recipe.usuario_id,
-          name: recipe.profiles?.nome || 'Chef Anônimo',
-          avatarUrl: recipe.profiles?.avatar_url || '',
+          id: recipe.usuario_id,
+          name: chef?.nome || 'Chef Anônimo',
+          avatarUrl: chef?.avatar_url || '',
         },
-        categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
-        macros: recipe.informacao_nutricional?.[0] ? {
-          calories: Math.round(recipe.informacao_nutricional[0].calorias_totais / recipe.porcoes),
-          protein: Math.round(recipe.informacao_nutricional[0].proteinas_totais / recipe.porcoes),
-          carbs: Math.round(recipe.informacao_nutricional[0].carboidratos_totais / recipe.porcoes),
-          fat: Math.round(recipe.informacao_nutricional[0].gorduras_totais / recipe.porcoes),
-        } : { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        categories: [],
+        macros: {
+          calories: Math.round((recipe.calorias_total || 0) / (recipe.porcoes || 1)),
+          protein: Math.round((recipe.proteinas_total || 0) / (recipe.porcoes || 1)),
+          carbs: Math.round((recipe.carboidratos_total || 0) / (recipe.porcoes || 1)),
+          fat: Math.round((recipe.gorduras_total || 0) / (recipe.porcoes || 1)),
+        },
       })) || [];
 
       setRecipes(transformedRecipes);

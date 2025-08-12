@@ -34,7 +34,7 @@ const DeleteRecipeButton: React.FC<DeleteRecipeButtonProps> = ({ recipeId, recip
       const { error } = await supabase
         .from('receitas')
         .update({ status: 'inativa' })
-        .eq('id', recipeId);
+        .eq('id', Number(recipeId));
 
       if (error) throw error;
 

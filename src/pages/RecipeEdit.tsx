@@ -473,14 +473,14 @@ const RecipeEdit: React.FC = () => {
           video_url: videoUrl,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id);
+        .eq('id', Number(id));
       
       if (recipeError) throw recipeError;
       
       // 3. Delete existing ingredients, steps, and categories
-      await supabase.from('receita_ingredientes').delete().eq('receita_id', id);
-      await supabase.from('receita_passos').delete().eq('receita_id', id);
-      await supabase.from('receita_categorias').delete().eq('receita_id', id);
+      await supabase.from('receita_ingredientes').delete().eq('receita_id', Number(id));
+      await supabase.from('receita_passos').delete().eq('receita_id', Number(id));
+      await supabase.from('receita_categorias').delete().eq('receita_id', Number(id));
       
       // 4. Add updated ingredients
       const validIngredients = ingredients.filter(ing => ing.name.trim() && ing.quantity > 0);
@@ -501,10 +501,10 @@ const RecipeEdit: React.FC = () => {
             .from('ingredientes')
             .insert({
               nome: ingredient.name,
-              proteina: ingredient.protein,
-              carboidratos: ingredient.carbs,
-              gorduras: ingredient.fat,
-              calorias: ingredient.calories,
+              proteinas_por_100g: ingredient.protein,
+              carboidratos_por_100g: ingredient.carbs,
+              gorduras_por_100g: ingredient.fat,
+              calorias_por_100g: ingredient.calories,
               unidade_padrao: ingredient.unit
             })
             .select()
@@ -518,7 +518,7 @@ const RecipeEdit: React.FC = () => {
         const { error: linkError } = await supabase
           .from('receita_ingredientes')
           .insert({
-            receita_id: parseInt(id),
+            receita_id: Number(id),
             ingrediente_id: ingredientId,
             quantidade: ingredient.quantity,
             unidade: ingredient.unit,
@@ -534,8 +534,8 @@ const RecipeEdit: React.FC = () => {
         const { error: stepError } = await supabase
           .from('receita_passos')
           .insert({
-            receita_id: parseInt(id),
-            ordem: step.order,
+            receita_id: Number(id),
+            numero_passo: step.order,
             descricao: step.description
           });
         
@@ -547,7 +547,7 @@ const RecipeEdit: React.FC = () => {
         const { error: categoryError } = await supabase
           .from('receita_categorias')
           .insert({
-            receita_id: parseInt(id),
+            receita_id: Number(id),
             categoria_id: parseInt(categoryId)
           });
         

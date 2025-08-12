@@ -35,6 +35,7 @@ const Cooks: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [followingStates, setFollowingStates] = useState<Record<string, boolean>>({});
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchChefs();

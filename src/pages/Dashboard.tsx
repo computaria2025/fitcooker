@@ -48,12 +48,12 @@ const Dashboard: React.FC = () => {
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('data_cadastro')
+        .select('created_at')
         .eq('id', user.id)
         .single();
 
       if (data) {
-        const cadastroDate = new Date(data.data_cadastro);
+        const cadastroDate = new Date(data.created_at);
         const now = new Date();
         const diffHours = (now.getTime() - cadastroDate.getTime()) / (1000 * 60 * 60);
         setIsNewUser(diffHours < 24); // Consider new if registered in last 24h
@@ -65,60 +65,43 @@ const Dashboard: React.FC = () => {
 
   const fetchFeaturedChefs = async () => {
     try {
-      // Get chefs with their average rating from their recipes
-      const { data: chefsWithRatings } = await supabase
+      // Fetch some profiles
+      const { data: profiles, error } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          nome,
-          avatar_url,
-          receitas_count,
-          seguidores_count,
-          receitas!inner(nota_media)
-        `)
-        .eq('is_chef', true)
-        .gt('receitas_count', 0);
+        .select('id, user_id, nome, avatar_url')
+        .limit(20);
 
-      if (chefsWithRatings) {
-        // Calculate average rating for each chef
-        const chefsWithAvgRating = chefsWithRatings.map(chef => {
-          const validRatings = chef.receitas
-            .map((r: any) => r.nota_media)
-            .filter((rating: number) => rating > 0);
-          
-          const avgRating = validRatings.length > 0 
-            ? validRatings.reduce((sum: number, rating: number) => sum + rating, 0) / validRatings.length
-            : 0;
+      if (error) throw error;
+
+      const chefsWithStats = await Promise.all(
+        (profiles || []).map(async (p) => {
+          const [{ count: receitasCount }, { count: seguidoresCount }, { data: ratingsData }] = await Promise.all([
+            supabase.from('receitas').select('*', { count: 'exact', head: true }).eq('usuario_id', p.user_id).eq('status', 'ativa'),
+            supabase.from('seguidores').select('*', { count: 'exact', head: true }).eq('seguido_id', p.user_id),
+            supabase.from('receitas').select('nota_media').eq('usuario_id', p.user_id).not('nota_media', 'is', null),
+          ]);
+
+          let avg = null as number | null;
+          if (ratingsData && ratingsData.length > 0) {
+            const valid = ratingsData.filter((r: any) => r.nota_media > 0);
+            if (valid.length > 0) {
+              avg = Number((valid.reduce((s: number, r: any) => s + r.nota_media, 0) / valid.length).toFixed(1));
+            }
+          }
 
           return {
-            id: chef.id,
-            nome: chef.nome,
-            avatar_url: chef.avatar_url,
-            receitas_count: chef.receitas_count,
-            seguidores_count: chef.seguidores_count,
-            nota_media: avgRating > 0 ? Number(avgRating.toFixed(1)) : null,
-          };
-        });
+            id: p.user_id,
+            nome: p.nome,
+            avatar_url: p.avatar_url,
+            receitas_count: receitasCount || 0,
+            seguidores_count: seguidoresCount || 0,
+            nota_media: avg,
+          } as Chef;
+        })
+      );
 
-        // Sort by followers count and rating, then take top 4
-        const sortedChefs = chefsWithAvgRating.sort((a, b) => {
-          // First priority: rating (if available)
-          if (a.nota_media && b.nota_media) {
-            if (a.nota_media !== b.nota_media) {
-              return b.nota_media - a.nota_media;
-            }
-          } else if (a.nota_media && !b.nota_media) {
-            return -1;
-          } else if (!a.nota_media && b.nota_media) {
-            return 1;
-          }
-          
-          // Second priority: followers count
-          return b.seguidores_count - a.seguidores_count;
-        }).slice(0, 4);
-
-        setFeaturedChefs(sortedChefs);
-      }
+      const sorted = chefsWithStats.sort((a, b) => (b.seguidores_count - a.seguidores_count)).slice(0, 4);
+      setFeaturedChefs(sorted);
     } catch (error) {
       console.error('Error fetching featured chefs:', error);
     }
@@ -132,7 +115,6 @@ const Dashboard: React.FC = () => {
         .from('receitas')
         .select(`
           *,
-          profiles(nome, avatar_url),
           receita_categorias(categorias(nome))
         `)
         .eq('usuario_id', user.id)
@@ -161,9 +143,9 @@ const Dashboard: React.FC = () => {
           created_at: recipe.created_at,
           usuario_id: recipe.usuario_id,
           author: {
-            id: recipe.profiles?.id || recipe.usuario_id,
-            name: recipe.profiles?.nome || 'Chef Anônimo',
-            avatarUrl: recipe.profiles?.avatar_url || '',
+            id: recipe.usuario_id,
+            name: profile?.nome || 'Chef Anônimo',
+            avatarUrl: profile?.avatar_url || '',
           },
           categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
           macros: { calories: 0, protein: 0, carbs: 0, fat: 0 },
@@ -183,12 +165,7 @@ const Dashboard: React.FC = () => {
         .from('receitas_salvas')
         .select(`
           *,
-          receitas(
-            *,
-            profiles(nome, avatar_url),
-            receita_categorias(categorias(nome)),
-            informacao_nutricional(*)
-          )
+          receitas(*)
         `)
         .eq('usuario_id', user.id)
         .order('created_at', { ascending: false })
@@ -222,13 +199,13 @@ const Dashboard: React.FC = () => {
             name: (recipe as any).profiles?.nome || 'Chef Anônimo',
             avatarUrl: (recipe as any).profiles?.avatar_url || '',
           },
-          categories: (recipe as any).receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
-          macros: recipe.informacao_nutricional?.[0] ? {
-            calories: Math.round(recipe.informacao_nutricional[0].calorias_totais / recipe.porcoes),
-            protein: Math.round(recipe.informacao_nutricional[0].proteinas_totais / recipe.porcoes),
-            carbs: Math.round(recipe.informacao_nutricional[0].carboidratos_totais / recipe.porcoes),
-            fat: Math.round(recipe.informacao_nutricional[0].gorduras_totais / recipe.porcoes),
-          } : { calories: 0, protein: 0, carbs: 0, fat: 0 },
+          categories: [],
+          macros: {
+            calories: Math.round((recipe.calorias_total || 0) / (recipe.porcoes || 1)),
+            protein: Math.round((recipe.proteinas_total || 0) / (recipe.porcoes || 1)),
+            carbs: Math.round((recipe.carboidratos_total || 0) / (recipe.porcoes || 1)),
+            fat: Math.round((recipe.gorduras_total || 0) / (recipe.porcoes || 1)),
+          },
         };
       }) || [];
 

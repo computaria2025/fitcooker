@@ -14,10 +14,10 @@ import { supabase } from '@/integrations/supabase/client';
 interface Ingrediente {
   id: number;
   nome: string;
-  calorias: number;
-  proteina: number;
-  carboidratos: number;
-  gorduras: number;
+  calorias_por_100g: number;
+  proteinas_por_100g: number;
+  carboidratos_por_100g: number;
+  gorduras_por_100g: number;
   unidade_padrao: string;
 }
 
@@ -85,10 +85,10 @@ const NutrientCalculator: React.FC = () => {
     const fatorCalculo = qtdEmGramas / 100; // Valores nutricionais geralmente são por 100g
 
     const resultado = {
-      calorias: Math.round(selectedIngrediente.calorias * fatorCalculo),
-      proteinas: Math.round(selectedIngrediente.proteina * fatorCalculo * 10) / 10,
-      carboidratos: Math.round(selectedIngrediente.carboidratos * fatorCalculo * 10) / 10,
-      gorduras: Math.round(selectedIngrediente.gorduras * fatorCalculo * 10) / 10
+      calorias: Math.round(selectedIngrediente.calorias_por_100g * fatorCalculo),
+      proteinas: Math.round(selectedIngrediente.proteinas_por_100g * fatorCalculo * 10) / 10,
+      carboidratos: Math.round(selectedIngrediente.carboidratos_por_100g * fatorCalculo * 10) / 10,
+      gorduras: Math.round(selectedIngrediente.gorduras_por_100g * fatorCalculo * 10) / 10
     };
 
     setResult(resultado);
@@ -148,7 +148,7 @@ const NutrientCalculator: React.FC = () => {
                   >
                     <div className="font-medium">{ingrediente.nome}</div>
                     <div className="text-sm text-gray-500">
-                      {ingrediente.calorias} kcal por 100{ingrediente.unidade_padrao}
+                      {ingrediente.calorias_por_100g} kcal por 100{ingrediente.unidade_padrao}
                     </div>
                   </div>
                 ))}

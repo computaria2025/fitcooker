@@ -45,9 +45,9 @@ const RecipeDetail: React.FC = () => {
           receita_midias(*),
           informacao_nutricional(*)
         `)
-        .eq('id', id)
+        .eq('id', Number(id))
         .eq('status', 'ativa')
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -58,11 +58,7 @@ const RecipeDetail: React.FC = () => {
 
       setRecipe(data);
 
-      // Increment view count
-      await supabase
-        .from('receitas')
-        .update({ visualizacoes: (data.visualizacoes || 0) + 1 })
-        .eq('id', id);
+      // Removido incremento de visualizações (coluna não existe)
 
     } catch (error) {
       console.error('Error fetching recipe:', error);
@@ -80,7 +76,7 @@ const RecipeDetail: React.FC = () => {
           *,
           profiles(nome, avatar_url)
         `)
-        .eq('receita_id', id)
+        .eq('receita_id', Number(id))
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -233,7 +229,7 @@ const RecipeDetail: React.FC = () => {
                   {/* Author Info */}
                   <div 
                     className="flex items-center space-x-4 p-4 bg-white/80 rounded-2xl shadow-lg backdrop-blur-sm cursor-pointer hover:shadow-xl transition-shadow"
-                    onClick={() => window.location.href = `/cook/${recipe.profiles.id}`}
+                    onClick={() => window.location.href = `/cook/${recipe.profiles.id ?? recipe.usuario_id}`}
                   >
                     <Avatar className="w-16 h-16 border-2 border-fitcooker-orange/20">
                       <AvatarImage src={recipe.profiles.avatar_url} />
