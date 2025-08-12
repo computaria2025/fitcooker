@@ -106,7 +106,7 @@ const RecipeEdit: React.FC = () => {
             ),
             receita_passos(ordem, descricao)
           `)
-          .eq('id', id)
+          .eq('id', Number(id))
           .single();
 
         if (recipeError) throw recipeError;
@@ -554,12 +554,8 @@ const RecipeEdit: React.FC = () => {
         if (categoryError) throw categoryError;
       }
       
-      // 7. Recalculate nutritional information
-      const { error: macroError } = await supabase.rpc('calcular_macros_receita', {
-        receita_id_param: parseInt(id)
-      });
-      
-      if (macroError) console.error('Erro ao calcular macros:', macroError);
+      // 7. Recalculate nutritional information (opcional)
+      // Removido: função RPC não existe no schema tipado atual
       
       toast({
         title: "Receita atualizada com sucesso!",

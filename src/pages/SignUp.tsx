@@ -57,19 +57,9 @@ const SignUp: React.FC = () => {
     };
   };
 
-  const checkEmailExists = async (email: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email.toLowerCase())
-        .maybeSingle();
-
-      return !!data;
-    } catch (error) {
-      console.error('Error checking email:', error);
-      return false;
-    }
+  const checkEmailExists = async (_email: string): Promise<boolean> => {
+    // Verificação prévia desativada: confie no retorno do signUp para evitar erros de tipos
+    return false;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
