@@ -334,9 +334,9 @@ const Profile: React.FC = () => {
                 <p className="text-gray-600 mb-4">{profile?.bio || 'Apaixonado por culinária e vida saudável'}</p>
 
                 {/* Display preferences */}
-                {profile?.preferencias && profile.preferencias.length > 0 && (
+                {profileData.preferencias && profileData.preferencias.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {profile.preferencias.map((preference, index) => (
+                    {profileData.preferencias.map((preference, index) => (
                       <Badge key={index} variant="outline" className="text-fitcooker-orange border-fitcooker-orange">
                         {preference}
                       </Badge>

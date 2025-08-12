@@ -376,7 +376,8 @@ const AddRecipe: React.FC = () => {
           dificuldade: difficulty,
           imagem_url: mainImageUrl,
           video_url: videoUrl,
-          usuario_id: user.id
+          usuario_id: user.id,
+          status: 'ativa'
         })
         .select()
         .single();
@@ -477,7 +478,7 @@ const AddRecipe: React.FC = () => {
       });
       
       // Reset form and redirect
-      navigate(`/recipe/${recipeId}`);
+      navigate(`/dashboard`);
       
     } catch (error) {
       console.error('Erro ao criar receita:', error);
