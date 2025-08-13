@@ -170,7 +170,14 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-3">
+            {user && (
+              <Button asChild variant="ghost" size="sm" className="p-2">
+                <Link to="/add-recipe">
+                  <Plus className="w-5 h-5" />
+                </Link>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -184,80 +191,88 @@ const Navbar: React.FC = () => {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 bg-white/95 backdrop-blur-sm border-t border-gray-100">
+          <div className="md:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-lg">
+            <div className="px-4 py-3 space-y-1 max-h-[80vh] overflow-y-auto">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 ${
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                       isActive(item.path)
                         ? 'bg-fitcooker-orange text-white'
                         : 'text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50'
                     }`}
                     onClick={() => setIsOpen(false)}
                   >
-                    <Icon className="w-4 h-4" />
-                    <span className="font-medium">{item.name}</span>
+                    <Icon className="w-5 h-5" />
+                    <span className="font-medium text-base">{item.name}</span>
                   </Link>
                 );
               })}
               
-              {user ? (
-                <>
-                  <Link
-                    to="/add-recipe"
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span className="font-medium">Adicionar Receita</span>
-                  </Link>
-                  <Link
-                    to="/profile"
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <User className="w-4 h-4" />
-                    <span className="font-medium">Perfil</span>
-                  </Link>
-                  <Link
-                    to="/dashboard"
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span className="font-medium">Dashboard</span>
-                  </Link>
-                  <button
-                    onClick={handleSignOut}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 w-full text-left"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span className="font-medium">Sair</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <User className="w-4 h-4" />
-                    <span className="font-medium">Entrar</span>
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-fitcooker-orange text-white"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <span className="font-medium">Cadastrar</span>
-                  </Link>
-                </>
-              )}
+              
+              <div className="border-t border-gray-200 pt-3 mt-3">
+                {user ? (
+                  <>
+                    <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-xl mb-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={profile?.avatar_url} alt={profile?.nome} />
+                        <AvatarFallback className="bg-fitcooker-orange text-white text-sm">
+                          {profile?.nome?.[0] || user.email?.[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-gray-900">{profile?.nome || 'Usuário'}</p>
+                        <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                      </div>
+                    </div>
+                    
+                    <Link
+                      to="/profile"
+                      className="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <User className="w-5 h-5" />
+                      <span className="font-medium text-base">Perfil</span>
+                    </Link>
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <Settings className="w-5 h-5" />
+                      <span className="font-medium text-base">Dashboard</span>
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center space-x-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 w-full text-left"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      <span className="font-medium text-base">Sair</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="flex items-center justify-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50 border border-gray-200"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <User className="w-5 h-5" />
+                      <span className="font-medium text-base">Entrar</span>
+                    </Link>
+                    <Link
+                      to="/signup"
+                      className="flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-fitcooker-orange text-white mt-2"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <span className="font-medium text-base">Cadastrar</span>
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}

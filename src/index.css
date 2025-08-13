@@ -128,3 +128,79 @@
 .text-gradient {
   @apply bg-clip-text text-transparent bg-gradient-to-r from-fitcooker-orange to-fitcooker-yellow;
 }
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .container {
+    @apply px-4;
+  }
+  
+  /* Recipe cards responsive */
+  .recipe-grid {
+    @apply grid-cols-1;
+  }
+  
+  .stats-grid {
+    @apply grid-cols-2;
+  }
+  
+  /* Mobile text sizes */
+  h1 {
+    @apply text-2xl md:text-4xl;
+  }
+  
+  h2 {
+    @apply text-xl md:text-2xl;
+  }
+  
+  /* Mobile spacing */
+  .mobile-spacing {
+    @apply p-2;
+  }
+  
+  /* Mobile navigation improvements */
+  .mobile-nav {
+    @apply fixed top-0 left-0 right-0 z-50;
+  }
+}
+
+/* Tablet responsiveness */
+@media (min-width: 640px) {
+  .recipe-grid {
+    @apply sm:grid-cols-2;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .recipe-grid {
+    @apply md:grid-cols-2;
+  }
+  
+  .stats-grid {
+    @apply md:grid-cols-2;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1024px) {
+  .recipe-grid {
+    @apply lg:grid-cols-3;
+  }
+  
+  .stats-grid {
+    @apply lg:grid-cols-4;
+  }
+}
+
+/* Responsive utilities */
+.responsive-padding {
+  @apply px-4 sm:px-6 lg:px-8;
+}
+
+.responsive-text {
+  @apply text-sm sm:text-base lg:text-lg;
+}
+
+.responsive-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+}

@@ -165,7 +165,9 @@ const Dashboard: React.FC = () => {
         .from('receitas_salvas')
         .select(`
           *,
-          receitas(*)
+          receitas(*,
+            profiles!usuario_id(nome, avatar_url)
+          )
         `)
         .eq('usuario_id', user.id)
         .order('created_at', { ascending: false })
@@ -195,9 +197,9 @@ const Dashboard: React.FC = () => {
           created_at: recipe.created_at,
           usuario_id: recipe.usuario_id,
           author: {
-            id: (recipe as any).profiles?.id || recipe.usuario_id,
-            name: (recipe as any).profiles?.nome || 'Chef Anônimo',
-            avatarUrl: (recipe as any).profiles?.avatar_url || '',
+            id: recipe.usuario_id,
+            name: recipe.profiles?.nome || 'Chef Anônimo',
+            avatarUrl: recipe.profiles?.avatar_url || '',
           },
           categories: [],
           macros: {
@@ -240,7 +242,7 @@ const Dashboard: React.FC = () => {
       <Navbar />
       
       <main className="py-12 pt-32">
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="container mx-auto responsive-padding">
           {/* Welcome Section with Enhanced Title */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -359,7 +361,7 @@ const Dashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   {userRecipes.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="recipe-grid grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {userRecipes.map((recipe) => (
                         <div key={recipe.id} className="transform hover:scale-105 transition-transform">
                           <RecipeCard recipe={recipe} />

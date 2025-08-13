@@ -136,9 +136,9 @@ const SignUp: React.FC = () => {
       } else {
         toast({
           title: "Conta criada!",
-          description: "Bem-vindo ao FitCooker!",
+          description: "Confirme seu cadastro no e-mail. Verifique sua caixa de entrada!",
         });
-        navigate('/');
+        navigate('/login');
       }
     } catch (error) {
       console.error('SignUp catch error:', error);

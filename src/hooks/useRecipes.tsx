@@ -60,7 +60,7 @@ export const useRecipes = () => {
         author: {
           id: recipe.usuario_id,
           name: recipe.profiles?.nome || 'Chef Anônimo',
-          avatarUrl: recipe.profiles?.avatar_url || '/placeholder.svg'
+          avatarUrl: recipe.profiles?.avatar_url || ''
         },
         categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
         macros: {

@@ -74,7 +74,7 @@ const Recipes: React.FC = () => {
       <Navbar />
       
       <main className="py-12 pt-40">
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="container mx-auto responsive-padding">
           <SectionTitle 
             title="Receitas Deliciosas"
             subtitle="Descubra pratos incríveis criados pela nossa comunidade de chefs apaixonados"

@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ImageCarousel from '@/components/ui/ImageCarousel';
 import NutritionDisplay from '@/components/ui/NutritionDisplay';
+import CommentsDialog from '@/components/ui/CommentsDialog';
 
 const RecipeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -153,7 +154,7 @@ const RecipeDetail: React.FC = () => {
       <Navbar />
       
       <main className="py-8 pt-40">
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="container mx-auto responsive-padding">
           <div className="max-w-6xl mx-auto">
             {/* Recipe Header */}
             <motion.div
@@ -161,7 +162,7 @@ const RecipeDetail: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               className="mb-8"
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
                 {/* Image Section */}
                 <div className="relative">
                   {recipe.imagem_url ? (
@@ -200,7 +201,7 @@ const RecipeDetail: React.FC = () => {
                   )}
 
                   {/* Recipe Stats */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-2 md:gap-4">
                     <div className="text-center p-4 bg-white/80 rounded-2xl shadow-lg backdrop-blur-sm">
                       <Clock className="w-6 h-6 text-fitcooker-orange mx-auto mb-2" />
                       <div className="text-2xl font-bold text-gray-900">{recipe.tempo_preparo}</div>
@@ -266,7 +267,7 @@ const RecipeDetail: React.FC = () => {
             </motion.div>
 
             {/* Recipe Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
               {/* Left Column - Ingredients and Nutrition */}
               <div className="lg:col-span-1 space-y-6">
                 {/* Ingredients */}
@@ -351,22 +352,30 @@ const RecipeDetail: React.FC = () => {
                 </motion.div>
 
                 {/* Reviews Section */}
-                {reviews.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 }}
-                  >
-                    <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-                      <CardHeader className="bg-gradient-to-r from-fitcooker-orange/10 to-orange-100">
-                        <CardTitle className="flex items-center space-x-2">
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+                    <CardHeader className="bg-gradient-to-r from-fitcooker-orange/10 to-orange-100">
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
                           <Star className="w-5 h-5 text-fitcooker-orange" />
                           <span>Avaliações ({reviews.length})</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-6">
+                        </div>
+                        {reviews.length > 3 && (
+                          <CommentsDialog 
+                            recipeId={recipe.id} 
+                            commentCount={reviews.length}
+                          />
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {reviews.length > 0 ? (
                         <div className="space-y-6">
-                          {reviews.map((review: any, index: number) => (
+                          {reviews.slice(0, 3).map((review: any, index: number) => (
                             <div key={index} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
                               <div className="flex items-start space-x-4">
                                 <Avatar className="w-10 h-10">
@@ -378,7 +387,7 @@ const RecipeDetail: React.FC = () => {
                                 <div className="flex-1">
                                   <div className="flex items-center space-x-3 mb-2">
                                     <span className="font-semibold text-gray-900">
-                                      {review.profiles?.nome || 'Usuário'}
+                                      {review.profiles?.nome || 'Usuário Anônimo'}
                                     </span>
                                     <RatingStars initialRating={review.nota} readOnly size="sm" />
                                     <span className="text-sm text-gray-500">
@@ -395,10 +404,16 @@ const RecipeDetail: React.FC = () => {
                             </div>
                           ))}
                         </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                )}
+                      ) : (
+                        <div className="text-center py-8">
+                          <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                          <p className="text-gray-500">Nenhuma avaliação ainda</p>
+                          <p className="text-gray-400 text-sm">Seja o primeiro a avaliar esta receita!</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </div>
             </div>
           </div>

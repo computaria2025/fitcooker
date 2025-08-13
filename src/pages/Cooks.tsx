@@ -221,7 +221,7 @@ const Cooks: React.FC = () => {
       <Navbar />
       
       <main className="py-12 pt-40">
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="container mx-auto responsive-padding">
           <SectionTitle 
             title="Nossos Chefs Talentosos"
             subtitle="Conheça nossa incrível comunidade de chefs apaixonados por culinária saudável"

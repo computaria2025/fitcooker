@@ -1,9 +1,8 @@
 
-import React, { useState } from 'react';
-import { Camera, User, Upload } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import React from 'react';
+import { Camera, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useImageUpload } from '@/hooks/useImageUpload';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
@@ -16,54 +15,18 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   currentAvatarUrl,
   onUploadComplete
 }) => {
-  const [uploading, setUploading] = useState(false);
-  const { toast } = useToast();
   const { user, updateProfile } = useAuth();
+  const { uploadImage, uploading } = useImageUpload();
 
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      setUploading(true);
+    if (!event.target.files || event.target.files.length === 0) return;
 
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('Você deve selecionar uma imagem para upload.');
-      }
-
-      const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      // Update profile in database
-      if (user) {
-        await updateProfile({ avatar_url: data.publicUrl });
-      }
-
-      onUploadComplete(data.publicUrl);
-
-      toast({
-        title: "Sucesso!",
-        description: "Foto de perfil atualizada com sucesso.",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao fazer upload da imagem.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
+    const file = event.target.files[0];
+    const publicUrl = await uploadImage(file, 'avatars');
+    
+    if (publicUrl && user) {
+      await updateProfile({ avatar_url: publicUrl });
+      onUploadComplete(publicUrl);
     }
   };
 

@@ -50,6 +50,13 @@ export type Database = {
             referencedRelation: "receitas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "avaliacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       categorias: {
@@ -337,7 +344,15 @@ export type Database = {
           usuario_id?: string
           video_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "receitas_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       receitas_salvas: {
         Row: {
@@ -365,6 +380,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "receitas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receitas_salvas_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
