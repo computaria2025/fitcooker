@@ -20,11 +20,11 @@ const teamMembers = [
     icon: <Database className="h-10 w-10" />
   },
   {
-    name: 'Andrei Barone',
-    role: 'Designer',
-    description: 'Criativo, idealizador da ideia do fitcooker. Combinou criatividade e designer para pensar e entregar ideias inovadoras.',
-    avatar: 'andrei.png',
-    icon: <PenTool className="h-10 w-10" />
+    name: 'Rafael Afonso',
+    role: 'Desenvolvedor responsável por conexão com APIs e novas funcionalidades',
+    description: 'Desenvolvedor Fullstack',
+    avatar: 'rafael.png',
+    icon: <Code className="h-10 w-10" />
   },
   {
     name: 'Ígor',
@@ -34,18 +34,11 @@ const teamMembers = [
     icon: <Code className="h-10 w-10" />
   },
   {
-    name: 'Gabriel',
-    role: 'Analista de Requisitos',
-    description: 'Identifica e documenta as necessidades dos usuários para guiar o desenvolvimento. Além de cuidar de toda documentação do projeto.',
-    avatar: 'gabriel.png',
-    icon: <FileSearch className="h-10 w-10" />
-  },
-  {
-    name: 'Isaac Machado',
-    role: 'Designer Figma e UI/UX',
-    description: 'Cria protótipos e designs que priorizam a experiência do usuário.',
-    avatar: 'isaac.png',
-    icon: <Figma className="h-10 w-10" />
+    name: 'Cristiano',
+    role: 'Desenvolvedor Fullstack',
+    description: 'Desenvolvedor responsável por cuidas de automações e funcionalidades novas do fitcooker.',
+    avatar: 'cristiano.png',
+    icon: <Code className="h-10 w-10" />
   }
 ];
 
