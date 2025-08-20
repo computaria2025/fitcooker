@@ -65,6 +65,7 @@ Esta seção lista as principais tecnologias e bibliotecas que dão vida ao FitC
 | [React Query](https://tanstack.com/query/latest) | Gerenciamento de estado de servidor, cache, e sincronização de dados. |
 | [React Router](https://reactrouter.com/) | Para gerenciamento de rotas na aplicação. |
 | [React Hook Form](https://react-hook-form.com/) | Gerenciamento de formulários performático e flexível. |
+| [Trello](https://trello.com/b/DRs6BPdI/projeto-integrador-2-melhorias-evolucao-do-fitcooker) | Gerenciamento de issues e backlog. |
 
 ---
 
@@ -178,4 +179,4 @@ Contribuições são o que tornam a comunidade de código aberto um lugar incrí
 * **GitHub**: [https://github.com/igorr0cha](https://github.com/igorr0cha)
 * **Email**: [igort10rocha@gmail.com](mailto:igort10rocha@gmail.com)
 
-Link do Projeto: [fitcooker-project](https://github.com/igorr0cha/fitcooker-v3)
+Link do Projeto: [fitcooker-project](https://github.com/computaria2025/fitcooker)
