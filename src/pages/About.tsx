@@ -324,7 +324,7 @@ export default FitCooker;
             </div>
             
             {/* Team members */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
               {teamMembers.map((member, index) => (
                 <motion.div 
                   key={index} 
