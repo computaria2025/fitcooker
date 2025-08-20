@@ -359,115 +359,49 @@ const AddRecipe: React.FC = () => {
     
     setIsSubmitting(true);
     
+    // Start a transaction by using a single RPC call
     try {
-      // 1. Upload media files
+      // 1. Upload media files first
       const { mainImageUrl, videoUrl } = await uploadMediaFiles();
       
-      // 2. Create recipe
-      const { data: recipeData, error: recipeError } = await supabase
-        .from('receitas')
-        .insert({
-          titulo: title,
-          descricao: description,
-          tempo_preparo: parseInt(preparationTime),
-          porcoes: parseInt(servings),
-          dificuldade: difficulty,
-          imagem_url: mainImageUrl,
-          video_url: videoUrl,
-          usuario_id: user.id,
-          status: 'ativa'
-        })
-        .select()
-        .single();
-      
-      if (recipeError) throw recipeError;
-      
-      const recipeId = recipeData.id;
-      
-      // 3. Add ingredients
-      const validIngredients = ingredients.filter(ing => ing.name.trim() && ing.quantity > 0);
-      for (let i = 0; i < validIngredients.length; i++) {
-        const ingredient = validIngredients[i];
-        
-        // Find or create ingredient in database
-        let { data: existingIngredient } = await supabase
-          .from('ingredientes')
-          .select('id')
-          .eq('nome', ingredient.name)
-          .maybeSingle();
-        
-        let ingredientId = existingIngredient?.id;
-        
-        if (!ingredientId) {
-          const { data: newIngredient, error: ingredientError } = await supabase
-            .from('ingredientes')
-            .insert({
-              nome: ingredient.name,
-              proteinas_por_100g: ingredient.protein,
-              carboidratos_por_100g: ingredient.carbs,
-              gorduras_por_100g: ingredient.fat,
-              calorias_por_100g: ingredient.calories,
-              unidade_padrao: ingredient.unit
-            })
-            .select()
-            .single();
-          
-          if (ingredientError) throw ingredientError;
-          ingredientId = newIngredient.id;
-        }
-        
-        // Link ingredient to recipe
-        const { error: linkError } = await supabase
-          .from('receita_ingredientes')
-          .insert({
-            receita_id: recipeId,
-            ingrediente_id: ingredientId,
-            quantidade: ingredient.quantity,
-            unidade: ingredient.unit,
-            ordem: i + 1
-          });
-        
-        if (linkError) throw linkError;
-      }
-      
-      // 4. Add steps
-      const validSteps = steps.filter(step => step.description.trim());
-      for (const step of validSteps) {
-        const { error: stepError } = await supabase
-          .from('receita_passos')
-          .insert({
-            receita_id: recipeId,
+      // Use Supabase transaction to ensure atomicity
+      const { data: result, error: transactionError } = await supabase.rpc('create_recipe_transaction', {
+        p_titulo: title,
+        p_descricao: description,
+        p_tempo_preparo: parseInt(preparationTime),
+        p_porcoes: parseInt(servings),
+        p_dificuldade: difficulty,
+        p_imagem_url: mainImageUrl || null,
+        p_video_url: videoUrl || null,
+        p_usuario_id: user.id,
+        p_ingredientes: ingredients
+          .filter(ing => ing.name.trim() && ing.quantity > 0)
+          .map((ing, index) => ({
+            nome: ing.name,
+            quantidade: ing.quantity,
+            unidade: ing.unit,
+            proteinas_por_100g: ing.protein,
+            carboidratos_por_100g: ing.carbs,
+            gorduras_por_100g: ing.fat,
+            calorias_por_100g: ing.calories,
+            ordem: index + 1
+          })),
+        p_passos: steps
+          .filter(step => step.description.trim())
+          .map(step => ({
             numero_passo: step.order,
             descricao: step.description
-          });
-        
-        if (stepError) throw stepError;
+          })),
+        p_categorias: selectedCategories.map(id => parseInt(id)),
+        p_calorias_total: totalMacros.calories,
+        p_proteinas_total: totalMacros.protein,
+        p_carboidratos_total: totalMacros.carbs,
+        p_gorduras_total: totalMacros.fat
+      });
+
+      if (transactionError) {
+        throw transactionError;
       }
-      
-      // 5. Add categories
-      for (const categoryId of selectedCategories) {
-        const { error: categoryError } = await supabase
-          .from('receita_categorias')
-          .insert({
-            receita_id: recipeId,
-            categoria_id: parseInt(categoryId)
-          });
-        
-        if (categoryError) throw categoryError;
-      }
-      
-      // 6. Calculate and update nutritional information
-      const { error: updateError } = await supabase
-        .from('receitas')
-        .update({
-          calorias_total: totalMacros.calories,
-          proteinas_total: totalMacros.protein,
-          carboidratos_total: totalMacros.carbs,
-          gorduras_total: totalMacros.fat
-        })
-        .eq('id', recipeId);
-      
-      if (updateError) console.error('Erro ao atualizar macros:', updateError);
       
       toast({
         title: "Receita publicada com sucesso! 🎉",

@@ -349,20 +349,26 @@ const Profile: React.FC = () => {
                     <Calendar className="w-4 h-4" />
                     Membro desde {new Date(profile?.created_at || '').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                   </div>
-                  <button
-                    onClick={() => setFollowersDialogOpen(true)}
-                    className="flex items-center gap-1 hover:text-fitcooker-orange transition-colors"
-                  >
-                    <Users className="w-4 h-4" />
-                    {statsLoading ? '...' : stats.seguidores_count} seguidores
-                  </button>
-                  <button
-                    onClick={() => setFollowingDialogOpen(true)}
-                    className="flex items-center gap-1 hover:text-fitcooker-orange transition-colors"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    {statsLoading ? '...' : stats.seguindo_count} seguindo
-                  </button>
+              <button
+                onClick={() => {
+                  setFollowersDialogOpen(true);
+                  if (user) fetchFollowers(user.id);
+                }}
+                className="flex items-center gap-1 hover:text-fitcooker-orange transition-colors"
+              >
+                <Users className="w-4 h-4" />
+                {statsLoading ? '...' : stats.seguidores_count} seguidores
+              </button>
+              <button
+                onClick={() => {
+                  setFollowingDialogOpen(true);
+                  if (user) fetchFollowing(user.id);
+                }}
+                className="flex items-center gap-1 hover:text-fitcooker-orange transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                {statsLoading ? '...' : stats.seguindo_count} seguindo
+              </button>
                   <div className="flex items-center gap-1">
                     <ChefHat className="w-4 h-4" />
                     {statsLoading ? '...' : stats.receitas_count} receitas
