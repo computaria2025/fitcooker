@@ -106,6 +106,14 @@ const Cooks: React.FC = () => {
       // Filter only chefs (those with at least one recipe)
       const activeChefs = chefsWithStats.filter(chef => chef.receitas_count > 0);
       setChefs(activeChefs);
+      
+      // Initialize following states
+      const initialFollowingStates: Record<string, boolean> = {};
+      activeChefs.forEach(chef => {
+        initialFollowingStates[chef.user_id] = chef.isFollowing;
+      });
+      setFollowingStates(initialFollowingStates);
+      
       console.log('Chefs data:', activeChefs);
 
       

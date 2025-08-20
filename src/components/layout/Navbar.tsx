@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User, LogOut, Settings, ChefHat, BookOpen, Users, Plus, Utensils, Info, Mail } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,6 +18,7 @@ const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, profile } = useAuth();
+  const { toast } = useToast();
   const location = useLocation();
 
   useEffect(() => {
@@ -30,8 +32,20 @@ const Navbar: React.FC = () => {
   }, []);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/';
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logout realizado!",
+        description: "Até logo! Volte sempre.",
+      });
+      window.location.href = '/';
+    } catch (error) {
+      toast({
+        title: "Erro no logout",
+        description: "Ocorreu um erro ao sair da conta.",
+        variant: "destructive",
+      });
+    }
   };
 
   const isActive = (path: string) => {
@@ -82,15 +96,15 @@ const Navbar: React.FC = () => {
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          {/* Desktop Navigation - Hidden on smaller screens to show menu button earlier */}
+          <div className="hidden xl:flex items-center space-x-6">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-500 group relative overflow-hidden ${
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-500 group relative overflow-hidden whitespace-nowrap ${
                     isActive(item.path)
                       ? 'bg-fitcooker-orange text-white shadow-lg transform scale-105'
                       : 'text-gray-700 hover:text-fitcooker-orange hover:bg-orange-50'
@@ -107,7 +121,7 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* User Menu / Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-4">
             {user ? (
               <>
                 <Button asChild variant="outline" className="transition-all duration-500 font-semibold group relative overflow-hidden border-fitcooker-orange text-fitcooker-orange hover:bg-fitcooker-orange hover:text-white">
@@ -169,8 +183,8 @@ const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center space-x-3">
+          {/* Mobile Menu Button - Show earlier on tablet screens */}
+          <div className="xl:hidden flex items-center space-x-3">
             {user && (
               <Button asChild variant="ghost" size="sm" className="p-2">
                 <Link to="/add-recipe">
@@ -191,7 +205,7 @@ const Navbar: React.FC = () => {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-lg">
+          <div className="xl:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-lg z-50">
             <div className="px-4 py-3 space-y-1 max-h-[80vh] overflow-y-auto">
               {navItems.map((item) => {
                 const Icon = item.icon;

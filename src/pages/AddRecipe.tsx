@@ -308,7 +308,7 @@ const AddRecipe: React.FC = () => {
         const filePath = `recipes/${fileName}`;
         
         const { data, error } = await supabase.storage
-          .from('recipe-media')
+          .from('recipe-images')
           .upload(filePath, mediaItem.file);
         
         if (error) {
@@ -317,7 +317,7 @@ const AddRecipe: React.FC = () => {
         }
         
         const { data: urlData } = supabase.storage
-          .from('recipe-media')
+          .from('recipe-images')
           .getPublicUrl(filePath);
         
         if (mediaItem.isMain) {
@@ -472,13 +472,15 @@ const AddRecipe: React.FC = () => {
       if (updateError) console.error('Erro ao atualizar macros:', updateError);
       
       toast({
-        title: "Receita criada com sucesso!",
-        description: "Sua receita foi publicada e está disponível para a comunidade.",
-        duration: 3000,
+        title: "Receita publicada com sucesso! 🎉",
+        description: "Sua receita foi criada e está disponível para a comunidade.",
+        duration: 4000,
       });
       
       // Reset form and redirect
-      navigate(`/dashboard`);
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
       
     } catch (error) {
       console.error('Erro ao criar receita:', error);

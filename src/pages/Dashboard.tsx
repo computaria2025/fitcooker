@@ -144,7 +144,7 @@ const Dashboard: React.FC = () => {
           usuario_id: recipe.usuario_id,
           author: {
             id: recipe.usuario_id,
-            name: profile?.nome || 'Chef Anônimo',
+            name: 'Você',
             avatarUrl: profile?.avatar_url || '',
           },
           categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
