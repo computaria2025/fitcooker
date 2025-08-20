@@ -23,9 +23,13 @@ import Privacidade from './pages/Privacidade';
 import TermosDeUso from './pages/TermosDeUso';
 import Ferramentas from './pages/Ferramentas';
 
+import { Toaster } from '@/components/ui/toaster'; // mensagens toast
+
+
 function App() {
   return (
     <Router>
+      <Toaster />
       <div className="App">
         <Routes>
           <Route path="/" element={<Home />} />

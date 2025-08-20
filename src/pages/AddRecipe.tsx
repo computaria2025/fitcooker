@@ -118,8 +118,7 @@ const AddRecipe: React.FC = () => {
   // Handler for multiple image uploads
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const files = Array.from(e.target.files);
-      
+      const files = Array.from(e.target.files) as File[];
       const newMediaItems: MediaItem[] = files.map((file, index) => ({
         id: Date.now().toString() + index,
         type: 'image',
@@ -127,7 +126,6 @@ const AddRecipe: React.FC = () => {
         preview: URL.createObjectURL(file),
         isMain: mediaItems.length === 0 && index === 0
       }));
-      
       setMediaItems(prev => [...prev, ...newMediaItems]);
     }
   };
@@ -142,7 +140,7 @@ const AddRecipe: React.FC = () => {
         isMain: false
       };
       setMediaItems(prev => [...prev, newMediaItem]);
-    } else {
+    } else if (urlOrFile instanceof File) {
       const newMediaItem: MediaItem = {
         id: Date.now().toString(),
         type: 'video',
