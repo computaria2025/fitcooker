@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
@@ -47,6 +46,15 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
   const [searchResults, setSearchResults] = useState<ProcessedIngredient[]>([]);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
+  // Estados novos para dados nutricionais e unidade
+  const [calorias, setCalorias] = useState<string>('0');
+  const [proteinas, setProteinas] = useState<string>('0');
+  const [carboidratos, setCarboidratos] = useState<string>('0');
+  const [gorduras, setGorduras] = useState<string>('0');
+  const [fibras, setFibras] = useState<string>('0');
+  const [sodio, setSodio] = useState<string>('0');
+  const [unidadePadrao, setUnidadePadrao] = useState<string>('g');
+
   // Buscar ingredientes quando o termo de busca mudar
   useEffect(() => {
     if (searchTimeout) {
@@ -71,10 +79,49 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
     };
   }, [ingredientSearchTerm, searchUSDAIngredients]);
 
+  // Limpar os campos nutricionais e nome quando abrir o formulário
+  useEffect(() => {
+    if (showAddIngredientForm) {
+      setCalorias('0');
+      setProteinas('0');
+      setCarboidratos('0');
+      setGorduras('0');
+      setFibras('0');
+      setSodio('0');
+      setUnidadePadrao('g');
+    }
+  }, [showAddIngredientForm]);
+
   const handleCustomIngredientSubmit = async () => {
     if (!newIngredientName.trim()) return;
-    
-    const newIngredient = await addCustomIngredient(newIngredientName);
+
+    // Montar objeto com valores numéricos convertidos
+    const newIngredientData = {
+      name: newIngredientName.trim(),
+      calories: parseFloat(calorias) || 0,
+      protein: parseFloat(proteinas) || 0,
+      carbs: parseFloat(carboidratos) || 0,
+      fat: parseFloat(gorduras) || 0,
+      fibers: parseFloat(fibras) || 0,
+      sodium: parseFloat(sodio) || 0,
+      unit: unidadePadrao || 'g',
+    };
+
+    // Adaptar para o formato esperado pela sua função de inserção
+    // Note que seu backend espera nomes em português:
+    const backendPayload = {
+      nome: newIngredientData.name,
+      calorias_por_100g: newIngredientData.calories,
+      proteinas_por_100g: newIngredientData.protein,
+      carboidratos_por_100g: newIngredientData.carbs,
+      gorduras_por_100g: newIngredientData.fat,
+      fibras_por_100g: newIngredientData.fibers,
+      sodio_por_100g: newIngredientData.sodium,
+      unidade_padrao: newIngredientData.unit,
+    };
+
+    // Submeter para o backend (via hook ou função addCustomIngredient)
+    const newIngredient = await addCustomIngredient(backendPayload);
     if (newIngredient) {
       handleSelectIngredient(currentIngredientIndex, newIngredient);
       setShowAddIngredientForm(false);
@@ -172,6 +219,99 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
                   Você poderá adicionar os valores nutricionais após selecionar o ingrediente
                 </p>
               </div>
+
+              {/* NOVOS CAMPOS NUTRICIONAIS */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="calorias">Calorias por 100g</Label>
+                  <Input
+                    id="calorias"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={calorias}
+                    onChange={(e) => setCalorias(e.target.value)}
+                    className="mt-1"
+                    placeholder="kcal"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="proteinas">Proteínas por 100g</Label>
+                  <Input
+                    id="proteinas"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={proteinas}
+                    onChange={(e) => setProteinas(e.target.value)}
+                    className="mt-1"
+                    placeholder="g"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="carboidratos">Carboidratos por 100g</Label>
+                  <Input
+                    id="carboidratos"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={carboidratos}
+                    onChange={(e) => setCarboidratos(e.target.value)}
+                    className="mt-1"
+                    placeholder="g"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="gorduras">Gorduras por 100g</Label>
+                  <Input
+                    id="gorduras"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={gorduras}
+                    onChange={(e) => setGorduras(e.target.value)}
+                    className="mt-1"
+                    placeholder="g"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="fibras">Fibras por 100g</Label>
+                  <Input
+                    id="fibras"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={fibras}
+                    onChange={(e) => setFibras(e.target.value)}
+                    className="mt-1"
+                    placeholder="g"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="sodio">Sódio por 100g</Label>
+                  <Input
+                    id="sodio"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={sodio}
+                    onChange={(e) => setSodio(e.target.value)}
+                    className="mt-1"
+                    placeholder="mg"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="unidadePadrao">Unidade padrão</Label>
+                  <Input
+                    id="unidadePadrao"
+                    value={unidadePadrao}
+                    onChange={(e) => setUnidadePadrao(e.target.value)}
+                    className="mt-1"
+                    placeholder="Ex: g, ml, un"
+                  />
+                </div>
+              </div>
+
               <div className="flex space-x-2">
                 <Button
                   type="button"
