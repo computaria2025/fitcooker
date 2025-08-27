@@ -251,17 +251,34 @@ const AddRecipe: React.FC = () => {
   };
   
   // Handle adding new category
-  const handleAddNewCategory = () => {
+  const handleAddNewCategory = async () => {
     if (newCategoryName.trim()) {
-      toast({
-        title: "Nova categoria sugerida",
-        description: "Sua sugestão será analisada pela nossa equipe.",
-        duration: 3000,
-      });
-      setNewCategoryName('');
-      setShowNewCategoryDialog(false);
+      const { error } = await supabase
+        .from("categorias")
+        .insert([{
+          nome: newCategoryName.trim(),
+          descricao: "", // TODO: a form field if you want this
+          ativa: true,
+        }]);
+  
+      if (error) {
+        toast({
+          title: "Erro ao adicionar categoria",
+          description: error.message,
+          variant: "destructive",
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: "Categoria adicionada",
+          description: `A categoria "${newCategoryName}" foi salva com sucesso.`,
+          duration: 3000,
+        });
+        setNewCategoryName("");
+        setShowNewCategoryDialog(false);
+      }
     }
-  };
+  }
   
   // Update ingredient quantity
   const updateIngredientQuantity = (id: string, quantity: number) => {
