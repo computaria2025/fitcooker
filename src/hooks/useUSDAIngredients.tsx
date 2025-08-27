@@ -16,10 +16,12 @@ interface USDAIngredient {
 
 interface ProcessedIngredient {
   name: string;
+  calories: number;
   protein: number;
   carbs: number;
   fat: number;
-  calories: number;
+  fibers: number;
+  sodium: number;
   unit: string;
 }
 
@@ -43,10 +45,12 @@ export const useUSDAIngredients = () => {
         setIsLoading(false);
         return cachedIngredients.map(ing => ({
           name: ing.nome as string,
+          calories: Number((ing as any).calorias_por_100g) || 0,
           protein: Number((ing as any).proteinas_por_100g) || 0,
           carbs: Number((ing as any).carboidratos_por_100g) || 0,
           fat: Number((ing as any).gorduras_por_100g) || 0,
-          calories: Number((ing as any).calorias_por_100g) || 0,
+          fibers: Number((ing as any).fibras_por_100g) || 0,
+          sodium: Number((ing as any).sodio_por_100g) || 0,
           unit: (ing as any).unidade_padrao || 'g'
         }));
       }
@@ -92,17 +96,21 @@ export const useUSDAIngredients = () => {
       const nutrients = food.foodNutrients;
       
       // Mapeamento dos IDs dos nutrientes da USDA
+      const caloriesNutrient = nutrients.find(n => n.nutrientId === 1008); // Energy
       const proteinNutrient = nutrients.find(n => n.nutrientId === 1003); // Protein
       const carbsNutrient = nutrients.find(n => n.nutrientId === 1005); // Carbs
       const fatNutrient = nutrients.find(n => n.nutrientId === 1004); // Fat
-      const caloriesNutrient = nutrients.find(n => n.nutrientId === 1008); // Energy
+      const fiberNutrient = nutrients.find(n => n.nutrientId === 1079); // Fiber
+      const sodiumNutrient = nutrients.find(n => n.nutrientId === 1093); // Sodium
 
       return {
         name: food.description,
+        calories: caloriesNutrient?.value || 0,
         protein: proteinNutrient?.value || 0,
         carbs: carbsNutrient?.value || 0,
         fat: fatNutrient?.value || 0,
-        calories: caloriesNutrient?.value || 0,
+        fibers: fiberNutrient?.value || 0,
+        sodium: sodiumNutrient?.value || 0,
         unit: 'g'
       };
     } catch (error) {
@@ -117,10 +125,12 @@ export const useUSDAIngredients = () => {
         .from('ingredientes')
         .insert({
           nome: ingredient.name,
+          calorias_por_100g: ingredient.calories,
           proteinas_por_100g: ingredient.protein,
           carboidratos_por_100g: ingredient.carbs,
           gorduras_por_100g: ingredient.fat,
-          calorias_por_100g: ingredient.calories,
+          fibras_por_100g: ingredient.fibers,
+          sodio_por_100g: ingredient.sodium,
           unidade_padrao: ingredient.unit
         });
 
@@ -132,17 +142,19 @@ export const useUSDAIngredients = () => {
     }
   };
 
-  const addCustomIngredient = async (name: string, macros?: Partial<ProcessedIngredient>) => {
+  const addCustomIngredient = async (macros?: Partial<ProcessedIngredient>) => {
     try {
       const { data, error } = await supabase
         .from('ingredientes')
         .insert({
-          nome: name,
+          nome: macros.name,
+          calorias_por_100g: macros?.calories || 0,
           proteinas_por_100g: macros?.protein || 0,
           carboidratos_por_100g: macros?.carbs || 0,
           gorduras_por_100g: macros?.fat || 0,
-          calorias_por_100g: macros?.calories || 0,
-          unidade_padrao: macros?.unit || 'g'
+          fibras_por_100g: macros?.fibers || 0,
+          sodio_por_100g: macros?.sodium || 0,
+          unidade_padrao: macros?.unit || 'g',
         })
         .select()
         .single();
@@ -161,7 +173,7 @@ export const useUSDAIngredients = () => {
         fat: Number((data as any).gorduras_por_100g) || 0,
         calories: Number((data as any).calorias_por_100g) || 0,
         unit: (data as any).unidade_padrao || 'g'
-      };
+      } as ProcessedIngredient;
     } catch (error) {
       console.error('Erro ao adicionar ingrediente personalizado:', error);
       toast({

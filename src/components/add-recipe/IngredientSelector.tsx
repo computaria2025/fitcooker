@@ -8,10 +8,12 @@ import { useUSDAIngredients } from '@/hooks/useUSDAIngredients';
 
 interface ProcessedIngredient {
   name: string;
+  calories: number;
   protein: number;
   carbs: number;
   fat: number;
-  calories: number;
+  fibers: number;
+  sodium: number;
   unit: string;
 }
 
@@ -96,7 +98,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
     if (!newIngredientName.trim()) return;
 
     // Montar objeto com valores numéricos convertidos
-    const newIngredientData = {
+    const newIngredientData : ProcessedIngredient = {
       name: newIngredientName.trim(),
       calories: parseFloat(calorias) || 0,
       protein: parseFloat(proteinas) || 0,
@@ -107,21 +109,8 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
       unit: unidadePadrao || 'g',
     };
 
-    // Adaptar para o formato esperado pela sua função de inserção
-    // Note que seu backend espera nomes em português:
-    const backendPayload = {
-      nome: newIngredientData.name,
-      calorias_por_100g: newIngredientData.calories,
-      proteinas_por_100g: newIngredientData.protein,
-      carboidratos_por_100g: newIngredientData.carbs,
-      gorduras_por_100g: newIngredientData.fat,
-      fibras_por_100g: newIngredientData.fibers,
-      sodio_por_100g: newIngredientData.sodium,
-      unidade_padrao: newIngredientData.unit,
-    };
-
     // Submeter para o backend (via hook ou função addCustomIngredient)
-    const newIngredient = await addCustomIngredient(backendPayload);
+    const newIngredient = await addCustomIngredient(newIngredientData);
     if (newIngredient) {
       handleSelectIngredient(currentIngredientIndex, newIngredient);
       setShowAddIngredientForm(false);
