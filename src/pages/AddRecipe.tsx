@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Import components
 import BasicInformation from '@/components/add-recipe/BasicInformation';
-import MediaUpload from '@/components/add-recipe/MediaUpload';
+import RecipeImageUpload from '@/components/ui/RecipeImageUpload';
 import Ingredients from '@/components/add-recipe/Ingredients';
 import Steps from '@/components/add-recipe/Steps';
 import RecipePreview from '@/components/add-recipe/RecipePreview';
@@ -36,15 +36,6 @@ interface RecipeStep {
   description: string;
 }
 
-interface MediaItem {
-  id: string;
-  type: 'image' | 'video';
-  file?: File;
-  preview?: string;
-  url?: string;
-  isMain: boolean;
-}
-
 const AddRecipe: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -64,7 +55,7 @@ const AddRecipe: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   
   // Images and media
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [recipeImages, setRecipeImages] = useState<string[]>([]);
   
   // Ingredients management
   const [ingredients, setIngredients] = useState<IngredientInput[]>([
@@ -106,7 +97,7 @@ const AddRecipe: React.FC = () => {
     { title: 'Tempo de preparo', isValid: preparationTime !== '' },
     { title: 'Porções', isValid: servings !== '' },
     { title: 'Pelo menos uma categoria', isValid: selectedCategories.length > 0 },
-    { title: 'Imagem principal', isValid: mediaItems.some(item => item.isMain) },
+    { title: 'Imagem principal', isValid: recipeImages.length > 0 },
     { title: 'Pelo menos um ingrediente', isValid: ingredients.some(ing => ing.name.trim() !== '' && ing.quantity > 0) },
     { title: 'Pelo menos um passo', isValid: steps.some(step => step.description.trim() !== '') }
   ];
@@ -115,65 +106,14 @@ const AddRecipe: React.FC = () => {
     (validationItems.filter(item => item.isValid).length / validationItems.length) * 100
   );
 
-  // Handler for multiple image uploads
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const files = Array.from(e.target.files) as File[];
-      const newMediaItems: MediaItem[] = files.map((file, index) => ({
-        id: Date.now().toString() + index,
-        type: 'image',
-        file: file,
-        preview: URL.createObjectURL(file),
-        isMain: mediaItems.length === 0 && index === 0
-      }));
-      setMediaItems(prev => [...prev, ...newMediaItems]);
-    }
+  // Handler for image uploads
+  const handleImageUpload = (url: string) => {
+    setRecipeImages(prev => [...prev, url]);
   };
-  
-  // Handler for adding video file
-  const handleAddVideoUrl = (urlOrFile: string | File) => {
-    if (typeof urlOrFile === 'string') {
-      const newMediaItem: MediaItem = {
-        id: Date.now().toString(),
-        type: 'video',
-        url: urlOrFile,
-        isMain: false
-      };
-      setMediaItems(prev => [...prev, newMediaItem]);
-    } else if (urlOrFile instanceof File) {
-      const newMediaItem: MediaItem = {
-        id: Date.now().toString(),
-        type: 'video',
-        file: urlOrFile,
-        preview: URL.createObjectURL(urlOrFile),
-        isMain: false
-      };
-      setMediaItems(prev => [...prev, newMediaItem]);
-    }
-  };
-  
-  // Handler for removing media item
-  const handleRemoveMediaItem = (id: string) => {
-    const updatedMediaItems = mediaItems.filter(item => item.id !== id);
-    
-    if (mediaItems.find(item => item.id === id)?.isMain && updatedMediaItems.length > 0) {
-      const itemsWithMain = updatedMediaItems.map((item, index) => ({
-        ...item,
-        isMain: index === 0
-      }));
-      setMediaItems(itemsWithMain);
-    } else {
-      setMediaItems(updatedMediaItems);
-    }
-  };
-  
-  // Handler for setting an image as main
-  const handleSetMainImage = (id: string) => {
-    const updatedMediaItems = mediaItems.map(item => ({
-      ...item,
-      isMain: item.id === id
-    }));
-    setMediaItems(updatedMediaItems);
+
+  // Handler for image removal
+  const handleImageRemove = (url: string) => {
+    setRecipeImages(prev => prev.filter(imageUrl => imageUrl !== url));
   };
   
   // Handler for selecting an ingredient from search
@@ -312,40 +252,9 @@ const AddRecipe: React.FC = () => {
     return validationProgress === 100;
   };
 
-  // Upload media files to Supabase Storage
-  const uploadMediaFiles = async (): Promise<{ mainImageUrl?: string; videoUrl?: string }> => {
-    const results: { mainImageUrl?: string; videoUrl?: string } = {};
-    
-    for (const mediaItem of mediaItems) {
-      if (mediaItem.file) {
-        const fileExt = mediaItem.file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
-        const filePath = `recipes/${fileName}`;
-        
-        const { data, error } = await supabase.storage
-          .from('recipe-images')
-          .upload(filePath, mediaItem.file);
-        
-        if (error) {
-          console.error('Erro no upload:', error);
-          continue;
-        }
-        
-        const { data: urlData } = supabase.storage
-          .from('recipe-images')
-          .getPublicUrl(filePath);
-        
-        if (mediaItem.isMain) {
-          results.mainImageUrl = urlData.publicUrl;
-        } else if (mediaItem.type === 'video') {
-          results.videoUrl = urlData.publicUrl;
-        }
-      } else if (mediaItem.url && mediaItem.type === 'video') {
-        results.videoUrl = mediaItem.url;
-      }
-    }
-    
-    return results;
+  // Upload media files to Supabase Storage - now simplified since images are already uploaded
+  const getMainImageUrl = (): string | undefined => {
+    return recipeImages.length > 0 ? recipeImages[0] : undefined;
   };
   
   // Check if user is logged in before proceeding
@@ -376,10 +285,9 @@ const AddRecipe: React.FC = () => {
     
     setIsSubmitting(true);
     
-    // Start a transaction by using a single RPC call
     try {
-      // 1. Upload media files first
-      const { mainImageUrl, videoUrl } = await uploadMediaFiles();
+      // 1. Get main image URL (images are already uploaded via RecipeImageUpload)
+      const mainImageUrl = getMainImageUrl();
       
       // Use Supabase transaction to ensure atomicity
       const { data: result, error: transactionError } = await supabase.rpc('create_recipe_transaction', {
@@ -388,8 +296,6 @@ const AddRecipe: React.FC = () => {
         p_tempo_preparo: parseInt(preparationTime),
         p_porcoes: parseInt(servings),
         p_dificuldade: difficulty,
-        p_imagem_url: mainImageUrl || null,
-        p_video_url: videoUrl || null,
         p_usuario_id: user.id,
         p_ingredientes: ingredients
           .filter(ing => ing.name.trim() && ing.quantity > 0)
@@ -413,7 +319,9 @@ const AddRecipe: React.FC = () => {
         p_calorias_total: totalMacros.calories,
         p_proteinas_total: totalMacros.protein,
         p_carboidratos_total: totalMacros.carbs,
-        p_gorduras_total: totalMacros.fat
+        p_gorduras_total: totalMacros.fat,
+        p_imagem_url: mainImageUrl || null,
+        p_video_url: null
       });
 
       if (transactionError) {
@@ -446,8 +354,7 @@ const AddRecipe: React.FC = () => {
   
   // Get main image preview
   const getMainImagePreview = () => {
-    const mainItem = mediaItems.find(item => item.isMain);
-    return mainItem?.preview || null;
+    return recipeImages.length > 0 ? recipeImages[0] : null;
   };
   
   return (
@@ -482,12 +389,11 @@ const AddRecipe: React.FC = () => {
                   categories={categories}
                 />
                 
-                <MediaUpload 
-                  mediaItems={mediaItems}
-                  handleImageChange={handleImageChange}
-                  handleAddVideoUrl={handleAddVideoUrl}
-                  handleRemoveMediaItem={handleRemoveMediaItem}
-                  handleSetMainImage={handleSetMainImage}
+                <RecipeImageUpload 
+                  onImageUpload={handleImageUpload}
+                  onImageRemove={handleImageRemove}
+                  currentImages={recipeImages}
+                  maxImages={5}
                 />
                 
                 <Ingredients 

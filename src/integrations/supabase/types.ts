@@ -427,7 +427,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_recipe_transaction: {
+        Args: {
+          p_calorias_total: number
+          p_carboidratos_total: number
+          p_categorias: number[]
+          p_descricao: string
+          p_dificuldade: string
+          p_gorduras_total: number
+          p_imagem_url?: string
+          p_ingredientes: Json
+          p_passos: Json
+          p_porcoes: number
+          p_proteinas_total: number
+          p_tempo_preparo: number
+          p_titulo: string
+          p_usuario_id: string
+          p_video_url?: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
