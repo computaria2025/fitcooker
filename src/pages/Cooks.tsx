@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChefHat, Users, Star, MapPin, Check } from 'lucide-react';
@@ -39,13 +38,12 @@ const Cooks: React.FC = () => {
 
   useEffect(() => {
     fetchChefs();
-  }, []);
+  }, [user]); // The key change is here: added 'user' to the dependency array
 
   const fetchChefs = async () => {
     try {
       setLoading(true);
       
-      // Fetch all profiles that have at least one recipe (making them chefs)
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*');
@@ -55,31 +53,27 @@ const Cooks: React.FC = () => {
         throw error;
       }
 
-      // Get additional stats for each chef and filter those with recipes
       const chefsWithStats = await Promise.all(
         (profiles || []).map(async (profile) => {
-          // Get recipe count
           const { count: receitasCount } = await supabase
             .from('receitas')
             .select('*', { count: 'exact', head: true })
             .eq('usuario_id', profile.user_id)
             .eq('status', 'ativa');
 
-          // Get followers count
           const { count: seguidoresCount } = await supabase
             .from('seguidores')
             .select('*', { count: 'exact', head: true })
             .eq('seguido_id', profile.user_id);
 
-          // Get following count
           const { count: seguindoCount } = await supabase
             .from('seguidores')
             .select('*', { count: 'exact', head: true })
             .eq('seguidor_id', profile.user_id);
 
-          // Check if current user is following this chef
           let isFollowing = false;
-          if (user) {
+          // This check is now reliable because the effect will re-run when `user` is available
+          if (user) { 
             const { data: followData } = await supabase
               .from('seguidores')
               .select('id')
@@ -103,11 +97,9 @@ const Cooks: React.FC = () => {
         })
       );
 
-      // Filter only chefs (those with at least one recipe)
       const activeChefs = chefsWithStats.filter(chef => chef.receitas_count > 0);
       setChefs(activeChefs);
       
-      // Initialize following states
       const initialFollowingStates: Record<string, boolean> = {};
       activeChefs.forEach(chef => {
         initialFollowingStates[chef.user_id] = chef.isFollowing;
@@ -161,7 +153,6 @@ const Cooks: React.FC = () => {
         
         setFollowingStates(prev => ({ ...prev, [chefId]: false }));
         
-        // Update chef's follower count
         setChefs(prev => prev.map(chef => 
           chef.user_id === chefId 
             ? { ...chef, seguidores_count: Math.max(0, chef.seguidores_count - 1) }
@@ -185,7 +176,6 @@ const Cooks: React.FC = () => {
         
         setFollowingStates(prev => ({ ...prev, [chefId]: true }));
         
-        // Update chef's follower count
         setChefs(prev => prev.map(chef => 
           chef.user_id === chefId 
             ? { ...chef, seguidores_count: chef.seguidores_count + 1 }
@@ -268,7 +258,6 @@ const Cooks: React.FC = () => {
                         </p>
                       )}
 
-                      {/* Preferências */}
                       {chef.preferencias && chef.preferencias.length > 0 && (
                         <div className="flex flex-wrap gap-1 justify-center mb-4">
                           {chef.preferencias.slice(0, 3).map((pref: string, index: number) => (
