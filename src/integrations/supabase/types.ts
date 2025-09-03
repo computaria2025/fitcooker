@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
@@ -88,6 +88,7 @@ export type Database = {
           calorias_por_100g: number
           carboidratos_por_100g: number
           created_at: string
+          criado_por: string | null
           fibras_por_100g: number
           gorduras_por_100g: number
           id: number
@@ -100,6 +101,7 @@ export type Database = {
           calorias_por_100g?: number
           carboidratos_por_100g?: number
           created_at?: string
+          criado_por?: string | null
           fibras_por_100g?: number
           gorduras_por_100g?: number
           id?: number
@@ -112,6 +114,7 @@ export type Database = {
           calorias_por_100g?: number
           carboidratos_por_100g?: number
           created_at?: string
+          criado_por?: string | null
           fibras_por_100g?: number
           gorduras_por_100g?: number
           id?: number
@@ -120,7 +123,15 @@ export type Database = {
           sodio_por_100g?: number
           unidade_padrao?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ingredientes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       profiles: {
         Row: {
