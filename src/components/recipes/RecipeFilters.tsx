@@ -168,15 +168,15 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-3 block flex items-center">
                   <Clock className="w-4 h-4 mr-2" />
-                  Tempo: {timeRange[0]}-{timeRange[1]} min
+                  Tempo: {timeRange[0]}-{(timeRange[1] === 181 ? '∞' : timeRange[1])} min
                 </label>
                 <div className="px-3">
                   <Slider
                     value={timeRange}
                     onValueChange={setTimeRange}
-                    max={180}
-                    min={5}
-                    step={5}
+                    max={181}
+                    min={0}
+                    step={1}
                     className="w-full"
                   />
                 </div>

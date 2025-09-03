@@ -21,7 +21,7 @@ const Recipes: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const defaultTimeRange = [0, 180];
+  const defaultTimeRange = [0, 181];
   const defaultServingsRange = [1, 12];
   const [timeRange, setTimeRange] = useState(defaultTimeRange);
   const [servingsRange, setServingsRange] = useState(defaultServingsRange);
@@ -36,7 +36,7 @@ const Recipes: React.FC = () => {
     const matchesDifficulty = selectedDifficulty === 'all' || 
       recipe.dificuldade.toLowerCase() === selectedDifficulty.toLowerCase();
     
-    const matchesTime = recipe.tempo_preparo >= timeRange[0] && recipe.tempo_preparo <= timeRange[1];
+    const matchesTime = recipe.tempo_preparo >= timeRange[0] && recipe.tempo_preparo <= (timeRange[1] === 181 ? Infinity : timeRange[1]);
     
     const matchesServings = recipe.porcoes >= servingsRange[0] && recipe.porcoes <= servingsRange[1];
 
