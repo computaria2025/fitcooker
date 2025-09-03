@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { supabase } from '@/integrations/supabase/client';
 
+
 // Import components
 import BasicInformation from '@/components/add-recipe/BasicInformation';
 import MediaUpload from '@/components/add-recipe/MediaUpload';
@@ -44,7 +45,29 @@ interface MediaItem {
   isMain: boolean;
 }
 
+interface Ingrediente {
+  nome: string;
+  proteinas_por_100g: number;
+  carboidratos_por_100g: number;
+  gorduras_por_100g: number;
+  calorias_por_100g: number;
+}
+
+interface ReceitaIngrediente {
+  quantidade: number;
+  unidade: string;
+  ingredientes: Ingrediente;
+}
+
+interface Recipe {
+  id: string;
+  nome: string;
+  instrucoes: string;
+  receita_ingredientes: ReceitaIngrediente[];
+}
+
 const RecipeEdit: React.FC = () => {
+  const [setRecipe] = useState<any>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -88,105 +111,59 @@ const RecipeEdit: React.FC = () => {
 
   // Load recipe data
   useEffect(() => {
+    if (!id) return;
+  
     const loadRecipe = async () => {
-      if (!id) return;
-
       try {
-        // Fetch recipe data
-        const { data: recipe, error: recipeError } = await supabase
-          .from('receitas')
+        setLoading(true);
+        const numericId = Number(id);
+        const { data, error } = await supabase
+          .from("receitas")
           .select(`
             *,
-            receita_categorias(categoria_id),
             receita_ingredientes(
               quantidade,
               unidade,
-              ordem,
-              ingredientes(nome, proteina, carboidratos, gorduras, calorias)
-            ),
-            receita_passos(ordem, descricao)
+              ingredientes(
+                nome,
+                proteinas_por_100g,
+                carboidratos_por_100g,
+                gorduras_por_100g,
+                calorias_por_100g
+              )
+            )
           `)
-          .eq('id', Number(id))
+          .eq("id", numericId)
           .single();
-
-        if (recipeError) throw recipeError;
-
-        // Check if user is the owner
-        if (recipe.usuario_id !== user?.id) {
-          toast({
-            title: "Acesso negado",
-            description: "Você só pode editar suas próprias receitas.",
-            variant: "destructive",
+  
+        if (error) throw error;
+  
+        if (data) {
+          setRecipe({
+            id: data.id,
+            nome: data.titulo,
+            instrucoes: data.descricao,
+            ingredientes: data.receita_ingredientes.map((ri: any) => ({
+              name: ri.ingredientes.nome,
+              amount: ri.quantidade,
+              unit: ri.unidade,
+              protein: ri.ingredientes.proteinas_por_100g || 0,
+              carbs: ri.ingredientes.carboidratos_por_100g || 0,
+              fat: ri.ingredientes.gorduras_por_100g || 0,
+              calories: ri.ingredientes.calorias_por_100g || 0,
+            })),
           });
-          navigate('/profile');
-          return;
         }
-
-        // Set basic information
-        setTitle(recipe.titulo);
-        setDescription(recipe.descricao);
-        setPreparationTime(recipe.tempo_preparo.toString());
-        setServings(recipe.porcoes.toString());
-        setDifficulty(recipe.dificuldade);
-
-        // Set categories
-        const recipeCategories = recipe.receita_categorias?.map((rc: any) => rc.categoria_id.toString()) || [];
-        setSelectedCategories(recipeCategories);
-
-        // Set media
-        if (recipe.imagem_url) {
-          setMediaItems([{
-            id: '1',
-            type: 'image',
-            url: recipe.imagem_url,
-            isMain: true
-          }]);
-        }
-
-        // Set ingredients
-        const recipeIngredients = recipe.receita_ingredientes?.map((ri: any, index: number) => ({
-          id: (index + 1).toString(),
-          name: ri.ingredientes.nome,
-          quantity: ri.quantidade,
-          unit: ri.unidade,
-          protein: ri.ingredientes.proteina || 0,
-          carbs: ri.ingredientes.carboidratos || 0,
-          fat: ri.ingredientes.gorduras || 0,
-          calories: ri.ingredientes.calorias || 0
-        })) || [];
-        
-        if (recipeIngredients.length > 0) {
-          setIngredients(recipeIngredients);
-        }
-
-        // Set steps
-        const recipeSteps = recipe.receita_passos?.map((rp: any) => ({
-          id: rp.ordem.toString(),
-          order: rp.ordem,
-          description: rp.descricao
-        })) || [];
-        
-        if (recipeSteps.length > 0) {
-          setSteps(recipeSteps);
-        }
-
-      } catch (error) {
-        console.error('Erro ao carregar receita:', error);
-        toast({
-          title: "Erro ao carregar receita",
-          description: "Não foi possível carregar os dados da receita.",
-          variant: "destructive",
-        });
-        navigate('/profile');
+      } catch (err) {
+        console.error("Erro ao carregar receita:", err);
       } finally {
         setLoading(false);
       }
     };
-
-    if (user) {
-      loadRecipe();
-    }
-  }, [id, user, navigate, toast]);
+  
+    loadRecipe();
+  }, [id]);
+  
 
   // Calculate total macros
   const totalMacros = ingredients.reduce(
@@ -226,9 +203,9 @@ const RecipeEdit: React.FC = () => {
         id: Date.now().toString() + index,
         type: 'image',
         file: file,
-        preview: URL.createObjectURL(file),
+        preview: URL.createObjectURL(file as Blob),
         isMain: mediaItems.length === 0 && index === 0
-      }));
+      } as MediaItem));
       
       setMediaItems(prev => [...prev, ...newMediaItems]);
     }
@@ -599,7 +576,6 @@ const RecipeEdit: React.FC = () => {
       </div>
     );
   }
-  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
