@@ -79,25 +79,17 @@ const FollowersDialog: React.FC<FollowersDialogProps> = ({
           ) : (
             <div className="space-y-3">
               {data.map((item, index) => {
-                const profile = type === 'followers' 
-                  ? item.profiles || {} 
-                  : item.profiles || {};
-                
-                const userId = type === 'followers' 
-                  ? item.seguidor_id 
-                  : item.seguido_id;
-                
                 return (
                   <div key={index} className="flex items-center justify-between space-x-3 p-2 rounded-lg hover:bg-gray-50">
                     <div className="flex items-center space-x-3">
                       <Avatar className="w-10 h-10">
-                        <AvatarImage src={profile.avatar_url} />
+                        <AvatarImage src={item.avatar_url} />
                         <AvatarFallback>
                           <User className="w-5 h-5" />
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{profile.nome || 'Usuário'}</p>
+                        <p className="font-medium">{item.nome || 'Usuário'}</p>
                       </div>
                     </div>
                     
@@ -105,7 +97,7 @@ const FollowersDialog: React.FC<FollowersDialogProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleUnfollow(userId)}
+                        onClick={() => handleUnfollow(item.user_id)}
                         className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                       >
                         <UserMinus className="w-4 h-4 mr-1" />

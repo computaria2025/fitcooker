@@ -85,39 +85,73 @@ export const useFollowers = (userId?: string) => {
   };
 
   const fetchFollowers = async (targetUserId: string) => {
+    console.debug("fetchFollowers", targetUserId);
     try {
-      const { data, error } = await supabase
+      // Step 1: get seguidor_id list
+      const { data: followerIds, error: followerError } = await supabase
         .from('seguidores')
-        .select(`
-          seguidor_id,
-          profiles!seguidores_seguidor_id_fkey(nome, avatar_url)
-        `)
+        .select('seguidor_id')
         .eq('seguido_id', targetUserId);
-
-      if (error) throw error;
-      setFollowers(data || []);
+  
+      if (followerError) throw followerError;
+  
+      if (!followerIds || followerIds.length === 0) {
+        setFollowers([]);
+        return;
+      }
+  
+      // Step 2: fetch profiles for those IDs
+      const ids = followerIds.map(f => f.seguidor_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, user_id, nome, avatar_url')
+        .in('user_id', ids);
+  
+      if (profilesError) throw profilesError;
+  
+      // Step 3: merge results
+      setFollowers(profiles || []);
     } catch (error) {
       console.error('Error fetching followers:', error);
     }
   };
-
+  
   const fetchFollowing = async (targetUserId: string) => {
+    console.debug("fetchFollowing", targetUserId);
     try {
-      const { data, error } = await supabase
+      // Step 1: get seguindo_id list
+      const { data: followingIds, error: followingError } = await supabase
         .from('seguidores')
-        .select(`
-          seguido_id,
-          profiles!seguidores_seguido_id_fkey(nome, avatar_url)
-        `)
+        .select('seguido_id')
         .eq('seguidor_id', targetUserId);
+  
+      if (followingError) throw followingError;
+  
+      if (!followingIds || followingIds.length === 0) {
+        setFollowing([]);
+        return;
+      }
+  
+      // Step 2: fetch profiles for those IDs
+      const ids = followingIds.map(f => f.seguido_id);
+      console.debug("ids", ids);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, user_id, nome, avatar_url')
+        .in('user_id', ids);
+  
 
-      if (error) throw error;
-      setFollowing(data || []);
+      if (profilesError) throw profilesError;
+
+      console.debug("profiles", profiles);
+  
+      // Step 3: merge results
+      setFollowing(profiles || []);
     } catch (error) {
-      console.error('Error fetching following:', error);
+      console.error('Error fetching followers:', error);
     }
   };
-
+  
   return {
     isFollowing,
     loading,
