@@ -175,8 +175,8 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                     value={timeRange}
                     onValueChange={setTimeRange}
                     max={180}
-                    min={5}
-                    step={5}
+                    min={0}
+                    step={1}
                     className="w-full"
                   />
                 </div>

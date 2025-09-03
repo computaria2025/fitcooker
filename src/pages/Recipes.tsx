@@ -21,8 +21,10 @@ const Recipes: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const [timeRange, setTimeRange] = useState([5, 180]);
-  const [servingsRange, setServingsRange] = useState([1, 12]);
+  const defaultTimeRange = [0, 180];
+  const defaultServingsRange = [1, 12];
+  const [timeRange, setTimeRange] = useState(defaultTimeRange);
+  const [servingsRange, setServingsRange] = useState(defaultServingsRange);
 
   const filteredRecipes = recipes.filter(recipe => {
     const matchesSearch = recipe.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -62,12 +64,13 @@ const Recipes: React.FC = () => {
     setSelectedCategory('all');
     setSelectedDifficulty('all');
     setSortBy('newest');
-    setTimeRange([5, 180]);
-    setServingsRange([1, 12]);
+    setTimeRange(defaultTimeRange);
+    setServingsRange(defaultServingsRange);
   };
 
   const hasActiveFilters = searchTerm !== '' || selectedCategory !== 'all' || selectedDifficulty !== 'all' || 
-    timeRange[0] !== 5 || timeRange[1] !== 180 || servingsRange[0] !== 1 || servingsRange[1] !== 12;
+    timeRange[0] !== defaultTimeRange[0] || timeRange[1] !== defaultTimeRange[1] ||
+    servingsRange[0] !== defaultServingsRange[0] || servingsRange[1] !== defaultServingsRange[1];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
