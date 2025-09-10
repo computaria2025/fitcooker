@@ -5,7 +5,21 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import RatingStars from '@/components/ui/RatingStars';
 import { supabase } from '@/integrations/supabase/client';
-import { ChefHat, MessageSquare } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useCommentActions } from '@/hooks/useCommentActions';
+import EditCommentDialog from '@/components/ui/EditCommentDialog';
+import { ChefHat, MessageSquare, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Comment {
   id: number;
@@ -23,13 +37,17 @@ interface CommentsDialogProps {
   recipeId: number;
   commentCount: number;
   trigger?: React.ReactNode;
+  onCommentsUpdate?: () => void;
 }
 
 export const CommentsDialog: React.FC<CommentsDialogProps> = ({ 
   recipeId, 
   commentCount, 
-  trigger 
+  trigger,
+  onCommentsUpdate 
 }) => {
+  const { user } = useAuth();
+  const { deleteComment, isLoading: isDeletingComment } = useCommentActions();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -59,6 +77,19 @@ export const CommentsDialog: React.FC<CommentsDialogProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    const success = await deleteComment(commentId);
+    if (success) {
+      fetchComments();
+      onCommentsUpdate?.();
+    }
+  };
+
+  const handleCommentUpdated = () => {
+    fetchComments();
+    onCommentsUpdate?.();
   };
 
   useEffect(() => {
@@ -108,20 +139,62 @@ export const CommentsDialog: React.FC<CommentsDialogProps> = ({
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <span className="font-semibold text-gray-900">
-                          {comment.profiles?.nome || 'Usuário Anônimo'}
-                        </span>
-                        <RatingStars initialRating={comment.nota} readOnly size="sm" />
-                        <span className="text-sm text-gray-500">
-                          {new Date(comment.created_at).toLocaleDateString('pt-BR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-3">
+                          <span className="font-semibold text-gray-900">
+                            {comment.profiles?.nome || 'Usuário Anônimo'}
+                          </span>
+                          <RatingStars initialRating={comment.nota} readOnly size="sm" />
+                          <span className="text-sm text-gray-500">
+                            {new Date(comment.created_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+                        
+                        {/* Action buttons for comment owner */}
+                        {user && user.id === comment.usuario_id && (
+                          <div className="flex items-center space-x-2">
+                            <EditCommentDialog 
+                              comment={comment}
+                              onCommentUpdated={handleCommentUpdated}
+                            />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all duration-200"
+                                  disabled={isDeletingComment}
+                                >
+                                  <Trash2 className="w-3 h-3 mr-1" />
+                                  Excluir
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir comentário</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja excluir este comentário? Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteComment(comment.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        )}
                       </div>
                       {comment.comentario && (
                         <p className="text-gray-700 leading-relaxed">

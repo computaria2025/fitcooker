@@ -33,6 +33,39 @@ const RecipeDetail: React.FC = () => {
     }
   }, [id]);
 
+  const handleDeleteReview = async (reviewId: number) => {
+    if (!confirm("Tem certeza que deseja excluir seu comentário?")) return;
+  
+    const { error } = await supabase
+      .from("avaliacoes")
+      .delete()
+      .eq("id", reviewId);
+  
+    if (error) {
+      console.error("Erro ao excluir comentário:", error);
+    } else {
+      fetchReviews(); // atualiza lista
+    }
+  };
+  
+  const handleEditReview = (review: any) => {
+    const newComment = prompt("Edite seu comentário:", review.comentario);
+    if (newComment === null) return;
+  
+    supabase
+      .from("avaliacoes")
+      .update({ comentario: newComment, updated_at: new Date(review.created_at).toLocaleDateString('pt-BR') })
+      .eq("id", review.id)
+      .then(({ error }) => {
+        if (error) {
+          console.error("Erro ao editar comentário:", error);
+        } else {
+          fetchReviews();
+        }
+      });
+  };
+  
+
   const fetchRecipe = async () => {
     try {
       setLoading(true);
@@ -240,7 +273,10 @@ const RecipeDetail: React.FC = () => {
                         <RateRecipeButton 
                           recipeId={recipe.id}
                           currentRating={recipe.nota_media || 0}
-                          onRatingUpdate={fetchRecipe}
+                          onRatingUpdate={() => {
+                            fetchRecipe();
+                            fetchReviews();
+                          }}
                         />
                       )}
                     </div>
@@ -368,6 +404,10 @@ const RecipeDetail: React.FC = () => {
                           <CommentsDialog 
                             recipeId={recipe.id} 
                             commentCount={reviews.length}
+                            onCommentsUpdate={() => {
+                              fetchReviews();
+                              fetchRecipe();
+                            }}
                           />
                         )}
                       </CardTitle>
@@ -396,6 +436,22 @@ const RecipeDetail: React.FC = () => {
                                   </div>
                                   {review.comentario && (
                                     <p className="text-gray-700 leading-relaxed">
+                                      {user?.id === review.usuario_id && (
+                                        <div className="flex space-x-2 mt-2">
+                                          <button
+                                            onClick={() => handleEditReview(review)}
+                                            className="text-sm text-blue-600 hover:underline"
+                                          >
+                                            Editar
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeleteReview(review.id)}
+                                            className="text-sm text-red-600 hover:underline"
+                                          >
+                                            Excluir
+                                          </button>
+                                        </div>
+                                      )}
                                       {review.comentario}
                                     </p>
                                   )}
