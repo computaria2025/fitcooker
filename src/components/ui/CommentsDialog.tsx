@@ -158,7 +158,7 @@ export const CommentsDialog: React.FC<CommentsDialogProps> = ({
                         
                         {/* Action buttons for comment owner */}
                         {user && user.id === comment.usuario_id && (
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center space-x-2">
                             <EditCommentDialog 
                               comment={comment}
                               onCommentUpdated={handleCommentUpdated}
@@ -166,12 +166,13 @@ export const CommentsDialog: React.FC<CommentsDialogProps> = ({
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button 
-                                  variant="ghost" 
+                                  variant="outline" 
                                   size="sm" 
-                                  className="text-gray-600 hover:text-red-600"
+                                  className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all duration-200"
                                   disabled={isDeletingComment}
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-3 h-3 mr-1" />
+                                  Excluir
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>

@@ -45,8 +45,13 @@ export const EditCommentDialog: React.FC<EditCommentDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-gray-600 hover:text-fitcooker-orange">
-          <Edit2 className="w-4 h-4" />
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200"
+        >
+          <Edit2 className="w-3 h-3 mr-1" />
+          Editar
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
