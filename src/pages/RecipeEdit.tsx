@@ -417,10 +417,10 @@ const RecipeEdit: React.FC = () => {
       if (mediaItem.file) {
         const fileExt = mediaItem.file.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
-        const filePath = `recipes/${fileName}`;
+        const filePath = `${user.id}/recipes/${fileName}`;
         
         const { data, error } = await supabase.storage
-          .from('recipe-media')
+          .from('recipe-images')
           .upload(filePath, mediaItem.file);
         
         if (error) {
@@ -429,7 +429,7 @@ const RecipeEdit: React.FC = () => {
         }
         
         const { data: urlData } = supabase.storage
-          .from('recipe-media')
+          .from('recipe-images')
           .getPublicUrl(filePath);
         
         if (mediaItem.isMain) {
