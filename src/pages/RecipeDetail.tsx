@@ -273,7 +273,10 @@ const RecipeDetail: React.FC = () => {
                         <RateRecipeButton 
                           recipeId={recipe.id}
                           currentRating={recipe.nota_media || 0}
-                          onRatingUpdate={fetchRecipe}
+                          onRatingUpdate={() => {
+                            fetchRecipe();
+                            fetchReviews();
+                          }}
                         />
                       )}
                     </div>
@@ -401,6 +404,10 @@ const RecipeDetail: React.FC = () => {
                           <CommentsDialog 
                             recipeId={recipe.id} 
                             commentCount={reviews.length}
+                            onCommentsUpdate={() => {
+                              fetchReviews();
+                              fetchRecipe();
+                            }}
                           />
                         )}
                       </CardTitle>
