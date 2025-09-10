@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChefHat, Clock, Users, TrendingUp, BookOpen, ShoppingCart, Star } from 'lucide-react';
+import { ChefHat, Clock, Users, TrendingUp, BookOpen, ShoppingCart, Star, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/layout/Navbar';
@@ -12,10 +11,23 @@ import RatingStars from '@/components/ui/RatingStars';
 import SaveRecipeButton from '@/components/recipe/SaveRecipeButton';
 import RateRecipeButton from '@/components/recipe/RateRecipeButton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import ImageCarousel from '@/components/ui/ImageCarousel';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import NutritionDisplay from '@/components/ui/NutritionDisplay';
 import CommentsDialog from '@/components/ui/CommentsDialog';
+import { useCommentActions } from '@/hooks/useCommentActions';
+import EditCommentDialog from '@/components/ui/EditCommentDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const RecipeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +37,7 @@ const RecipeDetail: React.FC = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { deleteComment, isLoading: isDeletingComment } = useCommentActions();
 
   useEffect(() => {
     if (id) {
@@ -32,39 +45,6 @@ const RecipeDetail: React.FC = () => {
       fetchReviews();
     }
   }, [id]);
-
-  const handleDeleteReview = async (reviewId: number) => {
-    if (!confirm("Tem certeza que deseja excluir seu comentário?")) return;
-  
-    const { error } = await supabase
-      .from("avaliacoes")
-      .delete()
-      .eq("id", reviewId);
-  
-    if (error) {
-      console.error("Erro ao excluir comentário:", error);
-    } else {
-      fetchReviews(); // atualiza lista
-    }
-  };
-  
-  const handleEditReview = (review: any) => {
-    const newComment = prompt("Edite seu comentário:", review.comentario);
-    if (newComment === null) return;
-  
-    supabase
-      .from("avaliacoes")
-      .update({ comentario: newComment, updated_at: new Date(review.created_at).toLocaleDateString('pt-BR') })
-      .eq("id", review.id)
-      .then(({ error }) => {
-        if (error) {
-          console.error("Erro ao editar comentário:", error);
-        } else {
-          fetchReviews();
-        }
-      });
-  };
-  
 
   const fetchRecipe = async () => {
     try {
@@ -142,6 +122,11 @@ const RecipeDetail: React.FC = () => {
     } catch (error) {
       console.error('Error fetching reviews:', error);
     }
+  };
+
+  const handleCommentUpdated = () => {
+    fetchReviews();
+    fetchRecipe();
   };
 
   const macros = recipe ? {
@@ -261,7 +246,7 @@ const RecipeDetail: React.FC = () => {
                             <RatingStars initialRating={recipe.nota_media} readOnly />
                           </div>
                           <span className="text-lg font-semibold text-gray-700">
-                            {recipe.nota_media} ({recipe.avaliacoes_count} avaliações)
+                            {recipe.nota_media.toFixed(1)} ({recipe.avaliacoes_count} avaliações)
                           </span>
                         </div>
                       )}
@@ -272,11 +257,7 @@ const RecipeDetail: React.FC = () => {
                       {user && (
                         <RateRecipeButton 
                           recipeId={recipe.id}
-                          currentRating={recipe.nota_media || 0}
-                          onRatingUpdate={() => {
-                            fetchRecipe();
-                            fetchReviews();
-                          }}
+                          onRatingUpdate={handleCommentUpdated}
                         />
                       )}
                     </div>
@@ -306,7 +287,6 @@ const RecipeDetail: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
               {/* Left Column - Ingredients and Nutrition */}
               <div className="lg:col-span-1 space-y-6">
-                {/* Ingredients */}
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -323,8 +303,8 @@ const RecipeDetail: React.FC = () => {
                       <ul className="space-y-3">
                         {recipe.receita_ingredientes
                           ?.sort((a: any, b: any) => (a.ordem ?? 0) - (b.ordem ?? 0))
-                          .map((item: any, index: number) => (
-                            <li key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-50 transition-colors">
+                          .map((item: any) => (
+                            <li key={item.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-50 transition-colors">
                               <div className="w-2 h-2 bg-fitcooker-orange rounded-full flex-shrink-0"></div>
                               <span className="text-gray-700">
                                 <span className="font-semibold">{item.quantidade} {item.unidade}</span> de {item.ingredientes?.nome || ''}
@@ -336,7 +316,6 @@ const RecipeDetail: React.FC = () => {
                   </Card>
                 </motion.div>
 
-                {/* Nutrition Information */}
                 {macros && (
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -355,7 +334,6 @@ const RecipeDetail: React.FC = () => {
 
               {/* Right Column - Instructions and Reviews */}
               <div className="lg:col-span-2 space-y-8">
-                {/* Instructions */}
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -372,8 +350,8 @@ const RecipeDetail: React.FC = () => {
                       <div className="space-y-6">
                         {recipe.receita_passos
                           ?.sort((a: any, b: any) => (a.numero_passo ?? 0) - (b.numero_passo ?? 0))
-                          .map((step: any, index: number) => (
-                            <div key={index} className="flex space-x-4 p-4 rounded-xl bg-gradient-to-r from-orange-50 to-orange-25 hover:from-orange-100 hover:to-orange-50 transition-colors">
+                          .map((step: any) => (
+                            <div key={step.id} className="flex space-x-4 p-4 rounded-xl bg-gradient-to-r from-orange-50 to-orange-25 hover:from-orange-100 hover:to-orange-50 transition-colors">
                               <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-fitcooker-orange to-orange-500 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
                                 {step.numero_passo}
                               </div>
@@ -387,7 +365,6 @@ const RecipeDetail: React.FC = () => {
                   </Card>
                 </motion.div>
 
-                {/* Reviews Section */}
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -404,10 +381,7 @@ const RecipeDetail: React.FC = () => {
                           <CommentsDialog 
                             recipeId={recipe.id} 
                             commentCount={reviews.length}
-                            onCommentsUpdate={() => {
-                              fetchReviews();
-                              fetchRecipe();
-                            }}
+                            onCommentsUpdate={handleCommentUpdated}
                           />
                         )}
                       </CardTitle>
@@ -415,8 +389,8 @@ const RecipeDetail: React.FC = () => {
                     <CardContent className="p-6">
                       {reviews.length > 0 ? (
                         <div className="space-y-6">
-                          {reviews.slice(0, 3).map((review: any, index: number) => (
-                            <div key={index} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
+                          {reviews.slice(0, 3).map((review: any) => (
+                            <div key={review.id} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
                               <div className="flex items-start space-x-4">
                                 <Avatar className="w-10 h-10">
                                   <AvatarImage src={review.profiles?.avatar_url || ''} />
@@ -425,33 +399,62 @@ const RecipeDetail: React.FC = () => {
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1">
-                                  <div className="flex items-center space-x-3 mb-2">
-                                    <span className="font-semibold text-gray-900">
-                                      {review.profiles?.nome || 'Usuário Anônimo'}
-                                    </span>
-                                    <RatingStars initialRating={review.nota} readOnly size="sm" />
-                                    <span className="text-sm text-gray-500">
-                                      {new Date(review.created_at).toLocaleDateString('pt-BR')}
-                                    </span>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center space-x-3">
+                                      <span className="font-semibold text-gray-900">
+                                        {review.profiles?.nome || 'Usuário Anônimo'}
+                                      </span>
+                                      <RatingStars initialRating={review.nota} readOnly size="sm" />
+                                      <span className="text-sm text-gray-500">
+                                        {new Date(review.created_at).toLocaleDateString('pt-BR')}
+                                      </span>
+                                    </div>
+
+                                    {user && user.id === review.usuario_id && (
+                                      <div className="flex items-center space-x-2">
+                                        <EditCommentDialog 
+                                          comment={review}
+                                          onCommentUpdated={handleCommentUpdated}
+                                        />
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button 
+                                              variant="outline" 
+                                              size="sm" 
+                                              className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all duration-200"
+                                              disabled={isDeletingComment}
+                                            >
+                                              <Trash2 className="w-3 h-3 mr-1" />
+                                              Excluir
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Excluir comentário</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Tem certeza que deseja excluir este comentário? Esta ação não pode ser desfeita.
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                              <AlertDialogAction
+                                                onClick={() => {
+                                                  deleteComment(review.id).then(success => {
+                                                    if (success) handleCommentUpdated();
+                                                  });
+                                                }}
+                                                className="bg-red-600 hover:bg-red-700"
+                                              >
+                                                Excluir
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      </div>
+                                    )}
                                   </div>
                                   {review.comentario && (
                                     <p className="text-gray-700 leading-relaxed">
-                                      {user?.id === review.usuario_id && (
-                                        <div className="flex space-x-2 mt-2">
-                                          <button
-                                            onClick={() => handleEditReview(review)}
-                                            className="text-sm text-blue-600 hover:underline"
-                                          >
-                                            Editar
-                                          </button>
-                                          <button
-                                            onClick={() => handleDeleteReview(review.id)}
-                                            className="text-sm text-red-600 hover:underline"
-                                          >
-                                            Excluir
-                                          </button>
-                                        </div>
-                                      )}
                                       {review.comentario}
                                     </p>
                                   )}
