@@ -125,6 +125,7 @@ const RecipeEdit: React.FC = () => {
             descricao,
             tempo_preparo,
             imagem_url,
+            video_url,
             porcoes,
             dificuldade,
             receita_ingredientes(
@@ -158,14 +159,14 @@ const RecipeEdit: React.FC = () => {
           setPreparationTime(String(data.tempo_preparo));
           setServings(String(data.porcoes));
           setDifficulty(data.dificuldade);
-          setMediaItems([{
-            id: Date.now().toString() + 0,
-            type: 'image',
-            url: data.imagem_url,
-            isMain: true
-
-          } as MediaItem])
-  
+          setMediaItems([ ["image", data.imagem_url], ["video", data.video_url] ]
+            .filter(([_, url]) => !!url)
+            .map(([type, url], index) => ({
+              id: Date.now().toString() + index,
+              type,
+              url,
+              isMain: index === 0,
+            })) as MediaItem[]);
           setIngredients(
             data.receita_ingredientes.map((ri: any, index: number) => ({
               id: String(index + 1),
@@ -247,21 +248,23 @@ const RecipeEdit: React.FC = () => {
   };
   
   // Handler for adding video file
-  const handleAddVideoUrl = (urlOrFile: string | File) => {
+  const handleAddVideo = (urlOrFile: string | File) => {
     if (typeof urlOrFile === 'string') {
+      const url = urlOrFile as string;
       const newMediaItem: MediaItem = {
         id: Date.now().toString(),
         type: 'video',
-        url: urlOrFile,
+        url,
         isMain: false
       };
       setMediaItems(prev => [...prev, newMediaItem]);
     } else {
+      const file = urlOrFile as File;
       const newMediaItem: MediaItem = {
         id: Date.now().toString(),
         type: 'video',
-        file: urlOrFile,
-        preview: URL.createObjectURL(urlOrFile),
+        file,
+        preview: URL.createObjectURL(file),
         isMain: false
       };
       setMediaItems(prev => [...prev, newMediaItem]);
@@ -650,7 +653,7 @@ const RecipeEdit: React.FC = () => {
                 <MediaUpload 
                   mediaItems={mediaItems}
                   handleImageChange={handleImageChange}
-                  handleAddVideoUrl={handleAddVideoUrl}
+                  handleAddVideo={handleAddVideo}
                   handleRemoveMediaItem={handleRemoveMediaItem}
                   handleSetMainImage={handleSetMainImage}
                 />
