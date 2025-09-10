@@ -257,8 +257,9 @@ const RecipeDetail: React.FC = () => {
                       {user && (
                         <RateRecipeButton 
                           recipeId={recipe.id}
-                          onRatingUpdate={handleCommentUpdated}
-                        />
+                          onRatingUpdate={handleCommentUpdated} 
+                          currentRating={0}                        
+                          />
                       )}
                     </div>
                   </div>

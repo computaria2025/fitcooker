@@ -56,7 +56,7 @@ export const useUSDAIngredients = () => {
       }
 
       // Se não encontrou no cache, buscar na API USDA
-      const apiKey = '6T1habKScbohIdvmxbRLcC9rd746THGAAf6uSETS'; 
+      const apiKey = import.meta.env.VITE_USDA_API_KEY; 
       const response = await fetch(
         `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(query)}&pageSize=5`
       );
