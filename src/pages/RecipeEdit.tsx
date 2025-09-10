@@ -146,6 +146,7 @@ const RecipeEdit: React.FC = () => {
             receita_categorias(
               categoria_id
             )
+              
           `)
           .eq("id", numericId)
           .maybeSingle();
@@ -485,6 +486,10 @@ const RecipeEdit: React.FC = () => {
           dificuldade: difficulty,
           imagem_url: mainImageUrl,
           video_url: videoUrl,
+          calorias_total: totalMacros.calories,
+          proteinas_total: totalMacros.protein,
+          carboidratos_total: totalMacros.carbs,
+          gorduras_total: totalMacros.fat,
           updated_at: new Date().toISOString()
         })
         .eq('id', Number(id));
