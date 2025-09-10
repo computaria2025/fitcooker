@@ -120,7 +120,13 @@ const RecipeEdit: React.FC = () => {
         const { data, error } = await supabase
           .from("receitas")
           .select(`
-            *,
+            id,
+            titulo,
+            descricao,
+            tempo_preparo,
+            imagem_url,
+            porcoes,
+            dificuldade,
             receita_ingredientes(
               quantidade,
               unidade,
@@ -131,28 +137,56 @@ const RecipeEdit: React.FC = () => {
                 gorduras_por_100g,
                 calorias_por_100g
               )
+            ),
+            receita_passos(
+              numero_passo,
+              descricao
+            ),
+            receita_categorias(
+              categoria_id
             )
           `)
           .eq("id", numericId)
-          .single();
+          .maybeSingle();
   
         if (error) throw error;
-  
         if (data) {
-          setRecipe({
-            id: data.id,
-            nome: data.titulo,
-            instrucoes: data.descricao,
-            ingredientes: data.receita_ingredientes.map((ri: any) => ({
+          // Preencher os states do formulário
+          setTitle(data.titulo);
+          setDescription(data.descricao || "");
+          setPreparationTime(String(data.tempo_preparo));
+          setServings(String(data.porcoes));
+          setDifficulty(data.dificuldade);
+          setMediaItems([{
+            id: Date.now().toString() + 0,
+            type: 'image',
+            url: data.imagem_url,
+            isMain: true
+
+          } as MediaItem])
+  
+          setIngredients(
+            data.receita_ingredientes.map((ri: any, index: number) => ({
+              id: String(index + 1),
               name: ri.ingredientes.nome,
-              amount: ri.quantidade,
+              quantity: Number(ri.quantidade),
               unit: ri.unidade,
-              protein: ri.ingredientes.proteinas_por_100g || 0,
-              carbs: ri.ingredientes.carboidratos_por_100g || 0,
-              fat: ri.ingredientes.gorduras_por_100g || 0,
-              calories: ri.ingredientes.calorias_por_100g || 0,
-            })),
-          });
+              protein: Number(ri.ingredientes.proteinas_por_100g) || 0,
+              carbs: Number(ri.ingredientes.carboidratos_por_100g) || 0,
+              fat: Number(ri.ingredientes.gorduras_por_100g) || 0,
+              calories: Number(ri.ingredientes.calorias_por_100g) || 0,
+            }))
+          );
+  
+          setSteps(
+            data.receita_passos.map((p: any) => ({
+              id: String(p.numero_passo),
+              order: p.numero_passo,
+              description: p.descricao,
+            }))
+          );
+  
+          setSelectedCategories(data.receita_categorias.map((c: any) => String(c.categoria_id)));
         }
       } catch (err) {
         console.error("Erro ao carregar receita:", err);

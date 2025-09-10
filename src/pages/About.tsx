@@ -36,7 +36,7 @@ const teamMembers = [
   {
     name: 'Cristiano',
     role: 'Desenvolvedor Fullstack',
-    description: 'Desenvolvedor responsável por cuidas de automações e funcionalidades novas do fitcooker.',
+    description: 'Desenvolvedor responsável por cuidar de automações e funcionalidades novas do fitcooker.',
     avatar: 'cristiano.png',
     icon: <Code className="h-10 w-10" />
   }
