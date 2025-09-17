@@ -28,6 +28,8 @@ interface IngredientInput {
   carbs: number;
   fat: number;
   calories: number;
+  fiber: number;
+  sodium: number;
 }
 
 interface RecipeStep {
@@ -91,7 +93,7 @@ const RecipeEdit: React.FC = () => {
   
   // Ingredients management
   const [ingredients, setIngredients] = useState<IngredientInput[]>([
-    { id: '1', name: '', quantity: 0, unit: 'g', protein: 0, carbs: 0, fat: 0, calories: 0 }
+    { id: '1', name: '', quantity: 0, unit: 'g', protein: 0, carbs: 0, fat: 0, calories: 0, fiber: 0, sodium: 0 }
   ]);
   const [ingredientSearchTerm, setIngredientSearchTerm] = useState('');
   const [newIngredientName, setNewIngredientName] = useState('');
@@ -177,6 +179,8 @@ const RecipeEdit: React.FC = () => {
               carbs: Number(ri.ingredientes.carboidratos_por_100g) || 0,
               fat: Number(ri.ingredientes.gorduras_por_100g) || 0,
               calories: Number(ri.ingredientes.calorias_por_100g) || 0,
+              fiber: Number(ri.ingredientes.fibras_por_100g) || 0,
+              sodium: Number(ri.ingredientes.sodio_por_100g) || 0
             }))
           );
   
@@ -208,10 +212,12 @@ const RecipeEdit: React.FC = () => {
         calories: acc.calories + (ingredient.calories * ingredient.quantity / 100),
         protein: acc.protein + (ingredient.protein * ingredient.quantity / 100),
         carbs: acc.carbs + (ingredient.carbs * ingredient.quantity / 100),
-        fat: acc.fat + (ingredient.fat * ingredient.quantity / 100)
+        fat: acc.fat + (ingredient.fat * ingredient.quantity / 100),
+        fiber: acc.fiber + (ingredient.fiber * ingredient.quantity / 100),
+        sodium: acc.sodium + (ingredient.sodium * ingredient.quantity / 100)
       };
     },
-    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sodium: 0 }
   );
 
   // Validation and progress tracking
@@ -305,7 +311,10 @@ const RecipeEdit: React.FC = () => {
       protein: ingredient.protein,
       carbs: ingredient.carbs,
       fat: ingredient.fat,
-      calories: ingredient.calories
+      calories: ingredient.calories,
+      fiber: ingredient.fiber,
+      sodium: ingredient.sodium
+
     };
     setIngredients(newIngredients);
     setIngredientSearchTerm('');
@@ -330,7 +339,7 @@ const RecipeEdit: React.FC = () => {
   const addIngredient = () => {
     setIngredients([
       ...ingredients,
-      { id: Date.now().toString(), name: '', quantity: 0, unit: 'g', protein: 0, carbs: 0, fat: 0, calories: 0 }
+      { id: Date.now().toString(), name: '', quantity: 0, unit: 'g', protein: 0, carbs: 0, fat: 0, calories: 0, fiber: 0, sodium: 0 }
     ]);
   };
   
@@ -489,6 +498,8 @@ const RecipeEdit: React.FC = () => {
           calorias_total: totalMacros.calories,
           proteinas_total: totalMacros.protein,
           carboidratos_total: totalMacros.carbs,
+          fibras_total: totalMacros.fiber,
+          sodio_total: totalMacros.sodium,
           gorduras_total: totalMacros.fat,
           updated_at: new Date().toISOString()
         })
@@ -524,6 +535,8 @@ const RecipeEdit: React.FC = () => {
               carboidratos_por_100g: ingredient.carbs,
               gorduras_por_100g: ingredient.fat,
               calorias_por_100g: ingredient.calories,
+              fibras_por_100g: ingredient.fiber,
+              sodio_por_100g: ingredient.sodium,
               unidade_padrao: ingredient.unit
             })
             .select()

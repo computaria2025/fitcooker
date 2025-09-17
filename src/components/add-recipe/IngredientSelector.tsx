@@ -12,7 +12,7 @@ interface ProcessedIngredient {
   protein: number;
   carbs: number;
   fat: number;
-  fibers: number;
+  fiber: number;
   sodium: number;
   unit: string;
 }
@@ -104,7 +104,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
       protein: parseFloat(proteinas) || 0,
       carbs: parseFloat(carboidratos) || 0,
       fat: parseFloat(gorduras) || 0,
-      fibers: parseFloat(fibras) || 0,
+      fiber: parseFloat(fibras) || 0,
       sodium: parseFloat(sodio) || 0,
       unit: unidadePadrao || 'g',
     };

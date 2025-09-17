@@ -14,6 +14,8 @@ interface IngredientInput {
   carbs: number;
   fat: number;
   calories: number;
+  fiber: number;
+  sodium: number;
 }
 
 interface IngredientsProps {
@@ -108,7 +110,7 @@ const Ingredients: React.FC<IngredientsProps> = ({
               </div>
               
               {ingredient.name && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2 border-t border-gray-100">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2 border-t border-gray-100">
                   <div className="text-center">
                     <span className="text-xs text-gray-500 block">Proteínas</span>
                     <span className="font-medium">{(ingredient.protein * ingredient.quantity / 100).toFixed(1)}g</span>
@@ -120,6 +122,14 @@ const Ingredients: React.FC<IngredientsProps> = ({
                   <div className="text-center">
                     <span className="text-xs text-gray-500 block">Gorduras</span>
                     <span className="font-medium">{(ingredient.fat * ingredient.quantity / 100).toFixed(1)}g</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-xs text-gray-500 block">Fibras</span>
+                    <span className="font-medium">{(ingredient.fiber * ingredient.quantity / 100).toFixed(1)}g</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-xs text-gray-500 block">Sódio</span>
+                    <span className="font-medium">{(ingredient.sodium * ingredient.quantity / 100).toFixed(1)}g</span>
                   </div>
                   <div className="text-center">
                     <span className="text-xs text-gray-500 block">Calorias</span>

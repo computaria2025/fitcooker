@@ -431,6 +431,8 @@ export type Database = {
         Args: {
           p_calorias_total: number
           p_carboidratos_total: number
+          p_fibras_total: number
+          p_sodio_total: number
           p_categorias: number[]
           p_descricao: string
           p_dificuldade: string
