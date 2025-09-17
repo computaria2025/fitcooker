@@ -13,6 +13,7 @@ import RateRecipeButton from '@/components/recipe/RateRecipeButton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem,CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
 import NutritionDisplay from '@/components/ui/NutritionDisplay';
 import CommentsDialog from '@/components/ui/CommentsDialog';
 import { useCommentActions } from '@/hooks/useCommentActions';
@@ -55,7 +56,8 @@ const RecipeDetail: React.FC = () => {
           *,
           receita_categorias(categorias(nome)),
           receita_ingredientes(*),
-          receita_passos(*)
+          receita_passos(*),
+          receita_media(*)
         `)
         .eq('id', Number(id))
         .eq('status', 'ativa')
@@ -172,7 +174,7 @@ const RecipeDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
-      
+
       <main className="py-8 pt-40">
         <div className="container mx-auto responsive-padding">
           <div className="max-w-6xl mx-auto">
@@ -183,21 +185,39 @@ const RecipeDetail: React.FC = () => {
               className="mb-8"
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
-                {/* Image Section */}
-                <div className="relative">
-                  {recipe.imagem_url ? (
-                    <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
-                      <img 
-                        src={recipe.imagem_url} 
-                        alt={recipe.titulo}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-2xl">
-                      <ChefHat className="w-20 h-20 text-gray-400" />
-                    </div>
-                  )}
+                {/* Media Carousel */}
+                <div className="relative space-y-4">
+                {recipe.receita_media && recipe.receita_media.length > 0 ? (
+                  <div className="rounded-3xl overflow-hidden shadow-2xl">
+                    <Carousel className="w-full">
+                      <CarouselContent>
+                        {recipe.receita_media.map((media: any, index: number) => (
+                          <CarouselItem key={media.id || index} className="aspect-[4/3]">
+                            {media.tipo === "image" ? (
+                              <img
+                                src={media.url}
+                                alt={`${recipe.titulo} - media ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <video
+                                src={media.url}
+                                controls
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious />
+                      <CarouselNext />
+                    </Carousel>
+                  </div>
+                ) : (
+                  <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-2xl">
+                    <ChefHat className="w-20 h-20 text-gray-400" />
+                  </div>
+                )}
                 </div>
 
                 {/* Recipe Info */}
@@ -253,7 +273,7 @@ const RecipeDetail: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex space-x-3">
                       <SaveRecipeButton recipeId={recipe.id} />
                       {user && (
@@ -261,7 +281,7 @@ const RecipeDetail: React.FC = () => {
                           recipeId={recipe.id}
                           onRatingUpdate={handleCommentUpdated} 
                           currentRating={0}                        
-                          />
+                        />
                       )}
                     </div>
                   </div>
@@ -483,7 +503,7 @@ const RecipeDetail: React.FC = () => {
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
