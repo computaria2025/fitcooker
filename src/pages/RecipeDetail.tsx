@@ -184,21 +184,36 @@ const RecipeDetail: React.FC = () => {
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
                 {/* Image Section */}
-                <div className="relative">
-                  {recipe.imagem_url ? (
-                    <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
-                      <img 
-                        src={recipe.imagem_url} 
-                        alt={recipe.titulo}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-2xl">
-                      <ChefHat className="w-20 h-20 text-gray-400" />
-                    </div>
-                  )}
-                </div>
+                <div className="relative space-y-4">
+                {/* Image */}
+                {recipe.imagem_url && (
+                  <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
+                    <img 
+                      src={recipe.imagem_url} 
+                      alt={recipe.titulo}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Video */}
+                {recipe.video_url && (
+                  <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
+                    <video 
+                      src={recipe.video_url} 
+                      controls
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Fallback */}
+                {!recipe.imagem_url && !recipe.video_url && (
+                  <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-2xl">
+                    <ChefHat className="w-20 h-20 text-gray-400" />
+                  </div>
+                )}
+              </div>
 
                 {/* Recipe Info */}
                 <div className="space-y-6">
