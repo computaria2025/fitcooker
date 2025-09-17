@@ -13,6 +13,7 @@ import RateRecipeButton from '@/components/recipe/RateRecipeButton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem,CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
 import NutritionDisplay from '@/components/ui/NutritionDisplay';
 import CommentsDialog from '@/components/ui/CommentsDialog';
 import { useCommentActions } from '@/hooks/useCommentActions';
@@ -186,23 +187,37 @@ const RecipeDetail: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
                 {/* Media Carousel */}
                 <div className="relative space-y-4">
-                  {recipe.receita_media && recipe.receita_media.length > 0 ? (
-                    <div className="overflow-x-auto flex space-x-4 pb-2">
-                      {recipe.receita_media.map((media: any, idx: number) => (
-                        <div key={idx} className="flex-shrink-0 w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
-                          {media.tipo === 'image' ? (
-                            <img src={media.url} alt={`media-${idx}`} className="w-full h-full object-cover" />
-                          ) : (
-                            <video src={media.url} controls className="w-full h-full object-cover" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-2xl">
-                      <ChefHat className="w-20 h-20 text-gray-400" />
-                    </div>
-                  )}
+                {recipe.receita_media && recipe.receita_media.length > 0 ? (
+                  <div className="rounded-3xl overflow-hidden shadow-2xl">
+                    <Carousel className="w-full">
+                      <CarouselContent>
+                        {recipe.receita_media.map((media: any, index: number) => (
+                          <CarouselItem key={media.id || index} className="aspect-[4/3]">
+                            {media.tipo === "image" ? (
+                              <img
+                                src={media.url}
+                                alt={`${recipe.titulo} - media ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <video
+                                src={media.url}
+                                controls
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious />
+                      <CarouselNext />
+                    </Carousel>
+                  </div>
+                ) : (
+                  <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-2xl">
+                    <ChefHat className="w-20 h-20 text-gray-400" />
+                  </div>
+                )}
                 </div>
 
                 {/* Recipe Info */}
