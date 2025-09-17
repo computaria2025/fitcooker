@@ -55,7 +55,8 @@ const RecipeDetail: React.FC = () => {
           *,
           receita_categorias(categorias(nome)),
           receita_ingredientes(*),
-          receita_passos(*)
+          receita_passos(*),
+          receita_media(*)
         `)
         .eq('id', Number(id))
         .eq('status', 'ativa')
@@ -172,7 +173,7 @@ const RecipeDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
       <Navbar />
-      
+
       <main className="py-8 pt-40">
         <div className="container mx-auto responsive-padding">
           <div className="max-w-6xl mx-auto">
@@ -183,37 +184,26 @@ const RecipeDetail: React.FC = () => {
               className="mb-8"
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
-                {/* Image Section */}
+                {/* Media Carousel */}
                 <div className="relative space-y-4">
-                {/* Image */}
-                {recipe.imagem_url && (
-                  <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
-                    <img 
-                      src={recipe.imagem_url} 
-                      alt={recipe.titulo}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-
-                {/* Video */}
-                {recipe.video_url && (
-                  <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
-                    <video 
-                      src={recipe.video_url} 
-                      controls
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-
-                {/* Fallback */}
-                {!recipe.imagem_url && !recipe.video_url && (
-                  <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-2xl">
-                    <ChefHat className="w-20 h-20 text-gray-400" />
-                  </div>
-                )}
-              </div>
+                  {recipe.receita_media && recipe.receita_media.length > 0 ? (
+                    <div className="overflow-x-auto flex space-x-4 pb-2">
+                      {recipe.receita_media.map((media: any, idx: number) => (
+                        <div key={idx} className="flex-shrink-0 w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
+                          {media.tipo === 'image' ? (
+                            <img src={media.url} alt={`media-${idx}`} className="w-full h-full object-cover" />
+                          ) : (
+                            <video src={media.url} controls className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-2xl">
+                      <ChefHat className="w-20 h-20 text-gray-400" />
+                    </div>
+                  )}
+                </div>
 
                 {/* Recipe Info */}
                 <div className="space-y-6">
@@ -268,7 +258,7 @@ const RecipeDetail: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex space-x-3">
                       <SaveRecipeButton recipeId={recipe.id} />
                       {user && (
@@ -276,7 +266,7 @@ const RecipeDetail: React.FC = () => {
                           recipeId={recipe.id}
                           onRatingUpdate={handleCommentUpdated} 
                           currentRating={0}                        
-                          />
+                        />
                       )}
                     </div>
                   </div>
@@ -498,7 +488,7 @@ const RecipeDetail: React.FC = () => {
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
