@@ -120,39 +120,42 @@ const RecipeEdit: React.FC = () => {
         setLoading(true);
         const numericId = Number(id);
         const { data, error } = await supabase
-          .from("receitas")
-          .select(`
-            id,
-            titulo,
-            descricao,
-            tempo_preparo,
-            imagem_url,
-            video_url,
-            porcoes,
-            dificuldade,
-            receita_ingredientes(
-              quantidade,
-              unidade,
-              ingredientes(
-                nome,
-                proteinas_por_100g,
-                carboidratos_por_100g,
-                gorduras_por_100g,
-                calorias_por_100g
-              )
-            ),
-            receita_passos(
-              numero_passo,
-              descricao
-            ),
-            receita_categorias(
-              categoria_id
+        .from("receitas")
+        .select(`
+          id,
+          titulo,
+          descricao,
+          tempo_preparo,
+          porcoes,
+          dificuldade,
+          receita_ingredientes(
+            quantidade,
+            unidade,
+            ingredientes(
+              nome,
+              proteinas_por_100g,
+              carboidratos_por_100g,
+              gorduras_por_100g,
+              calorias_por_100g
             )
-              
-          `)
-          .eq("id", numericId)
-          .maybeSingle();
-  
+          ),
+          receita_passos(
+            numero_passo,
+            descricao
+          ),
+          receita_categorias(
+            categoria_id
+          ),
+          receita_media(
+            url,
+            tipo,
+            ordem,
+            is_main
+          )
+        `)
+        .eq("id", numericId)
+        .maybeSingle();
+
         if (error) throw error;
         if (data) {
           // Preencher os states do formulário
@@ -161,14 +164,18 @@ const RecipeEdit: React.FC = () => {
           setPreparationTime(String(data.tempo_preparo));
           setServings(String(data.porcoes));
           setDifficulty(data.dificuldade);
-          setMediaItems([ ["image", data.imagem_url], ["video", data.video_url] ]
-            .filter(([_, url]) => !!url)
-            .map(([type, url], index) => ({
-              id: Date.now().toString() + index,
-              type,
-              url,
-              isMain: index === 0,
-            })) as MediaItem[]);
+         
+          if (Array.isArray(data.receita_media)) {
+            console.debug("receita_media", data.receita_media);
+            setMediaItems(
+              data.receita_media.map((m: any) => ({
+                id: String(m.id),
+                type: m.tipo === 'video' ? 'video' : 'image',
+                url: m.url,
+                isMain: m.is_main
+              }))
+            );
+          }
           setIngredients(
             data.receita_ingredientes.map((ri: any, index: number) => ({
               id: String(index + 1),
@@ -423,10 +430,9 @@ const RecipeEdit: React.FC = () => {
   };
 
   // Upload media files to Supabase Storage
-  const uploadMediaFiles = async (): Promise<{ mainImageUrl?: string; videoUrl?: string }> => {
-    const results: { mainImageUrl?: string; videoUrl?: string } = {};
-    
-    for (const mediaItem of mediaItems) {
+  const uploadMediaFiles = async (): Promise<void> => {
+    for (const [i, mediaItem] of mediaItems.entries()) {
+      let url = null;
       if (mediaItem.file) {
         const fileExt = mediaItem.file.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
@@ -445,21 +451,22 @@ const RecipeEdit: React.FC = () => {
           .from('recipe-images')
           .getPublicUrl(filePath);
         
-        if (mediaItem.isMain) {
-          results.mainImageUrl = urlData.publicUrl;
-        } else if (mediaItem.type === 'video') {
-          results.videoUrl = urlData.publicUrl;
-        }
+        url = urlData.publicUrl;
       } else if (mediaItem.url) {
-        if (mediaItem.isMain) {
-          results.mainImageUrl = mediaItem.url;
-        } else if (mediaItem.type === 'video') {
-          results.videoUrl = mediaItem.url;
-        }
+        url = mediaItem.url;
       }
+      const { error: mediaError } = await supabase
+        .from('receita_media')
+        .insert({
+          receita_id: Number(id),
+          url,
+          tipo: mediaItem.type,
+          ordem: i + 1,
+          is_main: mediaItem.isMain
+        } as any);
+      
+      if (mediaError) throw mediaError;
     }
-    
-    return results;
   };
   
   // Submit form
@@ -482,7 +489,7 @@ const RecipeEdit: React.FC = () => {
     
     try {
       // 1. Upload media files
-      const { mainImageUrl, videoUrl } = await uploadMediaFiles();
+      await uploadMediaFiles();
       
       // 2. Update recipe
       const { error: recipeError } = await supabase
@@ -493,8 +500,6 @@ const RecipeEdit: React.FC = () => {
           tempo_preparo: parseInt(preparationTime),
           porcoes: parseInt(servings),
           dificuldade: difficulty,
-          imagem_url: mainImageUrl,
-          video_url: videoUrl,
           calorias_total: totalMacros.calories,
           proteinas_total: totalMacros.protein,
           carboidratos_total: totalMacros.carbs,
