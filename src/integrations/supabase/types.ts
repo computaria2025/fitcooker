@@ -256,6 +256,44 @@ export type Database = {
           },
         ]
       }
+      receita_media: {
+        Row: {
+          created_at: string
+          id: number
+          is_main: boolean
+          ordem: number | null
+          receita_id: number
+          tipo: Database["public"]["Enums"]["MediaType"]
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          is_main?: boolean
+          ordem?: number | null
+          receita_id: number
+          tipo: Database["public"]["Enums"]["MediaType"]
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          is_main?: boolean
+          ordem?: number | null
+          receita_id?: number
+          tipo?: Database["public"]["Enums"]["MediaType"]
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receita_media_receita_id_fkey"
+            columns: ["receita_id"]
+            isOneToOne: false
+            referencedRelation: "receitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       receita_passos: {
         Row: {
           descricao: string
@@ -302,12 +340,14 @@ export type Database = {
           created_at: string
           descricao: string | null
           dificuldade: string
+          fibras_total: number
           gorduras_total: number
           id: number
           imagem_url: string | null
           nota_media: number
           porcoes: number
           proteinas_total: number
+          sodio_total: number
           status: string
           tempo_preparo: number
           titulo: string
@@ -322,12 +362,14 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           dificuldade: string
+          fibras_total?: number
           gorduras_total?: number
           id?: number
           imagem_url?: string | null
           nota_media?: number
           porcoes: number
           proteinas_total?: number
+          sodio_total?: number
           status?: string
           tempo_preparo: number
           titulo: string
@@ -342,12 +384,14 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           dificuldade?: string
+          fibras_total?: number
           gorduras_total?: number
           id?: number
           imagem_url?: string | null
           nota_media?: number
           porcoes?: number
           proteinas_total?: number
+          sodio_total?: number
           status?: string
           tempo_preparo?: number
           titulo?: string
@@ -431,8 +475,28 @@ export type Database = {
         Args: {
           p_calorias_total: number
           p_carboidratos_total: number
+          p_categorias: number[]
+          p_descricao: string
+          p_dificuldade: string
           p_fibras_total: number
+          p_gorduras_total: number
+          p_imagem_url: string
+          p_ingredientes: Json
+          p_passos: Json
+          p_porcoes: number
+          p_proteinas_total: number
           p_sodio_total: number
+          p_tempo_preparo: number
+          p_titulo: string
+          p_usuario_id: string
+          p_video_url: string
+        }
+        Returns: number
+      }
+      create_recipe_transaction_antiga: {
+        Args: {
+          p_calorias_total: number
+          p_carboidratos_total: number
           p_categorias: number[]
           p_descricao: string
           p_dificuldade: string
@@ -451,7 +515,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      MediaType: "image" | "video" | "audio"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -578,6 +642,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      MediaType: ["image", "video", "audio"],
+    },
   },
 } as const
