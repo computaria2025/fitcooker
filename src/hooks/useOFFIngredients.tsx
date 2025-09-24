@@ -22,28 +22,7 @@ export const useOFFIngredients = () => {
     setIsLoading(true);
 
     try {
-      // 1. Primeiro busca no Supabase (cache)
-      const { data: cachedIngredients } = await supabase
-        .from('ingredientes')
-        .select('*')
-        .ilike('nome', `%${query}%`)
-        .limit(5);
-
-      if (cachedIngredients && cachedIngredients.length > 0) {
-        setIsLoading(false);
-        return cachedIngredients.map(ing => ({
-          name: ing.nome as string,
-          calories: Number((ing as any).calorias_por_100g) || 0,
-          protein: Number((ing as any).proteinas_por_100g) || 0,
-          carbs: Number((ing as any).carboidratos_por_100g) || 0,
-          fat: Number((ing as any).gorduras_por_100g) || 0,
-          fibers: Number((ing as any).fibras_por_100g) || 0,
-          sodium: Number((ing as any).sodio_por_100g) || 0,
-          unit: (ing as any).unidade_padrao || 'g'
-        }));
-      }
-
-      // 2. Busca na API OpenFoodFacts
+      // Busca na API OpenFoodFacts
       const response = await fetch(
         `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=5`
       );
@@ -74,7 +53,6 @@ export const useOFFIngredients = () => {
         await cacheIngredient(processed);
       }
 
-      setIsLoading(false);
       return processedIngredients;
     } catch (error) {
       console.error('Erro ao buscar ingredientes OFF:', error);
@@ -83,8 +61,9 @@ export const useOFFIngredients = () => {
         description: "Não foi possível buscar ingredientes no OpenFoodFacts.",
         variant: "destructive",
       });
-      setIsLoading(false);
       return [];
+    } finally {
+      setIsLoading(false);
     }
   };
 

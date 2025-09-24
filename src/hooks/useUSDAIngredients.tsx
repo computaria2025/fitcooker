@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -34,28 +33,7 @@ export const useUSDAIngredients = () => {
     
     setIsLoading(true);
     try {
-      // Primeiro, verificar se o ingrediente já existe no cache (Supabase)
-      const { data: cachedIngredients } = await supabase
-        .from('ingredientes')
-        .select('*')
-        .ilike('nome', `%${query}%`)
-        .limit(5);
-
-      if (cachedIngredients && cachedIngredients.length > 0) {
-        setIsLoading(false);
-        return cachedIngredients.map(ing => ({
-          name: ing.nome as string,
-          calories: Number((ing as any).calorias_por_100g) || 0,
-          protein: Number((ing as any).proteinas_por_100g) || 0,
-          carbs: Number((ing as any).carboidratos_por_100g) || 0,
-          fat: Number((ing as any).gorduras_por_100g) || 0,
-          fiber: Number((ing as any).fibras_por_100g) || 0,
-          sodium: Number((ing as any).sodio_por_100g) || 0,
-          unit: (ing as any).unidade_padrao || 'g'
-        }));
-      }
-
-      // Se não encontrou no cache, buscar na API USDA
+      // Busca direto na API da USDA
       const apiKey = import.meta.env.VITE_USDA_API_KEY; 
       const response = await fetch(
         `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(query)}&pageSize=5`
@@ -77,7 +55,6 @@ export const useUSDAIngredients = () => {
         }
       }
 
-      setIsLoading(false);
       return processedIngredients;
     } catch (error) {
       console.error('Erro ao buscar ingredientes:', error);
@@ -86,8 +63,9 @@ export const useUSDAIngredients = () => {
         description: "Não foi possível buscar ingredientes. Tente novamente.",
         variant: "destructive",
       });
-      setIsLoading(false);
       return [];
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -95,7 +73,6 @@ export const useUSDAIngredients = () => {
     try {
       const nutrients = food.foodNutrients;
       
-      // Mapeamento dos IDs dos nutrientes da USDA
       const caloriesNutrient = nutrients.find(n => n.nutrientId === 1008); // Energy
       const proteinNutrient = nutrients.find(n => n.nutrientId === 1003); // Protein
       const carbsNutrient = nutrients.find(n => n.nutrientId === 1005); // Carbs

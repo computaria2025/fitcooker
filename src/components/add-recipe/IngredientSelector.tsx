@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Search, Plus, Check, X, Loader2 } from 'lucide-react';
 import { useUSDAIngredients } from '@/hooks/useUSDAIngredients';
 import { useOFFIngredients } from '@/hooks/useOFFIngredients';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProcessedIngredient {
   name: string;
@@ -53,7 +54,6 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
   const { searchOFFIngredients, isLoading: isLoadingOFF } = useOFFIngredients();
 
   const [searchResults, setSearchResults] = useState<ProcessedIngredient[]>([]);
-  const [source] = useState<'USDA' | 'OFF'>('USDA'); // alternar automaticamente
   const [calorias, setCalorias] = useState<string>('0');
   const [proteinas, setProteinas] = useState<string>('0');
   const [carboidratos, setCarboidratos] = useState<string>('0');
@@ -64,6 +64,29 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
 
   const isLoading = isLoadingUSDA || isLoadingOFF;
 
+  const searchInDb = async (query: string): Promise<ProcessedIngredient[]> => {
+    if (!query.trim()) return [];
+    const { data: cachedIngredients } = await supabase
+        .from('ingredientes')
+        .select('*')
+        .ilike('nome', `%${query}%`)
+        .limit(10);
+
+    if (cachedIngredients && cachedIngredients.length > 0) {
+      return cachedIngredients.map(ing => ({
+          name: ing.nome as string,
+          calories: Number((ing as any).calorias_por_100g) || 0,
+          protein: Number((ing as any).proteinas_por_100g) || 0,
+          carbs: Number((ing as any).carboidratos_por_100g) || 0,
+          fat: Number((ing as any).gorduras_por_100g) || 0,
+          fiber: Number((ing as any).fibras_por_100g) || 0,
+          sodium: Number((ing as any).sodio_por_100g) || 0,
+          unit: (ing as any).unidade_padrao || 'g'
+      }));
+    }
+    return [];
+  }
+
   // Debounce da busca
   useEffect(() => {
     if (ingredientSearchTerm.trim().length < 2) {
@@ -73,11 +96,21 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
 
     const timeout = setTimeout(async () => {
       try {
-        const [usdaResults, offResults] = await Promise.all([
-          searchUSDAIngredients(ingredientSearchTerm),
-          searchOFFIngredients(ingredientSearchTerm)
-        ]);
-        setSearchResults([...usdaResults, ...offResults]);
+        const dbResults = await searchInDb(ingredientSearchTerm);
+        if (dbResults.length > 0) {
+            setSearchResults(dbResults);
+        } else {
+            const [usdaResults, offResults] = await Promise.all([
+              searchUSDAIngredients(ingredientSearchTerm),
+              searchOFFIngredients(ingredientSearchTerm)
+            ]);
+            const combinedResults = [...usdaResults, ...offResults];
+            const uniqueResults = Array.from(new Set(combinedResults.map(a => a.name)))
+                .map(name => {
+                    return combinedResults.find(a => a.name === name)
+                })
+            setSearchResults(uniqueResults as ProcessedIngredient[]);
+        }
       } catch (error) {
         console.error("Erro ao buscar ingredientes:", error);
         setSearchResults([]);
