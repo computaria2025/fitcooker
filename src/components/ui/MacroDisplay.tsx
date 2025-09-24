@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, Zap, Beef, Wheat, Droplets, Eye } from 'lucide-react';
+import { BarChart3, Zap, Beef, Wheat, Droplets, Eye, Dumbbell } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -10,6 +10,8 @@ interface MacroDisplayProps {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
+  sodium: number;
   compact?: boolean;
   className?: string;
 }
@@ -19,6 +21,8 @@ const MacroDisplay: React.FC<MacroDisplayProps> = ({
   protein, 
   carbs, 
   fat, 
+  fiber,
+  sodium,
   compact = false,
   className = "" 
 }) => {
@@ -29,11 +33,15 @@ const MacroDisplay: React.FC<MacroDisplayProps> = ({
   const proteinPercent = totalMacros > 0 ? (protein / totalMacros) * 100 : 0;
   const carbsPercent = totalMacros > 0 ? (carbs / totalMacros) * 100 : 0;
   const fatPercent = totalMacros > 0 ? (fat / totalMacros) * 100 : 0;
+  const fiberPercent = totalMacros > 0 ? (fat / totalMacros) * 100 : 0;
+  const sodiumPercent = totalMacros > 0 ? (fat / totalMacros) * 100 : 0;
 
   // Calculate calories from macros (more accurate)
   const proteinCalories = protein * 4;
   const carbsCalories = carbs * 4;
   const fatCalories = fat * 9;
+  const fiberGrams = fiber;
+  const sodiumMg = sodium;
   const totalCalculatedCalories = proteinCalories + carbsCalories + fatCalories;
 
   // Use provided calories or calculated if provided is 0
@@ -69,6 +77,26 @@ const MacroDisplay: React.FC<MacroDisplayProps> = ({
       icon: Droplets,
       percent: fatPercent,
       calories: fatCalories
+    },
+    {
+      name: 'Fibras',
+      value: fiber,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-100',
+      progressColor: 'bg-yellow-500',
+      icon: Droplets,
+      percent: fiberPercent,
+      calories: fiberGrams
+    },
+    {
+      name: 'Sódio',
+      value: sodium,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-100',
+      progressColor: 'bg-yellow-500',
+      icon: Dumbbell,
+      percent: sodiumPercent,
+      calories: sodiumMg
     }
   ];
 

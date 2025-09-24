@@ -14,7 +14,9 @@ CREATE OR REPLACE FUNCTION public.create_recipe_transaction(
   p_calorias_total numeric DEFAULT 0,
   p_proteinas_total numeric DEFAULT 0,
   p_carboidratos_total numeric DEFAULT 0,
-  p_gorduras_total numeric DEFAULT 0
+  p_gorduras_total numeric DEFAULT 0,
+  p_fibras_total numeric DEFAULT 0,
+  p_sodio_total numeric DEFAULT 0
 ) RETURNS integer
 LANGUAGE plpgsql
 SECURITY DEFINER

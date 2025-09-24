@@ -121,23 +121,33 @@ const RecipeEdit: React.FC = () => {
         setLoading(true);
         const numericId = Number(recipeID);
         const { data, error } = await supabase
-        .from("receitas")
-        .select(`
-          id,
-          titulo,
-          descricao,
-          tempo_preparo,
-          porcoes,
-          dificuldade,
-          receita_ingredientes(
-            quantidade,
-            unidade,
-            ingredientes(
-              nome,
-              proteinas_por_100g,
-              carboidratos_por_100g,
-              gorduras_por_100g,
-              calorias_por_100g
+          .from("receitas")
+          .select(`
+            id,
+            titulo,
+            descricao,
+            tempo_preparo,
+            porcoes,
+            dificuldade,
+            receita_ingredientes(
+              quantidade,
+              unidade,
+              ingredientes(
+                nome,
+                proteinas_por_100g,
+                carboidratos_por_100g,
+                gorduras_por_100g,
+                calorias_por_100g,
+                fibras_por_100g,
+                sodio_por_100g
+              )
+            ),
+            receita_passos(
+              numero_passo,
+              descricao
+            ),
+            receita_categorias(
+              categoria_id
             )
           ),
           receita_passos(
