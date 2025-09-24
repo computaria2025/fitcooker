@@ -13,6 +13,8 @@ CREATE OR REPLACE FUNCTION public.create_recipe_transaction(
   p_proteinas_total numeric,
   p_carboidratos_total numeric,
   p_gorduras_total numeric,
+  p_fibras_total numeric,
+  p_sodio_total numeric,
   p_imagem_url text DEFAULT NULL,
   p_video_url text DEFAULT NULL
 ) RETURNS integer

@@ -8,6 +8,8 @@ interface NutritionDisplayProps {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
+  sodium: number;
   className?: string;
 }
 
@@ -16,6 +18,8 @@ const NutritionDisplay: React.FC<NutritionDisplayProps> = ({
   protein,
   carbs,
   fat,
+  fiber,
+  sodium,
   className = ""
 }) => {
   const nutrients = [
@@ -46,7 +50,22 @@ const NutritionDisplay: React.FC<NutritionDisplayProps> = ({
       unit: 'g',
       color: 'bg-gradient-to-r from-yellow-500 to-orange-500',
       textColor: 'text-yellow-600'
-    }
+    },
+    {
+    name: 'Fibras',
+    value: fiber,
+    unit: 'g',
+    color: 'bg-gradient-to-r from-pink-500 to-lightpink-500',
+    textColor: 'text-pink-600'
+    },
+    {
+      name: 'Sódio',
+      value: sodium,
+      unit: 'g',
+      color: 'bg-gradient-to-r from-gray-500 to-lightgray-500',
+      textColor: 'text-gray600'
+      }
+    
   ];
 
   return (

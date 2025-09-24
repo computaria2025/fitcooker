@@ -18,6 +18,8 @@ interface RecipePreviewProps {
     protein: number;
     carbs: number;
     fat: number;
+    fiber: number;
+    sodium: number;
   };
   getMainImagePreview: () => string | null;
   isRecipeValid: boolean;
@@ -61,6 +63,8 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
   const proteinPercentage = Math.min(Math.round((totalMacros.protein || 0) / 50 * 100), 100);
   const carbsPercentage = Math.min(Math.round((totalMacros.carbs || 0) / 300 * 100), 100);
   const fatPercentage = Math.min(Math.round((totalMacros.fat || 0) / 70 * 100), 100);
+  const fiberPercentage = Math.min(Math.round(((totalMacros.fiber || 0) / 25) * 100),100);
+  const sodiumPercentage = Math.min(Math.round(((totalMacros.sodium || 0) / 2400) * 100),100);
 
   const buttonText = isEditing 
     ? (isSubmitting ? "Salvando..." : "Salvar Alterações")
@@ -154,6 +158,39 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
                 ></div>
               </div>
             </div>
+
+                {/* Fibras */}
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm font-medium">Fibras</span>
+                  <span className="text-sm font-medium">
+                    {Math.round(totalMacros.fiber || 0)}g
+                  </span>
+                </div>
+                <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-purple-500 rounded-full" 
+                    style={{ width: `${fiberPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Sódio */}
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm font-medium">Sódio</span>
+                  <span className="text-sm font-medium">
+                    {Math.round(totalMacros.sodium || 0)}mg
+                  </span>
+                </div>
+                <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-red-500 rounded-full" 
+                    style={{ width: `${sodiumPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            
             
             <div>
               <div className="flex justify-between mb-1">

@@ -17,7 +17,7 @@ interface MediaItem {
 interface MediaUploadProps {
   mediaItems: MediaItem[];
   handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleAddVideoUrl: (url: string) => void;
+  handleAddVideo: (urlOrFile: string | File) => void;
   handleRemoveMediaItem: (id: string) => void;
   handleSetMainImage: (id: string) => void;
 }
@@ -25,7 +25,7 @@ interface MediaUploadProps {
 const MediaUpload: React.FC<MediaUploadProps> = ({
   mediaItems,
   handleImageChange,
-  handleAddVideoUrl,
+  handleAddVideo,
   handleRemoveMediaItem,
   handleSetMainImage
 }) => {
@@ -49,18 +49,8 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
       
-      files.forEach((file, index) => {
-        const newMediaItem: MediaItem = {
-          id: Date.now().toString() + index,
-          type: 'video',
-          file: file,
-          preview: URL.createObjectURL(file),
-          isMain: false
-        };
-        
-        // Simular o mesmo comportamento do handleAddVideoUrl mas com arquivo
-        const fakeUrl = URL.createObjectURL(file);
-        handleAddVideoUrl(fakeUrl);
+      files.forEach((file) => {
+        handleAddVideo(file);
       });
     }
   };

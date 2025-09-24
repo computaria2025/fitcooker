@@ -20,7 +20,7 @@ interface ProcessedIngredient {
   protein: number;
   carbs: number;
   fat: number;
-  fibers: number;
+  fiber: number;
   sodium: number;
   unit: string;
 }
@@ -49,7 +49,7 @@ export const useUSDAIngredients = () => {
           protein: Number((ing as any).proteinas_por_100g) || 0,
           carbs: Number((ing as any).carboidratos_por_100g) || 0,
           fat: Number((ing as any).gorduras_por_100g) || 0,
-          fibers: Number((ing as any).fibras_por_100g) || 0,
+          fiber: Number((ing as any).fibras_por_100g) || 0,
           sodium: Number((ing as any).sodio_por_100g) || 0,
           unit: (ing as any).unidade_padrao || 'g'
         }));
@@ -109,7 +109,7 @@ export const useUSDAIngredients = () => {
         protein: proteinNutrient?.value || 0,
         carbs: carbsNutrient?.value || 0,
         fat: fatNutrient?.value || 0,
-        fibers: fiberNutrient?.value || 0,
+        fiber: fiberNutrient?.value || 0,
         sodium: sodiumNutrient?.value || 0,
         unit: 'g'
       };
@@ -129,7 +129,7 @@ export const useUSDAIngredients = () => {
           proteinas_por_100g: ingredient.protein,
           carboidratos_por_100g: ingredient.carbs,
           gorduras_por_100g: ingredient.fat,
-          fibras_por_100g: ingredient.fibers,
+          fibras_por_100g: ingredient.fiber,
           sodio_por_100g: ingredient.sodium,
           unidade_padrao: ingredient.unit
         });
@@ -152,7 +152,7 @@ export const useUSDAIngredients = () => {
           proteinas_por_100g: macros?.protein || 0,
           carboidratos_por_100g: macros?.carbs || 0,
           gorduras_por_100g: macros?.fat || 0,
-          fibras_por_100g: macros?.fibers || 0,
+          fibras_por_100g: macros?.fiber || 0,
           sodio_por_100g: macros?.sodium || 0,
           unidade_padrao: macros?.unit || 'g',
         })

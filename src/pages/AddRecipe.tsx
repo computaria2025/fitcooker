@@ -28,6 +28,8 @@ interface IngredientInput {
   carbs: number;
   fat: number;
   calories: number;
+  fiber: number;
+  sodium: number;
 }
 
 interface RecipeStep {
@@ -59,7 +61,7 @@ const AddRecipe: React.FC = () => {
   
   // Ingredients management
   const [ingredients, setIngredients] = useState<IngredientInput[]>([
-    { id: '1', name: '', quantity: 0, unit: 'g', protein: 0, carbs: 0, fat: 0, calories: 0 }
+    { id: '1', name: '', quantity: 0, unit: 'g', protein: 0, carbs: 0, fat: 0, calories: 0, fiber: 0, sodium: 0 }
   ]);
   const [ingredientSearchTerm, setIngredientSearchTerm] = useState('');
   const [newIngredientName, setNewIngredientName] = useState('');
@@ -84,10 +86,12 @@ const AddRecipe: React.FC = () => {
         calories: acc.calories + (ingredient.calories * ingredient.quantity / 100),
         protein: acc.protein + (ingredient.protein * ingredient.quantity / 100),
         carbs: acc.carbs + (ingredient.carbs * ingredient.quantity / 100),
-        fat: acc.fat + (ingredient.fat * ingredient.quantity / 100)
+        fat: acc.fat + (ingredient.fat * ingredient.quantity / 100),
+        fiber: acc.fiber + (ingredient.fiber * ingredient.quantity / 100),
+        sodium: acc.sodium + (ingredient.sodium * ingredient.quantity / 100),
       };
     },
-    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sodium: 0 } as IngredientInput
   );
   
   // Validation and progress tracking
@@ -126,7 +130,9 @@ const AddRecipe: React.FC = () => {
       protein: ingredient.protein,
       carbs: ingredient.carbs,
       fat: ingredient.fat,
-      calories: ingredient.calories
+      calories: ingredient.calories,
+      fiber: ingredient.fiber,
+      sodium: ingredient.sodium
     };
     setIngredients(newIngredients);
     setIngredientSearchTerm('');
@@ -152,7 +158,7 @@ const AddRecipe: React.FC = () => {
   const addIngredient = () => {
     setIngredients([
       ...ingredients,
-      { id: Date.now().toString(), name: '', quantity: 0, unit: 'g', protein: 0, carbs: 0, fat: 0, calories: 0 }
+      { id: Date.now().toString(), name: '', quantity: 0, unit: 'g', protein: 0, carbs: 0, fat: 0, calories: 0, fiber: 0, sodium: 0}
     ]);
   };
   
@@ -307,6 +313,8 @@ const AddRecipe: React.FC = () => {
             carboidratos_por_100g: ing.carbs,
             gorduras_por_100g: ing.fat,
             calorias_por_100g: ing.calories,
+            fibras_por_100g: ing.fiber,
+            sodio_por_100g: ing.sodium,
             ordem: index + 1
           })),
         p_passos: steps
@@ -317,6 +325,8 @@ const AddRecipe: React.FC = () => {
           })),
         p_categorias: selectedCategories.map(id => parseInt(id)),
         p_calorias_total: totalMacros.calories,
+        p_sodio_total: totalMacros.sodium,
+        p_fibras_total: totalMacros.fiber,
         p_proteinas_total: totalMacros.protein,
         p_carboidratos_total: totalMacros.carbs,
         p_gorduras_total: totalMacros.fat,

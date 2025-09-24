@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Recipe } from '@/types/recipe';
 import CategoryBadge from './CategoryBadge';
-import { Clock, Users, Star, ChefHat, Zap, Beef, Wheat, Droplets } from 'lucide-react';
+import { Clock, Users, Star, ChefHat, Zap, Beef, Wheat, Droplets, Leaf, FlaskRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -135,25 +135,35 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, className, featured = f
         
         {/* Quick macro preview */}
         <div className="flex items-center justify-between mb-4 p-2 bg-gray-50 rounded-lg">
-          <div className="flex items-center space-x-3 text-xs">
-            <div className="flex items-center space-x-1">
-              <Zap className="w-3 h-3 text-fitcooker-orange" />
-              <span className="font-bold">{macros.calories}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Beef className="w-3 h-3 text-blue-500" />
-              <span>{macros.protein}g</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Wheat className="w-3 h-3 text-green-500" />
-              <span>{macros.carbs}g</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Droplets className="w-3 h-3 text-yellow-500" />
-              <span>{macros.fat}g</span>
+            <div className="flex items-center space-x-3 text-xs">
+              <div className="flex items-center space-x-1">
+                <Zap className="w-3 h-3 text-fitcooker-orange" />
+                <span className="font-bold">{macros.calories}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Beef className="w-3 h-3 text-blue-500" />
+                <span>{macros.protein}g</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Wheat className="w-3 h-3 text-green-500" />
+                <span>{macros.carbs}g</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Droplets className="w-3 h-3 text-yellow-500" />
+                <span>{macros.fat}g</span>
+              </div>
+              {/* Fibras */}
+              <div className="flex items-center space-x-1">
+                <Leaf className="w-3 h-3 text-purple-500" />
+                <span>{macros.fiber}g</span>
+              </div>
+              {/* Sódio */}
+              <div className="flex items-center space-x-1">
+                <FlaskRound className="w-3 h-3 text-red-500" />
+                <span>{macros.sodium}mg</span>
+              </div>
             </div>
           </div>
-        </div>
         
         {/* Author info */}
         <div className="mt-auto">
