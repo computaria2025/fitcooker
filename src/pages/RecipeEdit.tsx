@@ -138,7 +138,9 @@ const RecipeEdit: React.FC = () => {
                 proteinas_por_100g,
                 carboidratos_por_100g,
                 gorduras_por_100g,
-                calorias_por_100g
+                calorias_por_100g,
+                fibras_por_100g,
+                sodio_por_100g
               )
             ),
             receita_passos(
