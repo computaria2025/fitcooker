@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { processIngredient } from '@/services/IngredientProcessingService'; // Importe o serviço
 
 interface ProcessedIngredient {
   name: string;
@@ -8,7 +9,7 @@ interface ProcessedIngredient {
   protein: number;
   carbs: number;
   fat: number;
-  fibers: number;
+  fiber: number;
   sodium: number;
   unit: string;
 }
@@ -22,7 +23,6 @@ export const useOFFIngredients = () => {
     setIsLoading(true);
 
     try {
-      // Busca na API OpenFoodFacts
       const response = await fetch(
         `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=5`
       );
@@ -37,20 +37,21 @@ export const useOFFIngredients = () => {
       for (const product of data.products || []) {
         const nutriments = product.nutriments || {};
 
-        const processed: ProcessedIngredient = {
+        const rawIngredient = {
           name: product.product_name || query,
-          calories: nutriments['energy-kcal_100g'] || 0,
-          protein: nutriments['proteins_100g'] || 0,
-          carbs: nutriments['carbohydrates_100g'] || 0,
-          fat: nutriments['fat_100g'] || 0,
-          fibers: nutriments['fiber_100g'] || 0,
-          sodium: nutriments['sodium_100g'] ? nutriments['sodium_100g'] * 1000 : 0,
+          calories: nutriments['energy-kcal_100g'],
+          protein: nutriments['proteins_100g'],
+          carbs: nutriments['carbohydrates_100g'],
+          fat: nutriments['fat_100g'],
+          fiber: nutriments['fiber_100g'],
+          sodium: nutriments['sodium_100g'] ? nutriments['sodium_100g'] * 1000 : 0, // Converte de g para mg
           unit: 'g'
         };
 
-        processedIngredients.push(processed);
+        const standardizedIngredient = processIngredient(rawIngredient);
+        processedIngredients.push(standardizedIngredient);
 
-        await cacheIngredient(processed);
+        await cacheIngredient(standardizedIngredient);
       }
 
       return processedIngredients;
@@ -77,7 +78,7 @@ export const useOFFIngredients = () => {
           proteinas_por_100g: ingredient.protein,
           carboidratos_por_100g: ingredient.carbs,
           gorduras_por_100g: ingredient.fat,
-          fibras_por_100g: ingredient.fibers,
+          fibras_por_100g: ingredient.fiber,
           sodio_por_100g: ingredient.sodium,
           unidade_padrao: ingredient.unit
         });
