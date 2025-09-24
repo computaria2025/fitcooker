@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Check, X, Loader2 } from 'lucide-react';
 import { useUSDAIngredients } from '@/hooks/useUSDAIngredients';
+import { useOFFIngredients } from '@/hooks/useOFFIngredients';
 
 interface ProcessedIngredient {
   name: string;
@@ -28,7 +35,6 @@ interface IngredientSelectorProps {
   setShowAddIngredientForm: (show: boolean) => void;
   newIngredientName: string;
   setNewIngredientName: (name: string) => void;
-  handleAddCustomIngredient: () => void;
 }
 
 const IngredientSelector: React.FC<IngredientSelectorProps> = ({
@@ -41,14 +47,13 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
   showAddIngredientForm,
   setShowAddIngredientForm,
   newIngredientName,
-  setNewIngredientName,
-  handleAddCustomIngredient
+  setNewIngredientName
 }) => {
-  const { searchUSDAIngredients, addCustomIngredient, isLoading } = useUSDAIngredients();
-  const [searchResults, setSearchResults] = useState<ProcessedIngredient[]>([]);
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const { searchUSDAIngredients, addCustomIngredient, isLoading: isLoadingUSDA } = useUSDAIngredients();
+  const { searchOFFIngredients, isLoading: isLoadingOFF } = useOFFIngredients();
 
-  // Estados novos para dados nutricionais e unidade
+  const [searchResults, setSearchResults] = useState<ProcessedIngredient[]>([]);
+  const [source] = useState<'USDA' | 'OFF'>('USDA'); // alternar automaticamente
   const [calorias, setCalorias] = useState<string>('0');
   const [proteinas, setProteinas] = useState<string>('0');
   const [carboidratos, setCarboidratos] = useState<string>('0');
@@ -57,31 +62,32 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
   const [sodio, setSodio] = useState<string>('0');
   const [unidadePadrao, setUnidadePadrao] = useState<string>('g');
 
-  // Buscar ingredientes quando o termo de busca mudar
+  const isLoading = isLoadingUSDA || isLoadingOFF;
+
+  // Debounce da busca
   useEffect(() => {
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-
-    if (ingredientSearchTerm.trim().length >= 2) {
-      const timeout = setTimeout(async () => {
-        const results = await searchUSDAIngredients(ingredientSearchTerm);
-        setSearchResults(results);
-      }, 500); // Debounce de 500ms
-      
-      setSearchTimeout(timeout);
-    } else {
+    if (ingredientSearchTerm.trim().length < 2) {
       setSearchResults([]);
+      return;
     }
 
-    return () => {
-      if (searchTimeout) {
-        clearTimeout(searchTimeout);
+    const timeout = setTimeout(async () => {
+      try {
+        const [usdaResults, offResults] = await Promise.all([
+          searchUSDAIngredients(ingredientSearchTerm),
+          searchOFFIngredients(ingredientSearchTerm)
+        ]);
+        setSearchResults([...usdaResults, ...offResults]);
+      } catch (error) {
+        console.error("Erro ao buscar ingredientes:", error);
+        setSearchResults([]);
       }
-    };
-  }, [ingredientSearchTerm, searchUSDAIngredients]);
+    }, 500);
 
-  // Limpar os campos nutricionais e nome quando abrir o formulário
+    return () => clearTimeout(timeout);
+  }, [ingredientSearchTerm]);
+
+  // Reset campos ao abrir o formulário
   useEffect(() => {
     if (showAddIngredientForm) {
       setCalorias('0');
@@ -97,8 +103,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
   const handleCustomIngredientSubmit = async () => {
     if (!newIngredientName.trim()) return;
 
-    // Montar objeto com valores numéricos convertidos
-    const newIngredientData : ProcessedIngredient = {
+    const newIngredientData: ProcessedIngredient = {
       name: newIngredientName.trim(),
       calories: parseFloat(calorias) || 0,
       protein: parseFloat(proteinas) || 0,
@@ -109,7 +114,6 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
       unit: unidadePadrao || 'g',
     };
 
-    // Submeter para o backend (via hook ou função addCustomIngredient)
     const newIngredient = await addCustomIngredient(newIngredientData);
     if (newIngredient) {
       handleSelectIngredient(currentIngredientIndex, newIngredient);
@@ -125,15 +129,15 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
         <DialogHeader>
           <DialogTitle>Selecionar Ingrediente</DialogTitle>
           <DialogDescription>
-            Busque ingredientes em nossa base de dados ou na API USDA. Você também pode adicionar ingredientes personalizados.
+            Busque ingredientes na USDA e OpenFoodFacts automaticamente, ou adicione personalizados.
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="relative">
+
+        <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <Input
-            placeholder="Buscar ingrediente..."
             className="pl-10"
+            placeholder="Buscar ingrediente..."
             value={ingredientSearchTerm}
             onChange={(e) => setIngredientSearchTerm(e.target.value)}
             autoFocus
@@ -142,7 +146,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 animate-spin" size={18} />
           )}
         </div>
-        
+
         <div className="max-h-60 overflow-auto">
           {isLoading ? (
             <div className="py-6 text-center">
@@ -161,10 +165,10 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
                   <div className="flex-1">
                     <span className="font-medium">{ingredient.name}</span>
                     <div className="text-xs text-gray-500 mt-1">
-                      P: {ingredient.protein.toFixed(1)}g | C: {ingredient.carbs.toFixed(1)}g | G: {ingredient.fat.toFixed(1)}g
+                      P: {Number(ingredient.protein || 0).toFixed(1)}g | C: {Number(ingredient.carbs || 0).toFixed(1)}g | G: {Number(ingredient.fat || 0).toFixed(1)}g
                     </div>
                   </div>
-                  <span className="text-gray-500 text-xs">{ingredient.calories.toFixed(0)} kcal/100g</span>
+                  <span className="text-gray-500 text-xs">{Number(ingredient.calories || 0).toFixed(0)} kcal/100g</span>
                 </button>
               ))}
             </div>
@@ -178,7 +182,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
             </div>
           )}
         </div>
-        
+
         <div className="border-t pt-4 mt-2">
           {!showAddIngredientForm ? (
             <Button
@@ -204,101 +208,16 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
                   className="mt-1"
                   placeholder="Ex: Quinoa orgânica"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Você poderá adicionar os valores nutricionais após selecionar o ingrediente
-                </p>
               </div>
 
-              {/* NOVOS CAMPOS NUTRICIONAIS */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="calorias">Calorias por 100g</Label>
-                  <Input
-                    id="calorias"
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={calorias}
-                    onChange={(e) => setCalorias(e.target.value)}
-                    className="mt-1"
-                    placeholder="kcal"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="proteinas">Proteínas por 100g</Label>
-                  <Input
-                    id="proteinas"
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={proteinas}
-                    onChange={(e) => setProteinas(e.target.value)}
-                    className="mt-1"
-                    placeholder="g"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="carboidratos">Carboidratos por 100g</Label>
-                  <Input
-                    id="carboidratos"
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={carboidratos}
-                    onChange={(e) => setCarboidratos(e.target.value)}
-                    className="mt-1"
-                    placeholder="g"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="gorduras">Gorduras por 100g</Label>
-                  <Input
-                    id="gorduras"
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={gorduras}
-                    onChange={(e) => setGorduras(e.target.value)}
-                    className="mt-1"
-                    placeholder="g"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="fibras">Fibras por 100g</Label>
-                  <Input
-                    id="fibras"
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={fibras}
-                    onChange={(e) => setFibras(e.target.value)}
-                    className="mt-1"
-                    placeholder="g"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="sodio">Sódio por 100g</Label>
-                  <Input
-                    id="sodio"
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={sodio}
-                    onChange={(e) => setSodio(e.target.value)}
-                    className="mt-1"
-                    placeholder="mg"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="unidadePadrao">Unidade padrão</Label>
-                  <Input
-                    id="unidadePadrao"
-                    value={unidadePadrao}
-                    onChange={(e) => setUnidadePadrao(e.target.value)}
-                    className="mt-1"
-                    placeholder="Ex: g, ml, un"
-                  />
-                </div>
+                <InputField label="Calorias por 100g" value={calorias} setValue={setCalorias} placeholder="kcal" />
+                <InputField label="Proteínas por 100g" value={proteinas} setValue={setProteinas} placeholder="g" />
+                <InputField label="Carboidratos por 100g" value={carboidratos} setValue={setCarboidratos} placeholder="g" />
+                <InputField label="Gorduras por 100g" value={gorduras} setValue={setGorduras} placeholder="g" />
+                <InputField label="Fibras por 100g" value={fibras} setValue={setFibras} placeholder="g" />
+                <InputField label="Sódio por 100g" value={sodio} setValue={setSodio} placeholder="mg" />
+                <InputField label="Unidade padrão" value={unidadePadrao} setValue={setUnidadePadrao} placeholder="g, ml, un" />
               </div>
 
               <div className="flex space-x-2">
@@ -328,5 +247,26 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
     </Dialog>
   );
 };
+
+interface InputFieldProps {
+  label: string;
+  value: string;
+  setValue: (v: string) => void;
+  placeholder?: string;
+}
+const InputField: React.FC<InputFieldProps> = ({ label, value, setValue, placeholder }) => (
+  <div>
+    <Label>{label}</Label>
+    <Input
+      type="number"
+      min="0"
+      step="0.1"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      className="mt-1"
+      placeholder={placeholder}
+    />
+  </div>
+);
 
 export default IngredientSelector;
