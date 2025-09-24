@@ -45,6 +45,7 @@ interface MediaItem {
   preview?: string;
   url?: string;
   isMain: boolean;
+  online?: boolean;
 }
 
 interface Ingrediente {
@@ -72,7 +73,7 @@ const RecipeEdit: React.FC = () => {
   const [setRecipe] = useState<any>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id: recipeID } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { categories } = useCategories();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -113,12 +114,12 @@ const RecipeEdit: React.FC = () => {
 
   // Load recipe data
   useEffect(() => {
-    if (!id) return;
+    if (!recipeID) return;
   
     const loadRecipe = async () => {
       try {
         setLoading(true);
-        const numericId = Number(id);
+        const numericId = Number(recipeID);
         const { data, error } = await supabase
         .from("receitas")
         .select(`
@@ -147,6 +148,7 @@ const RecipeEdit: React.FC = () => {
             categoria_id
           ),
           receita_media(
+            id,
             url,
             tipo,
             ordem,
@@ -172,7 +174,8 @@ const RecipeEdit: React.FC = () => {
                 id: String(m.id),
                 type: m.tipo === 'video' ? 'video' : 'image',
                 url: m.url,
-                isMain: m.is_main
+                isMain: m.is_main,
+                online: true,
               }))
             );
           }
@@ -209,7 +212,7 @@ const RecipeEdit: React.FC = () => {
     };
   
     loadRecipe();
-  }, [id]);
+  }, [recipeID]);
   
 
   // Calculate total macros
@@ -285,10 +288,36 @@ const RecipeEdit: React.FC = () => {
   };
   
   // Handler for removing media item
-  const handleRemoveMediaItem = (id: string) => {
-    const updatedMediaItems = mediaItems.filter(item => item.id !== id);
-    
-    if (mediaItems.find(item => item.id === id)?.isMain && updatedMediaItems.length > 0) {
+  const handleRemoveMediaItem = async (mediaID: string) => {
+    const mediaItem = mediaItems.find(item => item.id === mediaID);
+    if (!mediaItem) return;
+  
+    // If this item was already saved in the DB (online)
+    if (mediaItem.online) {
+      try {
+        const { error } = await supabase
+          .from("receita_media")
+          .delete()
+          .eq("id", mediaID)
+          .eq("receita_id", Number(recipeID)); // safety: only delete if it belongs to this recipe
+        if (error) throw error;
+      } catch (err) {
+        console.error("Erro ao remover mídia:", err);
+        toast({
+          title: "Erro",
+          description: "Não foi possível remover a mídia.",
+          variant: "destructive",
+          duration: 3000,
+        });
+        return;
+      }
+    }
+
+    // Update local state after DB deletion (or for unsaved items)
+    const updatedMediaItems = mediaItems.filter(item => item.id !== mediaID);
+
+    if (mediaItem.isMain && updatedMediaItems.length > 0) {
+      // Ensure another item becomes main if the main was removed
       const itemsWithMain = updatedMediaItems.map((item, index) => ({
         ...item,
         isMain: index === 0
@@ -300,10 +329,10 @@ const RecipeEdit: React.FC = () => {
   };
   
   // Handler for setting an image as main
-  const handleSetMainImage = (id: string) => {
+  const handleSetMainImage = (mediaID: string) => {
     const updatedMediaItems = mediaItems.map(item => ({
       ...item,
-      isMain: item.id === id
+      isMain: item.id === mediaID
     }));
     setMediaItems(updatedMediaItems);
   };
@@ -351,9 +380,9 @@ const RecipeEdit: React.FC = () => {
   };
   
   // Remove ingredient field
-  const removeIngredient = (id: string) => {
+  const removeIngredient = (ingredientID: string) => {
     if (ingredients.length > 1) {
-      setIngredients(ingredients.filter(ing => ing.id !== id));
+      setIngredients(ingredients.filter(ing => ing.id !== ingredientID));
     }
   };
   
@@ -367,9 +396,9 @@ const RecipeEdit: React.FC = () => {
   };
   
   // Remove step field
-  const removeStep = (id: string) => {
+  const removeStep = (stepID: string) => {
     if (steps.length > 1) {
-      const newSteps = steps.filter(step => step.id !== id)
+      const newSteps = steps.filter(step => step.id !== stepID)
         .map((step, index) => ({ ...step, order: index + 1 }));
       setSteps(newSteps);
     }
@@ -398,28 +427,28 @@ const RecipeEdit: React.FC = () => {
   };
   
   // Update ingredient quantity
-  const updateIngredientQuantity = (id: string, quantity: number) => {
+  const updateIngredientQuantity = (ingredientID: string, quantity: number) => {
     setIngredients(
       ingredients.map(ing => 
-        ing.id === id ? { ...ing, quantity } : ing
+        ing.id === ingredientID ? { ...ing, quantity } : ing
       )
     );
   };
 
   // Update ingredient unit
-  const updateIngredientUnit = (id: string, unit: string) => {
+  const updateIngredientUnit = (ingredientID: string, unit: string) => {
     setIngredients(
       ingredients.map(ing => 
-        ing.id === id ? { ...ing, unit } : ing
+        ing.id === ingredientID ? { ...ing, unit } : ing
       )
     );
   };
   
   // Update step description
-  const updateStepDescription = (id: string, description: string) => {
+  const updateStepDescription = (stepID: string, description: string) => {
     setSteps(
       steps.map(step => 
-        step.id === id ? { ...step, description } : step
+        step.id === stepID ? { ...step, description } : step
       )
     );
   };
@@ -432,6 +461,8 @@ const RecipeEdit: React.FC = () => {
   // Upload media files to Supabase Storage
   const uploadMediaFiles = async (): Promise<void> => {
     for (const [i, mediaItem] of mediaItems.entries()) {
+      if (mediaItem.online) continue;
+
       let url = null;
       if (mediaItem.file) {
         const fileExt = mediaItem.file.name.split('.').pop();
@@ -458,7 +489,7 @@ const RecipeEdit: React.FC = () => {
       const { error: mediaError } = await supabase
         .from('receita_media')
         .insert({
-          receita_id: Number(id),
+          receita_id: Number(recipeID),
           url,
           tipo: mediaItem.type,
           ordem: i + 1,
@@ -473,7 +504,7 @@ const RecipeEdit: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user || !id) return;
+    if (!user || !recipeID) return;
     
     if (!isRecipeValid()) {
       toast({
@@ -508,14 +539,14 @@ const RecipeEdit: React.FC = () => {
           gorduras_total: totalMacros.fat,
           updated_at: new Date().toISOString()
         })
-        .eq('id', Number(id));
+        .eq('id', Number(recipeID));
       
       if (recipeError) throw recipeError;
       
       // 3. Delete existing ingredients, steps, and categories
-      await supabase.from('receita_ingredientes').delete().eq('receita_id', Number(id));
-      await supabase.from('receita_passos').delete().eq('receita_id', Number(id));
-      await supabase.from('receita_categorias').delete().eq('receita_id', Number(id));
+      await supabase.from('receita_ingredientes').delete().eq('receita_id', Number(recipeID));
+      await supabase.from('receita_passos').delete().eq('receita_id', Number(recipeID));
+      await supabase.from('receita_categorias').delete().eq('receita_id', Number(recipeID));
       
       // 4. Add updated ingredients
       const validIngredients = ingredients.filter(ing => ing.name.trim() && ing.quantity > 0);
@@ -555,7 +586,7 @@ const RecipeEdit: React.FC = () => {
         const { error: linkError } = await supabase
           .from('receita_ingredientes')
           .insert({
-            receita_id: Number(id),
+            receita_id: Number(recipeID),
             ingrediente_id: ingredientId,
             quantidade: ingredient.quantity,
             unidade: ingredient.unit,
@@ -571,7 +602,7 @@ const RecipeEdit: React.FC = () => {
         const { error: stepError } = await supabase
           .from('receita_passos')
           .insert({
-            receita_id: Number(id),
+            receita_id: Number(recipeID),
             numero_passo: step.order,
             descricao: step.description
           });
@@ -584,7 +615,7 @@ const RecipeEdit: React.FC = () => {
         const { error: categoryError } = await supabase
           .from('receita_categorias')
           .insert({
-            receita_id: Number(id),
+            receita_id: Number(recipeID),
             categoria_id: parseInt(categoryId)
           });
         
@@ -601,7 +632,7 @@ const RecipeEdit: React.FC = () => {
       });
       
       // Redirect to recipe detail
-      navigate(`/recipe/${id}`);
+      navigate(`/recipe/${recipeID}`);
       
     } catch (error) {
       console.error('Erro ao atualizar receita:', error);
