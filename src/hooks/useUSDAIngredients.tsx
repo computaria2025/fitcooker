@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { processIngredient } from '@/services/IngredientProcessingService'; // Importe o serviço
 
 interface USDAIngredient {
   fdcId: number;
@@ -33,7 +34,6 @@ export const useUSDAIngredients = () => {
     
     setIsLoading(true);
     try {
-      // Busca direto na API da USDA
       const apiKey = import.meta.env.VITE_USDA_API_KEY; 
       const response = await fetch(
         `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(query)}&pageSize=5`
@@ -49,9 +49,10 @@ export const useUSDAIngredients = () => {
       for (const food of data.foods || []) {
         const processed = processUSDAFood(food);
         if (processed) {
-          processedIngredients.push(processed);
-          // Salvar no cache (Supabase)
-          await cacheIngredient(processed);
+          // Processa o ingrediente antes de adicionar e cachear
+          const standardizedIngredient = processIngredient(processed);
+          processedIngredients.push(standardizedIngredient);
+          await cacheIngredient(standardizedIngredient);
         }
       }
 
@@ -68,7 +69,8 @@ export const useUSDAIngredients = () => {
       setIsLoading(false);
     }
   };
-
+  
+  // (O resto do seu código permanece igual)
   const processUSDAFood = (food: USDAIngredient): ProcessedIngredient | null => {
     try {
       const nutrients = food.foodNutrients;
@@ -121,17 +123,20 @@ export const useUSDAIngredients = () => {
 
   const addCustomIngredient = async (macros?: Partial<ProcessedIngredient>) => {
     try {
+        // Processa o ingrediente personalizado também
+      const standardizedIngredient = processIngredient(macros as ProcessedIngredient);
+
       const { data, error } = await supabase
         .from('ingredientes')
         .insert({
-          nome: macros.name,
-          calorias_por_100g: macros?.calories || 0,
-          proteinas_por_100g: macros?.protein || 0,
-          carboidratos_por_100g: macros?.carbs || 0,
-          gorduras_por_100g: macros?.fat || 0,
-          fibras_por_100g: macros?.fiber || 0,
-          sodio_por_100g: macros?.sodium || 0,
-          unidade_padrao: macros?.unit || 'g',
+          nome: standardizedIngredient.name,
+          calorias_por_100g: standardizedIngredient.calories,
+          proteinas_por_100g: standardizedIngredient.protein,
+          carboidratos_por_100g: standardizedIngredient.carbs,
+          gorduras_por_100g: standardizedIngredient.fat,
+          fibras_por_100g: standardizedIngredient.fiber,
+          sodio_por_100g: standardizedIngredient.sodium,
+          unidade_padrao: standardizedIngredient.unit
         })
         .select()
         .single();
