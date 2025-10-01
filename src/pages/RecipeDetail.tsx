@@ -70,6 +70,9 @@ const RecipeDetail: React.FC = () => {
         return;
       }
 
+      // Enforce recipe media order
+      data.receita_media.sort((media1, media2) => media1.ordem - media2.ordem);
+
       // Enrich ingredients with names
       let enriched = data;
       const ingredientIds = (data.receita_ingredientes || []).map((ri: any) => ri.ingrediente_id).filter(Boolean);

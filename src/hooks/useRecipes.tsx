@@ -22,7 +22,8 @@ export const useRecipes = () => {
         .select(`
           *,
           profiles!usuario_id(nome, avatar_url),
-          receita_categorias(categorias(nome))
+          receita_categorias(categorias(nome)),
+          receita_media(url, is_main)
         `)
         .eq('status', 'ativa')
         .order('created_at', { ascending: false });
@@ -34,12 +35,12 @@ export const useRecipes = () => {
 
       console.log('Raw recipes data:', data);
 
-      const formattedRecipes: Recipe[] = (data || []).map((recipe: any) => ({
+      const formattedRecipes: Recipe[] = (data || []).map((recipe) => ({
         // Campos originais do banco
         id: recipe.id,
         titulo: recipe.titulo,
         descricao: recipe.descricao,
-        imagem_url: recipe.imagem_url || '/placeholder.svg',
+        imagem_url: recipe.receita_media.find((media) => media.is_main)?.url || recipe.imagem_url || '/placeholder.svg',
         tempo_preparo: recipe.tempo_preparo,
         porcoes: recipe.porcoes,
         dificuldade: recipe.dificuldade,
@@ -51,7 +52,7 @@ export const useRecipes = () => {
         // Aliases para compatibilidade com componentes existentes
         title: recipe.titulo,
         description: recipe.descricao,
-        imageUrl: recipe.imagem_url || '/placeholder.svg',
+        imageUrl: recipe.receita_media.find((media) => media.is_main)?.url || recipe.imagem_url || '/placeholder.svg',
         preparationTime: recipe.tempo_preparo,
         servings: recipe.porcoes,
         difficulty: recipe.dificuldade,
@@ -67,7 +68,9 @@ export const useRecipes = () => {
           calories: recipe.calorias_total || 0,
           protein: recipe.proteinas_total || 0,
           carbs: recipe.carboidratos_total || 0,
-          fat: recipe.gorduras_total || 0
+          fat: recipe.gorduras_total || 0,
+          fiber: recipe.fibras_total || 0,
+          sodium: recipe.sodio_total || 0,
         }
       }));
 

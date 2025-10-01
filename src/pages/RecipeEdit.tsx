@@ -148,23 +148,15 @@ const RecipeEdit: React.FC = () => {
             ),
             receita_categorias(
               categoria_id
+            ),
+            receita_media(
+              id,
+              url,
+              tipo,
+              ordem,
+              is_main
             )
-          ),
-          receita_passos(
-            numero_passo,
-            descricao
-          ),
-          receita_categorias(
-            categoria_id
-          ),
-          receita_media(
-            id,
-            url,
-            tipo,
-            ordem,
-            is_main
-          )
-        `)
+          `)
         .eq("id", numericId)
         .maybeSingle();
 
@@ -178,7 +170,6 @@ const RecipeEdit: React.FC = () => {
           setDifficulty(data.dificuldade);
          
           if (Array.isArray(data.receita_media)) {
-            console.debug("receita_media", data.receita_media);
             setMediaItems(
               data.receita_media.map((m: any) => ({
                 id: String(m.id),
@@ -468,23 +459,37 @@ const RecipeEdit: React.FC = () => {
     return validationProgress === 100;
   };
 
-  // Upload media files to Supabase Storage
-  const uploadMediaFiles = async (): Promise<void> => {
-    for (const [i, mediaItem] of mediaItems.entries()) {
-      if (mediaItem.online) continue;
+  // Update media files / upload to Supabase Storage
+  const updataMediaFiles = async (): Promise<void> => {
+    // Make sure exactly one is marked as isMain
+    const mainCount = mediaItems.filter(m => m.isMain).length;
+    if (mainCount !== 1) {
+      throw new Error("Exactly one media item must be marked as primary");
+    }
 
-      let url = null;
-      if (mediaItem.file) {
+    for (const [index, mediaItem] of mediaItems.entries()) {
+      // Prepare payload
+      const payload = {
+        id: mediaItem.id ?? undefined,
+        receita_id: Number(recipeID),
+        url: mediaItem.url,
+        tipo: mediaItem.type,
+        ordem: mediaItem.isMain ? 1 : index + 2,
+        is_main: mediaItem.isMain,
+      };
+
+      // Upload local media
+      if (!mediaItem.online && mediaItem.file) {
         const fileExt = mediaItem.file.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
         const filePath = `${user.id}/recipes/${fileName}`;
         
-        const { data, error } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('recipe-images')
           .upload(filePath, mediaItem.file);
         
-        if (error) {
-          console.error('Erro no upload:', error);
+        if (uploadError) {
+          console.error('Erro no upload:', uploadError);
           continue;
         }
         
@@ -492,21 +497,18 @@ const RecipeEdit: React.FC = () => {
           .from('recipe-images')
           .getPublicUrl(filePath);
         
-        url = urlData.publicUrl;
-      } else if (mediaItem.url) {
-        url = mediaItem.url;
+        payload.url = urlData.publicUrl;
       }
+
+      // Update media table
       const { error: mediaError } = await supabase
         .from('receita_media')
-        .insert({
-          receita_id: Number(recipeID),
-          url,
-          tipo: mediaItem.type,
-          ordem: i + 1,
-          is_main: mediaItem.isMain
-        } as any);
-      
-      if (mediaError) throw mediaError;
+        .upsert(payload, { onConflict: "id" });
+
+      if (mediaError) {
+        console.error("Erro ao salvar media.")
+        throw mediaError;
+      };
     }
   };
   
@@ -529,8 +531,8 @@ const RecipeEdit: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // 1. Upload media files
-      await uploadMediaFiles();
+      // 1. Update media files
+      await updataMediaFiles();
       
       // 2. Update recipe
       const { error: recipeError } = await supabase

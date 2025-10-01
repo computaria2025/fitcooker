@@ -55,10 +55,30 @@ const Profile: React.FC = () => {
 
   useEffect(() => {
     if (allRecipes && user) {
-      const recipes = allRecipes.filter(recipe => recipe.usuario_id === user.id);
-      setUserRecipes(recipes);
+      fetchUserRecipes();
     }
   }, [allRecipes, user]);
+
+  const fetchUserRecipes = async () => {
+    if (!user) return;
+    const userRecipes : Recipe[] = allRecipes.filter(recipe => recipe.usuario_id === user.id);
+    try {
+      for (const recipe of userRecipes) {
+        const { data, error } = await supabase
+          .from('receita_media')
+          .select(`receita_id, url`)
+          .eq('receita_id', recipe.id)
+          .eq('is_main', true);
+        if (error) throw error;
+        recipe.imagem_url = data[0].url;
+        recipe.imageUrl = data[0].url;
+      }
+
+      setUserRecipes(userRecipes);
+    } catch (error) {
+      console.error('Error fetching user recipes media:', error);
+    }
+  }
 
   useEffect(() => {
     if (profile) {
@@ -90,6 +110,10 @@ const Profile: React.FC = () => {
             profiles!usuario_id(nome, avatar_url),
             receita_categorias(categorias(nome))
           )
+          receita_media(
+            url,
+            is_main
+          )
         `)
         .eq('usuario_id', user.id);
 
@@ -97,11 +121,12 @@ const Profile: React.FC = () => {
 
       const formattedSavedRecipes: Recipe[] = (data || []).map((item: any) => {
         const recipe = item.receitas;
+        const mainMedia = item.receita_media.filter(media => media.is_main);
         return {
           id: recipe.id,
           titulo: recipe.titulo,
           descricao: recipe.descricao,
-          imagem_url: recipe.imagem_url || '/placeholder.svg',
+          imagem_url: mainMedia.url || '/placeholder.svg',
           tempo_preparo: recipe.tempo_preparo,
           porcoes: recipe.porcoes,
           dificuldade: recipe.dificuldade,
@@ -111,7 +136,7 @@ const Profile: React.FC = () => {
           usuario_id: recipe.usuario_id,
           title: recipe.titulo,
           description: recipe.descricao,
-          imageUrl: recipe.imagem_url || '/placeholder.svg',
+          imageUrl: mainMedia.url || '/placeholder.svg',
           preparationTime: recipe.tempo_preparo,
           servings: recipe.porcoes,
           difficulty: recipe.dificuldade,
@@ -126,7 +151,9 @@ const Profile: React.FC = () => {
             calories: recipe.calorias_total || 0,
             protein: recipe.proteinas_total || 0,
             carbs: recipe.carboidratos_total || 0,
-            fat: recipe.gorduras_total || 0
+            fat: recipe.gorduras_total || 0,
+            fiber: recipe.fibras_total || 0,
+            sodium: recipe.sodio_total || 0,
           }
         };
       });
