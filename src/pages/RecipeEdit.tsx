@@ -460,7 +460,7 @@ const RecipeEdit: React.FC = () => {
   };
 
   // Update media files / upload to Supabase Storage
-  const updataMediaFiles = async (): Promise<void> => {
+  const updateMediaFiles = async (): Promise<void> => {
     // Make sure exactly one is marked as isMain
     const mainCount = mediaItems.filter(m => m.isMain).length;
     if (mainCount !== 1) {
@@ -532,7 +532,7 @@ const RecipeEdit: React.FC = () => {
     
     try {
       // 1. Update media files
-      await updataMediaFiles();
+      await updateMediaFiles();
       
       // 2. Update recipe
       const { error: recipeError } = await supabase

@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Import components
 import BasicInformation from '@/components/add-recipe/BasicInformation';
-import RecipeImageUpload from '@/components/ui/RecipeImageUpload';
+import MediaUpload from '@/components/add-recipe/MediaUpload';
 import Ingredients from '@/components/add-recipe/Ingredients';
 import Steps from '@/components/add-recipe/Steps';
 import RecipePreview from '@/components/add-recipe/RecipePreview';
@@ -38,6 +38,16 @@ interface RecipeStep {
   description: string;
 }
 
+interface MediaItem {
+  id: string;
+  type: 'image' | 'video';
+  file?: File;
+  preview?: string;
+  url?: string;
+  isMain: boolean;
+  online?: boolean;
+}
+
 const AddRecipe: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -57,7 +67,7 @@ const AddRecipe: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   
   // Images and media
-  const [recipeImages, setRecipeImages] = useState<string[]>([]);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   
   // Ingredients management
   const [ingredients, setIngredients] = useState<IngredientInput[]>([
@@ -101,7 +111,7 @@ const AddRecipe: React.FC = () => {
     { title: 'Tempo de preparo', isValid: preparationTime !== '' },
     { title: 'Porções', isValid: servings !== '' },
     { title: 'Pelo menos uma categoria', isValid: selectedCategories.length > 0 },
-    { title: 'Imagem principal', isValid: recipeImages.length > 0 },
+    { title: 'Imagem principal', isValid: mediaItems.some(item => item.isMain) },
     { title: 'Pelo menos um ingrediente', isValid: ingredients.some(ing => ing.name.trim() !== '' && ing.quantity > 0) },
     { title: 'Pelo menos um passo', isValid: steps.some(step => step.description.trim() !== '') }
   ];
@@ -110,16 +120,76 @@ const AddRecipe: React.FC = () => {
     (validationItems.filter(item => item.isValid).length / validationItems.length) * 100
   );
 
-  // Handler for image uploads
-  const handleImageUpload = (url: string) => {
-    setRecipeImages(prev => [...prev, url]);
-  };
-
-  // Handler for image removal
-  const handleImageRemove = (url: string) => {
-    setRecipeImages(prev => prev.filter(imageUrl => imageUrl !== url));
+  // Handler for multiple image uploads
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const files = Array.from(e.target.files);
+      
+      const newMediaItems: MediaItem[] = files.map((file, index) => ({
+        id: Date.now().toString() + index,
+        type: 'image',
+        file: file,
+        preview: URL.createObjectURL(file as Blob),
+        isMain: mediaItems.length === 0 && index === 0
+      } as MediaItem));
+      
+      setMediaItems(prev => [...prev, ...newMediaItems]);
+    }
   };
   
+  // Handler for adding video file
+  const handleAddVideo = (urlOrFile: string | File) => {
+    if (typeof urlOrFile === 'string') {
+      const url = urlOrFile as string;
+      const newMediaItem: MediaItem = {
+        id: Date.now().toString(),
+        type: 'video',
+        url,
+        isMain: false
+      };
+      setMediaItems(prev => [...prev, newMediaItem]);
+    } else {
+      const file = urlOrFile as File;
+      const newMediaItem: MediaItem = {
+        id: Date.now().toString(),
+        type: 'video',
+        file,
+        preview: URL.createObjectURL(file),
+        isMain: false
+      };
+      setMediaItems(prev => [...prev, newMediaItem]);
+    }
+  };
+  
+  // Handler for removing media item
+  const handleRemoveMediaItem = async (mediaID: string) => {
+    const mediaItem = mediaItems.find(item => item.id === mediaID);
+    if (!mediaItem) return;
+  
+    // Update local state after DB deletion (or for unsaved items)
+    const updatedMediaItems = mediaItems.filter(item => item.id !== mediaID);
+
+    if (mediaItem.isMain && updatedMediaItems.length > 0) {
+      // Ensure another item becomes main if the main was removed
+      const itemsWithMain = updatedMediaItems.map((item, index) => ({
+        ...item,
+        isMain: index === 0
+      }));
+      setMediaItems(itemsWithMain);
+    } else {
+      setMediaItems(updatedMediaItems);
+    }
+  };
+  
+  // Handler for setting an image as main
+  const handleSetMainImage = (mediaID: string) => {
+    const updatedMediaItems = mediaItems.map(item => ({
+      ...item,
+      isMain: item.id === mediaID
+    }));
+    setMediaItems(updatedMediaItems);
+  };
+
   // Handler for selecting an ingredient from search
   const handleSelectIngredient = (index: number, ingredient: any) => {
     const newIngredients = [...ingredients];
@@ -258,11 +328,6 @@ const AddRecipe: React.FC = () => {
     return validationProgress === 100;
   };
 
-  // Upload media files to Supabase Storage - now simplified since images are already uploaded
-  const getMainImageUrl = (): string | undefined => {
-    return recipeImages.length > 0 ? recipeImages[0] : undefined;
-  };
-  
   // Check if user is logged in before proceeding
   const checkLoginBeforeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,6 +349,59 @@ const AddRecipe: React.FC = () => {
     
     handleSubmit();
   };
+
+  // Update media files / upload to Supabase Storage
+  const updateMediaFiles = async (recipeID): Promise<void> => {
+    // Make sure exactly one is marked as isMain
+    const mainCount = mediaItems.filter(m => m.isMain).length;
+    if (mainCount !== 1) {
+      throw new Error("Exactly one media item must be marked as primary");
+    }
+
+    for (const [index, mediaItem] of mediaItems.entries()) {
+      // Prepare payload
+      const payload = {
+        id: mediaItem.id ?? undefined,
+        receita_id: Number(recipeID),
+        url: mediaItem.url,
+        tipo: mediaItem.type,
+        ordem: mediaItem.isMain ? 1 : index + 2,
+        is_main: mediaItem.isMain,
+      };
+
+      // Upload local media
+      if (mediaItem.file) {
+        const fileExt = mediaItem.file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+        const filePath = `${user.id}/recipes/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('recipe-images')
+          .upload(filePath, mediaItem.file);
+        
+        if (uploadError) {
+          console.error('Erro no upload:', uploadError);
+          continue;
+        }
+        
+        const { data: urlData } = supabase.storage
+          .from('recipe-images')
+          .getPublicUrl(filePath);
+        
+        payload.url = urlData.publicUrl;
+      }
+
+      // Update media table
+      const { error: mediaError } = await supabase
+        .from('receita_media')
+        .insert(payload);
+
+      if (mediaError) {
+        console.error("Erro ao salvar media.")
+        throw mediaError;
+      };
+    }
+  };
   
   // Submit form
   const handleSubmit = async () => {
@@ -292,11 +410,8 @@ const AddRecipe: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // 1. Get main image URL (images are already uploaded via RecipeImageUpload)
-      const mainImageUrl = getMainImageUrl();
-      
       // Use Supabase transaction to ensure atomicity
-      const { data: result, error: transactionError } = await supabase.rpc('create_recipe_transaction', {
+      const { data: recipeID, error: transactionError } = await supabase.rpc('create_recipe_transaction', {
         p_titulo: title,
         p_descricao: description,
         p_tempo_preparo: parseInt(preparationTime),
@@ -330,14 +445,18 @@ const AddRecipe: React.FC = () => {
         p_proteinas_total: totalMacros.protein,
         p_carboidratos_total: totalMacros.carbs,
         p_gorduras_total: totalMacros.fat,
-        p_imagem_url: mainImageUrl || null,
+        p_imagem_url: null,
         p_video_url: null
       });
 
       if (transactionError) {
         throw transactionError;
       }
-      
+
+      // Update media files
+      await updateMediaFiles(recipeID);
+
+
       toast({
         title: "Receita publicada com sucesso! 🎉",
         description: "Sua receita foi criada e está disponível para a comunidade.",
@@ -363,8 +482,8 @@ const AddRecipe: React.FC = () => {
   };
   
   // Get main image preview
-  const getMainImagePreview = () => {
-    return recipeImages.length > 0 ? recipeImages[0] : null;
+  const getMainImagePreview = () : string => {
+    return mediaItems.find(media => media.isMain)?.url ?? null;
   };
   
   return (
@@ -399,13 +518,13 @@ const AddRecipe: React.FC = () => {
                   categories={categories}
                 />
                 
-                <RecipeImageUpload 
-                  onImageUpload={handleImageUpload}
-                  onImageRemove={handleImageRemove}
-                  currentImages={recipeImages}
-                  maxImages={5}
+                <MediaUpload
+                  mediaItems={mediaItems}
+                  handleImageChange={handleImageChange}
+                  handleAddVideo={handleAddVideo}
+                  handleRemoveMediaItem={handleRemoveMediaItem}
+                  handleSetMainImage={handleSetMainImage}
                 />
-                
                 <Ingredients 
                   ingredients={ingredients}
                   updateIngredientQuantity={updateIngredientQuantity}
