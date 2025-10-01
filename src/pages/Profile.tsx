@@ -66,12 +66,11 @@ const Profile: React.FC = () => {
       for (const recipe of userRecipes) {
         const { data, error } = await supabase
           .from('receita_media')
-          .select(`receita_id, url`)
-          .eq('receita_id', recipe.id)
-          .eq('is_main', true);
+          .select(`receita_id, url, is_main`)
+          .eq('receita_id', recipe.id);
         if (error) throw error;
-        recipe.imagem_url = data[0].url;
-        recipe.imageUrl = data[0].url;
+        recipe.imagem_url = data.find(media => media.is_main)?.url;
+        recipe.imageUrl = data.find(media => media.is_main)?.url;
       }
 
       setUserRecipes(userRecipes);
