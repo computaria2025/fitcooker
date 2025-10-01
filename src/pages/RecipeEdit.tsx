@@ -148,23 +148,15 @@ const RecipeEdit: React.FC = () => {
             ),
             receita_categorias(
               categoria_id
+            ),
+            receita_media(
+              id,
+              url,
+              tipo,
+              ordem,
+              is_main
             )
-          ),
-          receita_passos(
-            numero_passo,
-            descricao
-          ),
-          receita_categorias(
-            categoria_id
-          ),
-          receita_media(
-            id,
-            url,
-            tipo,
-            ordem,
-            is_main
-          )
-        `)
+          `)
         .eq("id", numericId)
         .maybeSingle();
 
@@ -308,7 +300,7 @@ const RecipeEdit: React.FC = () => {
         const { error } = await supabase
           .from("receita_media")
           .delete()
-          .eq("id", mediaID)
+          .eq("id", Number(mediaID))
           .eq("receita_id", Number(recipeID)); // safety: only delete if it belongs to this recipe
         if (error) throw error;
       } catch (err) {

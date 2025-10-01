@@ -66,7 +66,9 @@ const MacroCalculator: React.FC = () => {
       calorias: Math.round(calorias),
       proteinas: Math.round(proteinas),
       carboidratos: Math.round(carboidratos),
-      gorduras: Math.round(gorduras)
+      gorduras: Math.round(gorduras),
+      fibras: 0,
+      sodio: 0
     });
   };
 

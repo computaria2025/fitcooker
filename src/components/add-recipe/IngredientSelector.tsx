@@ -36,6 +36,7 @@ interface IngredientSelectorProps {
   setShowAddIngredientForm: (show: boolean) => void;
   newIngredientName: string;
   setNewIngredientName: (name: string) => void;
+  handleAddCustomIngredient?: () => void;
 }
 
 const IngredientSelector: React.FC<IngredientSelectorProps> = ({
