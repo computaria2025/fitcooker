@@ -168,6 +168,8 @@ const CookProfile: React.FC = () => {
           protein: Math.round((recipe.proteinas_total || 0) / (recipe.porcoes || 1)),
           carbs: Math.round((recipe.carboidratos_total || 0) / (recipe.porcoes || 1)),
           fat: Math.round((recipe.gorduras_total || 0) / (recipe.porcoes || 1)),
+          fiber: Math.round((recipe.fibras_total || 0) / (recipe.porcoes || 1)),
+          sodium: Math.round((recipe.sodio_total || 0) / (recipe.porcoes || 1)),
         },
       })) || [];
 

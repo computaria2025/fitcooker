@@ -148,7 +148,7 @@ const Dashboard: React.FC = () => {
             avatarUrl: profile?.avatar_url || '',
           },
           categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
-          macros: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+          macros: { calories: recipe.calorias_total, protein: recipe.proteinas_total, carbs: recipe.carboidratos_total, fat: recipe.gorduras_total, fiber: recipe.fibras_total, sodium: recipe.sodio_total },
         }));
         setUserRecipes(transformedRecipes);
       }
@@ -207,6 +207,8 @@ const Dashboard: React.FC = () => {
             protein: Math.round((recipe.proteinas_total || 0) / (recipe.porcoes || 1)),
             carbs: Math.round((recipe.carboidratos_total || 0) / (recipe.porcoes || 1)),
             fat: Math.round((recipe.gorduras_total || 0) / (recipe.porcoes || 1)),
+            fiber: Math.round((recipe.fibras_total || 0) / (recipe.porcoes || 1)),
+            sodium: Math.round((recipe.sodio_total || 0) / (recipe.porcoes || 1)),
           },
         };
       }) || [];

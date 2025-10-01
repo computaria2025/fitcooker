@@ -150,15 +150,24 @@ export const useAuth = (): AuthContextType => {
         return { error: { message: 'Senha incorreta' } };
       }
 
-      // Delete the user account
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
-      
-      if (deleteError) {
-        return { error: { message: 'Erro ao deletar conta. Tente novamente.' } };
+      // Call the edge function to delete the user account
+      const { data, error: deleteError } = await supabase.functions.invoke('delete-user', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (deleteError || data?.error) {
+        console.error('Error deleting account:', deleteError || data?.error);
+        return { error: { message: data?.error || 'Erro ao deletar conta. Tente novamente.' } };
       }
+
+      // Sign out the user after successful deletion
+      await supabase.auth.signOut();
 
       return { error: null };
     } catch (error) {
+      console.error('Unexpected error deleting account:', error);
       return { error: { message: 'Erro inesperado ao deletar conta' } };
     }
   };
