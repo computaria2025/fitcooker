@@ -20,6 +20,8 @@ interface MacroResult {
   proteinas: number;
   carboidratos: number;
   gorduras: number;
+  fibras: number;
+  sodio: number;
 }
 
 const MacroCalculator: React.FC = () => {

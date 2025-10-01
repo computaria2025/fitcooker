@@ -126,7 +126,9 @@ const Profile: React.FC = () => {
             calories: recipe.calorias_total || 0,
             protein: recipe.proteinas_total || 0,
             carbs: recipe.carboidratos_total || 0,
-            fat: recipe.gorduras_total || 0
+            fat: recipe.gorduras_total || 0,
+            fiber: recipe.fibras_total || 0,
+            sodium: recipe.sodio_total || 0
           }
         };
       });

@@ -303,6 +303,8 @@ export type Database = {
           descricao: string | null
           dificuldade: string
           gorduras_total: number
+          fibras_total: number
+          sodio_total: number
           id: number
           imagem_url: string | null
           nota_media: number

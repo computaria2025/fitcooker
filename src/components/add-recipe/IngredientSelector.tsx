@@ -165,7 +165,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
                   <div className="flex-1">
                     <span className="font-medium">{ingredient.name}</span>
                     <div className="text-xs text-gray-500 mt-1">
-                      P: {Number(ingredient.protein || 0).toFixed(1)}g | C: {Number(ingredient.carbs || 0).toFixed(1)}g | G: {Number(ingredient.fat || 0).toFixed(1)}g
+                      P: {Number(ingredient.protein || 0).toFixed(1)}g | C: {Number(ingredient.carbs || 0).toFixed(1)}g | G: {Number(ingredient.fat || 0).toFixed(1)}g  F: {Number(ingredient.fiber || 0).toFixed(1)}g  S: {Number(ingredient.sodium || 0).toFixed(1)}g
                     </div>
                   </div>
                   <span className="text-gray-500 text-xs">{Number(ingredient.calories || 0).toFixed(0)} kcal/100g</span>

@@ -33,8 +33,8 @@ const MacroDisplay: React.FC<MacroDisplayProps> = ({
   const proteinPercent = totalMacros > 0 ? (protein / totalMacros) * 100 : 0;
   const carbsPercent = totalMacros > 0 ? (carbs / totalMacros) * 100 : 0;
   const fatPercent = totalMacros > 0 ? (fat / totalMacros) * 100 : 0;
-  const fiberPercent = totalMacros > 0 ? (fat / totalMacros) * 100 : 0;
-  const sodiumPercent = totalMacros > 0 ? (fat / totalMacros) * 100 : 0;
+  const fiberPercent = totalMacros > 0 ? (fiber / totalMacros) * 100 : 0;
+  const sodiumPercent = totalMacros > 0 ? (sodium / totalMacros) * 100 : 0;
 
   // Calculate calories from macros (more accurate)
   const proteinCalories = protein * 4;
