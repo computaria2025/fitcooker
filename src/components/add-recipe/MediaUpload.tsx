@@ -6,7 +6,7 @@ import { Camera, Video, X, Star, Upload, ImagePlus } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 interface MediaItem {
-  id: string;
+  id: number;
   type: 'image' | 'video';
   file?: File;
   preview?: string;
@@ -18,8 +18,8 @@ interface MediaUploadProps {
   mediaItems: MediaItem[];
   handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleAddVideo: (urlOrFile: string | File) => void;
-  handleRemoveMediaItem: (id: string) => void;
-  handleSetMainImage: (id: string) => void;
+  handleRemoveMediaItem: (id: number) => void;
+  handleSetMainImage: (id: number) => void;
 }
 
 const MediaUpload: React.FC<MediaUploadProps> = ({

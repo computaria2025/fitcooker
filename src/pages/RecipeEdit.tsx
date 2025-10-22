@@ -39,7 +39,7 @@ interface RecipeStep {
 }
 
 interface MediaItem {
-  id: string;
+  id: number;
   type: 'image' | 'video';
   file?: File;
   preview?: string;
@@ -172,7 +172,7 @@ const RecipeEdit: React.FC = () => {
           if (Array.isArray(data.receita_media)) {
             setMediaItems(
               data.receita_media.map((m: any) => ({
-                id: String(m.id),
+                id: m.id,
                 type: m.tipo === 'video' ? 'video' : 'image',
                 url: m.url,
                 isMain: m.is_main,
@@ -253,7 +253,8 @@ const RecipeEdit: React.FC = () => {
       const files = Array.from(e.target.files);
       
       const newMediaItems: MediaItem[] = files.map((file, index) => ({
-        id: Date.now().toString() + index,
+        id: 1e8 + mediaItems.length + index,
+        online: false,
         type: 'image',
         file: file,
         preview: URL.createObjectURL(file as Blob),
@@ -269,7 +270,8 @@ const RecipeEdit: React.FC = () => {
     if (typeof urlOrFile === 'string') {
       const url = urlOrFile as string;
       const newMediaItem: MediaItem = {
-        id: Date.now().toString(),
+        id: 1e8 + mediaItems.length,
+        online: false,
         type: 'video',
         url,
         isMain: false
@@ -278,7 +280,8 @@ const RecipeEdit: React.FC = () => {
     } else {
       const file = urlOrFile as File;
       const newMediaItem: MediaItem = {
-        id: Date.now().toString(),
+        id: 1e8 + mediaItems.length,
+        online: false,
         type: 'video',
         file,
         preview: URL.createObjectURL(file),
@@ -289,7 +292,7 @@ const RecipeEdit: React.FC = () => {
   };
   
   // Handler for removing media item
-  const handleRemoveMediaItem = async (mediaID: string) => {
+  const handleRemoveMediaItem = async (mediaID: number) => {
     const mediaItem = mediaItems.find(item => item.id === mediaID);
     if (!mediaItem) return;
   
@@ -330,7 +333,7 @@ const RecipeEdit: React.FC = () => {
   };
   
   // Handler for setting an image as main
-  const handleSetMainImage = (mediaID: string) => {
+  const handleSetMainImage = (mediaID: number) => {
     const updatedMediaItems = mediaItems.map(item => ({
       ...item,
       isMain: item.id === mediaID
@@ -470,7 +473,7 @@ const RecipeEdit: React.FC = () => {
     for (const [index, mediaItem] of mediaItems.entries()) {
       // Prepare payload
       const payload = {
-        id: mediaItem.id ?? undefined,
+        id: mediaItem.online ? mediaItem.id ?? undefined : undefined,
         receita_id: Number(recipeID),
         url: mediaItem.url,
         tipo: mediaItem.type,

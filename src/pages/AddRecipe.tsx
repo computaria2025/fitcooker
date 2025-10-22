@@ -39,7 +39,7 @@ interface RecipeStep {
 }
 
 interface MediaItem {
-  id: string;
+  id: number;
   type: 'image' | 'video';
   file?: File;
   preview?: string;
@@ -124,9 +124,10 @@ const AddRecipe: React.FC = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
+      console.debug("files", files);
       
       const newMediaItems: MediaItem[] = files.map((file, index) => ({
-        id: Date.now().toString() + index,
+        id: mediaItems.length + index,
         type: 'image',
         file: file,
         preview: URL.createObjectURL(file as Blob),
@@ -142,7 +143,7 @@ const AddRecipe: React.FC = () => {
     if (typeof urlOrFile === 'string') {
       const url = urlOrFile as string;
       const newMediaItem: MediaItem = {
-        id: Date.now().toString(),
+        id: 1e8 + mediaItems.length,
         type: 'video',
         url,
         isMain: false
@@ -151,7 +152,7 @@ const AddRecipe: React.FC = () => {
     } else {
       const file = urlOrFile as File;
       const newMediaItem: MediaItem = {
-        id: Date.now().toString(),
+        id: 1e8 + mediaItems.length,
         type: 'video',
         file,
         preview: URL.createObjectURL(file),
@@ -162,7 +163,7 @@ const AddRecipe: React.FC = () => {
   };
   
   // Handler for removing media item
-  const handleRemoveMediaItem = async (mediaID: string) => {
+  const handleRemoveMediaItem = async (mediaID: number) => {
     const mediaItem = mediaItems.find(item => item.id === mediaID);
     if (!mediaItem) return;
   
@@ -182,7 +183,8 @@ const AddRecipe: React.FC = () => {
   };
   
   // Handler for setting an image as main
-  const handleSetMainImage = (mediaID: string) => {
+  const handleSetMainImage = (mediaID: number) => {
+    console.debug("mediaItems", mediaItems);
     const updatedMediaItems = mediaItems.map(item => ({
       ...item,
       isMain: item.id === mediaID
@@ -361,7 +363,8 @@ const AddRecipe: React.FC = () => {
     for (const [index, mediaItem] of mediaItems.entries()) {
       // Prepare payload
       const payload = {
-        id: mediaItem.id ?? undefined,
+        // id: mediaItem.id ?? undefined,
+        id: undefined,
         receita_id: Number(recipeID),
         url: mediaItem.url,
         tipo: mediaItem.type,
