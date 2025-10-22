@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const RecipeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -258,19 +259,27 @@ const RecipeDetail: React.FC = () => {
                       <div className="text-sm text-gray-600">minutos</div>
                     </div>
                     <div className="text-center p-4 bg-white/80 rounded-2xl shadow-lg backdrop-blur-sm">
-                      <Users className="w-6 h-6 text-fitcooker-orange mx-auto mb-2" />
-                      <select
-                        value={portionCount}
-                        onChange={(e) => setPortionCount(parseInt(e.target.value))}
-                        className="text-2xl font-bold text-gray-900 bg-transparent border-none focus:ring-2 focus:ring-fitcooker-orange/30 text-center"
-                      >
-                        {Array.from({ length: 10 }, (_, i) => i + 1).map((val) => (
-                          <option key={val} value={val}>
-                            {val}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="text-sm text-gray-600">porções</div>
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-fitcooker-orange/25 bg-fitcooker-orange/10 text-fitcooker-orange shadow-sm">
+                          <Users className="w-6 h-6" />
+                        </div>
+                        <Select
+                          value={String(portionCount)}
+                          onValueChange={(value) => setPortionCount(parseInt(value))}
+                        >
+                          <SelectTrigger className="w-24 justify-center border-fitcooker-orange/25 bg-white text-2xl font-bold text-gray-900 hover:bg-orange-50 focus:ring-2 focus:ring-fitcooker-orange/30">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="w-24">
+                            {Array.from({ length: 10 }, (_, i) => i + 1).map((val) => (
+                              <SelectItem key={val} value={String(val)}>
+                                {val}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="text-sm text-gray-600">porções</div>
+                      </div>
                     </div>
                     <div className="text-center p-4 bg-white/80 rounded-2xl shadow-lg backdrop-blur-sm">
                       <TrendingUp className="w-6 h-6 text-fitcooker-orange mx-auto mb-2" />
