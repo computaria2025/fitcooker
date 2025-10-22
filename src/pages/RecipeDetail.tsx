@@ -38,6 +38,7 @@ const RecipeDetail: React.FC = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [portionCount, setPortionCount] = useState<number>(1);
   const { deleteComment, isLoading: isDeletingComment } = useCommentActions();
 
   useEffect(() => {
@@ -46,6 +47,12 @@ const RecipeDetail: React.FC = () => {
       fetchReviews();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (recipe?.porcoes) {
+      setPortionCount(recipe.porcoes);
+    }
+  }, [recipe]);
 
   const fetchRecipe = async () => {
     try {
@@ -252,7 +259,17 @@ const RecipeDetail: React.FC = () => {
                     </div>
                     <div className="text-center p-4 bg-white/80 rounded-2xl shadow-lg backdrop-blur-sm">
                       <Users className="w-6 h-6 text-fitcooker-orange mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-gray-900">{recipe.porcoes}</div>
+                      <select
+                        value={portionCount}
+                        onChange={(e) => setPortionCount(parseInt(e.target.value))}
+                        className="text-2xl font-bold text-gray-900 bg-transparent border-none focus:ring-2 focus:ring-fitcooker-orange/30 text-center"
+                      >
+                        {Array.from({ length: 10 }, (_, i) => i + 1).map((val) => (
+                          <option key={val} value={val}>
+                            {val}
+                          </option>
+                        ))}
+                      </select>
                       <div className="text-sm text-gray-600">porções</div>
                     </div>
                     <div className="text-center p-4 bg-white/80 rounded-2xl shadow-lg backdrop-blur-sm">
@@ -333,7 +350,9 @@ const RecipeDetail: React.FC = () => {
                             <li key={item.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-50 transition-colors">
                               <div className="w-2 h-2 bg-fitcooker-orange rounded-full flex-shrink-0"></div>
                               <span className="text-gray-700">
-                                <span className="font-semibold">{item.quantidade} {item.unidade}</span> de {item.ingredientes?.nome || ''}
+                                <span className="font-semibold">
+                                  {((item.quantidade * portionCount) / recipe.porcoes).toFixed(2)} {item.unidade}
+                                </span> de {item.ingredientes?.nome || ''}
                               </span>
                             </li>
                           ))}
