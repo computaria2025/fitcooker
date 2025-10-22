@@ -2,17 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { processIngredient } from '@/services/IngredientProcessingService'; // Importe o serviço
-
-interface ProcessedIngredient {
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  sodium: number;
-  unit: string;
-}
+import { ProcessedIngredient } from '@/types/recipe';
 
 export const useOFFIngredients = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +35,8 @@ export const useOFFIngredients = () => {
           fat: nutriments['fat_100g'],
           fiber: nutriments['fiber_100g'],
           sodium: nutriments['sodium_100g'] ? nutriments['sodium_100g'] * 1000 : 0, // Converte de g para mg
-          unit: 'g'
+          unit: 'g',
+          allergens: product.allergens_tags,
         };
 
         const standardizedIngredient = processIngredient(rawIngredient);
@@ -68,9 +59,29 @@ export const useOFFIngredients = () => {
     }
   };
 
-  const cacheIngredient = async (ingredient: ProcessedIngredient) => {
+  const cacheAllergens = async (ingredient : ProcessedIngredient) => {
     try {
-      const { error } = await supabase
+      console.debug("allergens", ingredient.allergens);
+      for (const allergen of ingredient.allergens) {
+        const { error } = await supabase
+        .from('alergenios')
+        .upsert({
+          id: allergen,
+          name: undefined
+        });
+        if (error && !error.message.includes('duplicate')) {
+          console.error('Erro ao cachear alergenio:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao cachear alergenio:', error);
+    }
+  }
+
+  const cacheIngredient = async (ingredient: ProcessedIngredient) => {
+    await cacheAllergens(ingredient);
+    try {
+      var { data, error } = await supabase
         .from('ingredientes')
         .insert({
           nome: ingredient.name,
@@ -81,10 +92,22 @@ export const useOFFIngredients = () => {
           fibras_por_100g: ingredient.fiber,
           sodio_por_100g: ingredient.sodium,
           unidade_padrao: ingredient.unit
-        });
+        })
+        .select("id")
+        .single();
 
-      if (error && !error.message.includes('duplicate')) {
+
+      if (!data || (error && !error.message.includes('duplicate'))) {
         console.error('Erro ao cachear ingrediente:', error);
+      }
+
+      for (const allergen of ingredient.allergens) {
+        var { error } = await supabase
+        .from('ingrediente_alergenio')
+        .insert({
+          alergenio: allergen,
+          ingrediente: data.id,
+        });
       }
     } catch (error) {
       console.error('Erro ao cachear ingrediente:', error);

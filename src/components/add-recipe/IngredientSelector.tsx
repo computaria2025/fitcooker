@@ -13,17 +13,7 @@ import { Search, Plus, Check, X, Loader2 } from 'lucide-react';
 import { useUSDAIngredients } from '@/hooks/useUSDAIngredients';
 import { useOFFIngredients } from '@/hooks/useOFFIngredients';
 import { supabase } from '@/integrations/supabase/client';
-
-interface ProcessedIngredient {
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  sodium: number;
-  unit: string;
-}
+import { ProcessedIngredient } from '@/types/recipe';
 
 interface IngredientSelectorProps {
   showIngredientSelector: boolean;

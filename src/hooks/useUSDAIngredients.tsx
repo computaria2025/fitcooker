@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { processIngredient } from '@/services/IngredientProcessingService'; // Importe o serviço
+import { ProcessedIngredient } from '@/types/recipe';
 
 interface USDAIngredient {
   fdcId: number;
@@ -12,17 +13,6 @@ interface USDAIngredient {
     value: number;
     unitName: string;
   }>;
-}
-
-interface ProcessedIngredient {
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  sodium: number;
-  unit: string;
 }
 
 export const useUSDAIngredients = () => {

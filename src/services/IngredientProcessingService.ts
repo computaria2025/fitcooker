@@ -1,3 +1,5 @@
+import { ProcessedIngredient } from "@/types/recipe";
+
 interface RawIngredient {
   name: any;
   calories: any;
@@ -7,27 +9,21 @@ interface RawIngredient {
   fiber?: any; // Opcional, pois nem toda API fornece
   sodium?: any; // Opcional
   unit?: any;
-}
-
-interface ProcessedIngredient {
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  sodium: number;
-  unit: string;
+  allergens?: string[];
 }
 
 // Função para normalizar o texto (lowercase, sem acentos e caracteres especiais)
-const normalizeText = (text: string): string => {
+const normalizeText = (text: string, keep: string = ""): string => {
+	// Escape regex-special characters in `keep`
+	const escapedKeep = keep.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+	const regex = new RegExp(`[^a-z0-9\\s${escapedKeep}]`, "g");
+
   return text
     .toString()
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, '')
+    .replace(regex, '')
     .trim();
 };
 
@@ -60,5 +56,6 @@ export const processIngredient = (rawIngredient: RawIngredient): ProcessedIngred
     fiber: convertToNumber(rawIngredient.fiber),
     sodium: convertToNumber(rawIngredient.sodium),
     unit: standardizeUnits(rawIngredient.unit),
+    allergens: (rawIngredient.allergens ?? []).map(allergen => normalizeText(allergen, ":")),
   };
 };

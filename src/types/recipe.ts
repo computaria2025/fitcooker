@@ -42,3 +42,15 @@ export interface Category {
   ativa: boolean;
   created_at?: string;
 }
+
+export interface ProcessedIngredient {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  sodium: number;
+  unit: string;
+  allergens: string[];
+}
