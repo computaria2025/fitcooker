@@ -340,6 +340,12 @@ const RecipeEdit: React.FC = () => {
     }));
     setMediaItems(updatedMediaItems);
   };
+
+  const updateStepVideo = (stepID: string, videoUrl: string) => {
+    setSteps(prev => prev.map(step => 
+      step.id === stepID ? { ...step, videoUrl } : step
+    ));
+  };
   
   // Handler for selecting an ingredient from search
   const handleSelectIngredient = (index: number, ingredient: any) => {
@@ -460,6 +466,56 @@ const RecipeEdit: React.FC = () => {
   // Check if recipe is valid for submission
   const isRecipeValid = () => {
     return validationProgress === 100;
+  };
+
+  const handleSaveDraft = async () => {
+    if (!user || !recipeID) return;
+    
+    setIsSubmitting(true);
+    try {
+      await updateMediaFiles();
+
+      const mainImage = mediaItems.find(item => item.isMain);
+      const mainImageUrl = mainImage?.url || '';
+
+      const { error: updateError } = await supabase
+        .from('receitas')
+        .update({
+          titulo: title || 'Rascunho sem título',
+          descricao: description || '',
+          tempo_preparo: preparationTime ? parseInt(preparationTime) : 0,
+          porcoes: servings ? parseInt(servings) : 1,
+          dificuldade: difficulty || 'Fácil',
+          imagem_url: mainImageUrl,
+          status: 'rascunho',
+          calorias_total: totalMacros.calories,
+          proteinas_total: totalMacros.protein,
+          carboidratos_total: totalMacros.carbs,
+          gorduras_total: totalMacros.fat,
+          fibras_total: totalMacros.fiber,
+          sodio_total: totalMacros.sodium,
+        })
+        .eq('id', Number(recipeID));
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: 'Rascunho salvo!',
+        description: 'Você pode continuar editando depois.',
+        duration: 3000,
+      });
+      navigate('/profile');
+    } catch (error: any) {
+      console.error('Error saving draft:', error);
+      toast({
+        title: 'Erro ao salvar rascunho',
+        description: error.message,
+        variant: 'destructive',
+        duration: 3000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Update media files / upload to Supabase Storage
@@ -732,22 +788,33 @@ const RecipeEdit: React.FC = () => {
                   unitOptions={unitOptions}
                 />
                 
-                <Steps 
-                  steps={steps}
-                  updateStepDescription={updateStepDescription}
-                  removeStep={removeStep}
-                  addStep={addStep}
-                />
+            <Steps
+              steps={steps}
+              updateStepDescription={updateStepDescription}
+              removeStep={removeStep}
+              addStep={addStep}
+              updateStepVideo={updateStepVideo}
+            />
                 
                 <div className="lg:hidden">
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    size="lg"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Salvando..." : "Salvar Alterações"}
-                  </Button>
+                  <div className="flex gap-4">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={handleSaveDraft}
+                      disabled={isSubmitting}
+                      className="flex-1"
+                    >
+                      {isSubmitting ? 'Salvando...' : 'Salvar Rascunho'}
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={isSubmitting || validationProgress < 100}
+                      className="flex-1"
+                    >
+                      {isSubmitting ? 'Atualizando...' : 'Atualizar Receita'}
+                    </Button>
+                  </div>
                 </div>
               </form>
             </div>

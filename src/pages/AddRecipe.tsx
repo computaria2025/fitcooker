@@ -192,6 +192,12 @@ const AddRecipe: React.FC = () => {
     setMediaItems(updatedMediaItems);
   };
 
+  const updateStepVideo = (stepID: string, videoUrl: string) => {
+    setSteps(prev => prev.map(step => 
+      step.id === stepID ? { ...step, videoUrl } : step
+    ));
+  };
+
   // Handler for selecting an ingredient from search
   const handleSelectIngredient = (index: number, ingredient: any) => {
     const newIngredients = [...ingredients];
@@ -328,6 +334,78 @@ const AddRecipe: React.FC = () => {
   // Check if recipe is valid for submission
   const isRecipeValid = () => {
     return validationProgress === 100;
+  };
+
+  const handleSaveDraft = async () => {
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const mainImage = mediaItems.find(item => item.isMain);
+      
+      const { data: recipeData, error: recipeError } = await supabase
+        .from('receitas')
+        .insert({
+          titulo: title || 'Rascunho sem título',
+          descricao: description || '',
+          tempo_preparo: preparationTime ? parseInt(preparationTime) : 0,
+          porcoes: servings ? parseInt(servings) : 1,
+          dificuldade: difficulty || 'Fácil',
+          imagem_url: mainImage?.file ? '' : null,
+          usuario_id: user.id,
+          status: 'rascunho',
+          calorias_total: totalMacros.calories,
+          proteinas_total: totalMacros.protein,
+          carboidratos_total: totalMacros.carbs,
+          gorduras_total: totalMacros.fat,
+          fibras_total: totalMacros.fiber,
+          sodio_total: totalMacros.sodium,
+        })
+        .select()
+        .single();
+
+      if (recipeError) throw recipeError;
+
+      if (mainImage?.file) {
+        const fileExt = mainImage.file.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/recipes/${fileName}`;
+        const { error: uploadError } = await supabase.storage
+          .from('recipe-images')
+          .upload(filePath, mainImage.file);
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('recipe-images')
+            .getPublicUrl(filePath);
+
+          await supabase
+            .from('receitas')
+            .update({ imagem_url: publicUrl })
+            .eq('id', recipeData.id);
+        }
+      }
+
+      toast({
+        title: 'Rascunho salvo!',
+        description: 'Você pode continuar editando depois.',
+        duration: 3000,
+      });
+      navigate('/profile');
+    } catch (error: any) {
+      console.error('Error saving draft:', error);
+      toast({
+        title: 'Erro ao salvar rascunho',
+        description: error.message,
+        variant: 'destructive',
+        duration: 3000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Check if user is logged in before proceeding
@@ -538,22 +616,33 @@ const AddRecipe: React.FC = () => {
                   unitOptions={unitOptions}
                 />
                 
-                <Steps 
-                  steps={steps}
-                  updateStepDescription={updateStepDescription}
-                  removeStep={removeStep}
-                  addStep={addStep}
-                />
+          <Steps
+            steps={steps}
+            updateStepDescription={updateStepDescription}
+            removeStep={removeStep}
+            addStep={addStep}
+            updateStepVideo={updateStepVideo}
+          />
                 
                 <div className="lg:hidden">
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    size="lg"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Publicando..." : "Publicar Receita"}
-                  </Button>
+                  <div className="flex gap-4">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={handleSaveDraft}
+                      disabled={isSubmitting}
+                      className="flex-1"
+                    >
+                      {isSubmitting ? 'Salvando...' : 'Salvar Rascunho'}
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={isSubmitting || validationProgress < 100}
+                      className="flex-1"
+                    >
+                      {isSubmitting ? 'Publicando...' : 'Publicar Receita'}
+                    </Button>
+                  </div>
                 </div>
               </form>
             </div>

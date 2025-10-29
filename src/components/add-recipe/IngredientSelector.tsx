@@ -72,7 +72,8 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
           fat: Number((ing as any).gorduras_por_100g) || 0,
           fiber: Number((ing as any).fibras_por_100g) || 0,
           sodium: Number((ing as any).sodio_por_100g) || 0,
-          unit: (ing as any).unidade_padrao || 'g'
+          unit: (ing as any).unidade_padrao || 'g',
+          allergens: []
       }));
     }
     return [];
@@ -136,6 +137,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({
       fiber: parseFloat(fibras) || 0,
       sodium: parseFloat(sodio) || 0,
       unit: unidadePadrao || 'g',
+      allergens: []
     };
 
     const newIngredient = await addCustomIngredient(newIngredientData);
