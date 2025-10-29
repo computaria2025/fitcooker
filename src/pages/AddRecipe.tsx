@@ -666,6 +666,7 @@ const AddRecipe: React.FC = () => {
                 validationItems={validationItems}
                 isSubmitting={isSubmitting}
                 categories={categories}
+                onSaveDraft={handleSaveDraft}
               />
             </div>
           </div>
