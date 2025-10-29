@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChefHat, Clock, Users, TrendingUp, BookOpen, ShoppingCart, Star, Trash2 } from 'lucide-react';
+import { ChefHat, Clock, Users, TrendingUp, BookOpen, ShoppingCart, Star, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/layout/Navbar';
@@ -62,15 +62,29 @@ const RecipeDetail: React.FC = () => {
         .from('receitas')
         .select(`
           *,
-          receita_categorias(categorias(nome)),
-          receita_ingredientes(*),
-          receita_passos(*),
-          receita_media(*)
+          receita_categorias (
+            categorias ( nome )
+          ),
+          receita_ingredientes (
+            *,
+            ingredientes (
+              id,
+              nome,
+              ingrediente_alergenio (
+                alergenio (
+                  id,
+                  name
+                )
+              )
+            )
+          ),
+          receita_passos ( * ),
+          receita_media ( * )
         `)
         .eq('id', Number(id))
         .eq('status', 'ativa')
         .maybeSingle();
-
+    
       if (error) throw error;
 
       if (!data) {
@@ -82,7 +96,7 @@ const RecipeDetail: React.FC = () => {
       data.receita_media.sort((media1, media2) => media1.ordem - media2.ordem);
 
       // Enrich ingredients with names
-      let enriched = data;
+      let enriched = data as any;
       const ingredientIds = (data.receita_ingredientes || []).map((ri: any) => ri.ingrediente_id).filter(Boolean);
       if (ingredientIds.length > 0) {
         const { data: ingList } = await supabase
@@ -96,6 +110,15 @@ const RecipeDetail: React.FC = () => {
             ...ri,
             ingredientes: ingMap[ri.ingrediente_id] || null,
           })),
+          alergenios: [
+            ...new Map(
+              (data?.receita_ingredientes ?? [])
+                .flatMap(ri =>
+                  ri.ingredientes?.ingrediente_alergenio?.map(ia => ia.alergenio) ?? []
+                )
+                .map(a => [a.id, a])
+            ).values()
+          ],
         };
       }
 
@@ -369,6 +392,36 @@ const RecipeDetail: React.FC = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
+
+                {recipe.alergenios && recipe.alergenios.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 }}
+                  >
+                    <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+                      <CardHeader className="bg-gradient-to-r from-fitcooker-orange/10 to-orange-100">
+                        <CardTitle className="flex items-center space-x-2">
+                          <AlertTriangle className="w-5 h-5 text-red-500" />
+                          <span>Alergênicos</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <ul className="flex flex-wrap gap-2">
+                          {recipe.alergenios.map((a: any) => (
+                            <li
+                              key={a.id}
+                              className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium shadow-sm"
+                            >
+                              {a.name}
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+
 
                 {macros && (
                   <motion.div
