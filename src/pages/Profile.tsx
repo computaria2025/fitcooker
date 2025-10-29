@@ -46,6 +46,9 @@ const Profile: React.FC = () => {
   const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [userAlergenios, setUserAlergenios] = useState<any[]>([]);
+  const [newAlergenio, setNewAlergenio] = useState('');
+  const [availableAlergenios, setAvailableAlergenios] = useState<any[]>([]);
   const [profileData, setProfileData] = useState({
     nome: profile?.nome || '',
     bio: profile?.bio || '',
@@ -93,7 +96,26 @@ const Profile: React.FC = () => {
   useEffect(() => {
     if (user) {
       fetchSavedRecipes();
-    }
+
+      const fetchUserAlergenios = async () => {
+        const { data, error } = await supabase
+          .from('user_alergenio')
+          .select('id, alergenio, alergenios(name)')
+          .eq('usuario', user.id);
+        if (!error) setUserAlergenios(data || []);
+      };
+    
+      const fetchAvailableAlergenios = async () => {
+        const { data, error } = await supabase
+          .from('alergenios')
+          .select('id, name')
+          .order('name', { ascending: true });
+        if (!error) setAvailableAlergenios(data || []);
+      };
+    
+      fetchUserAlergenios();
+      fetchAvailableAlergenios();
+    };
   }, [user]);
 
   const fetchSavedRecipes = async () => {
@@ -273,6 +295,50 @@ const Profile: React.FC = () => {
     }
   };
 
+  const handleAddAlergenio = async () => {
+    if (!newAlergenio || !user) return;
+  
+    const { data, error } = await supabase
+      .from('user_alergenio')
+      .insert({
+        alergenio: newAlergenio,
+        usuario: user.id,
+      })
+      .select('id, alergenio, alergenios(name)')
+      .single();
+  
+    if (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível adicionar o alérgeno.',
+        variant: 'destructive',
+      });
+      console.error(error);
+      return;
+    }
+  
+    setUserAlergenios(prev => [...prev, data]);
+    setNewAlergenio('');
+    toast({ title: 'Adicionado!', description: 'Alérgeno adicionado com sucesso.' });
+  };
+  
+
+  const handleRemoveAlergenio = async (id: number) => {
+    const { error } = await supabase.from('user_alergenio').delete().eq('id', id);
+    if (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível remover o alérgeno.',
+        variant: 'destructive',
+      });
+      console.error(error);
+      return;
+    }
+  
+    setUserAlergenios(prev => prev.filter(a => a.id !== id));
+    toast({ title: 'Removido!', description: 'Alérgeno removido com sucesso.' });
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30">
@@ -344,6 +410,42 @@ const Profile: React.FC = () => {
                           preferences={profileData.preferencias}
                           onChange={(preferences) => setProfileData({ ...profileData, preferencias: preferences })}
                         />
+                        <div>
+                          <Label htmlFor="alergenios">Seus Alérgenos</Label>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {userAlergenios.map((a) => (
+                              <Badge
+                                key={a.id}
+                                variant="destructive"
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                {a.alergenios?.name || a.alergenio}
+                                <button
+                                  onClick={() => handleRemoveAlergenio(a.id)}
+                                  className="ml-1 hover:text-gray-200 transition"
+                                >
+                                  ✕
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                          <div className="flex gap-2 items-center">
+                            <select
+                              id="alergenios"
+                              value={newAlergenio}
+                              onChange={(e) => setNewAlergenio(e.target.value)}
+                              className="flex-1 rounded-md border border-gray-300 bg-background px-3 py-2"
+                            >
+                              <option value="">Selecione um alérgeno</option>
+                              {availableAlergenios.map(a => (
+                                <option key={a.id} value={a.id}>{a.name}</option>
+                              ))}
+                            </select>
+                            <Button onClick={handleAddAlergenio} disabled={!newAlergenio}>
+                              Adicionar
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setEditingProfile(false)}>
