@@ -33,6 +33,7 @@ interface RecipePreviewProps {
   }[];
   isSubmitting: boolean;
   categories: any[];
+  onSaveDraft?: () => void;
 }
 
 const RecipePreview: React.FC<RecipePreviewProps> = ({
@@ -51,7 +52,8 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
   validationProgress,
   validationItems,
   isSubmitting,
-  categories
+  categories,
+  onSaveDraft
 }) => {
   const location = useLocation();
   const isEditing = location.pathname.includes('/edit');
@@ -241,30 +243,45 @@ const RecipePreview: React.FC<RecipePreviewProps> = ({
           </div>
         </div>
 
-        {isRecipeValid ? (
-          <Button 
-            type="button" 
-            className="w-full bg-fitcooker-orange hover:bg-fitcooker-orange/90 px-6 py-4 h-auto"
-            onClick={checkLoginBeforeSubmit}
-            disabled={isSubmitting}
-          >
-            {isEditing ? (
-              <Save className="mr-2 h-5 w-5" />
-            ) : (
-              <Check className="mr-2 h-5 w-5" />
-            )}
-            {buttonText}
-          </Button>
-        ) : (
-          <Button 
-            type="button" 
-            className="w-full bg-gray-300 hover:bg-gray-400 cursor-not-allowed px-6 py-4 h-auto"
-            disabled
-          >
-            <AlertCircle className="mr-2 h-5 w-5" />
-            Complete Todos os Campos
-          </Button>
-        )}
+        <div className="space-y-2">
+          {onSaveDraft && (
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={onSaveDraft}
+              disabled={isSubmitting}
+              className="w-full"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {isSubmitting ? 'Salvando...' : 'Salvar Rascunho'}
+            </Button>
+          )}
+          
+          {isRecipeValid ? (
+            <Button 
+              type="button" 
+              className="w-full bg-fitcooker-orange hover:bg-fitcooker-orange/90 px-6 py-4 h-auto"
+              onClick={checkLoginBeforeSubmit}
+              disabled={isSubmitting}
+            >
+              {isEditing ? (
+                <Save className="mr-2 h-5 w-5" />
+              ) : (
+                <Check className="mr-2 h-5 w-5" />
+              )}
+              {buttonText}
+            </Button>
+          ) : (
+            <Button 
+              type="button" 
+              className="w-full bg-gray-300 hover:bg-gray-400 cursor-not-allowed px-6 py-4 h-auto"
+              disabled
+            >
+              <AlertCircle className="mr-2 h-5 w-5" />
+              Complete Todos os Campos
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

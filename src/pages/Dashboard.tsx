@@ -115,7 +115,8 @@ const Dashboard: React.FC = () => {
         .from('receitas')
         .select(`
           *,
-          receita_categorias(categorias(nome))
+          receita_categorias(categorias(nome)),
+          receita_media(url, is_main, ordem)
         `)
         .eq('usuario_id', user.id)
         .eq('status', 'ativa')
@@ -123,33 +124,42 @@ const Dashboard: React.FC = () => {
         .limit(4);
 
       if (data) {
-        const transformedRecipes = data.map(recipe => ({
-          id: recipe.id,
-          titulo: recipe.titulo,
-          title: recipe.titulo,
-          descricao: recipe.descricao,
-          description: recipe.descricao,
-          imagem_url: recipe.imagem_url,
-          imageUrl: recipe.imagem_url,
-          tempo_preparo: recipe.tempo_preparo,
-          preparationTime: recipe.tempo_preparo,
-          porcoes: recipe.porcoes,
-          servings: recipe.porcoes,
-          dificuldade: recipe.dificuldade,
-          difficulty: recipe.dificuldade,
-          nota_media: recipe.nota_media,
-          rating: recipe.nota_media,
-          avaliacoes_count: recipe.avaliacoes_count,
-          created_at: recipe.created_at,
-          usuario_id: recipe.usuario_id,
-          author: {
-            id: recipe.usuario_id,
-            name: 'Você',
-            avatarUrl: profile?.avatar_url || '',
-          },
-          categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
-          macros: { calories: recipe.calorias_total, protein: recipe.proteinas_total, carbs: recipe.carboidratos_total, fat: recipe.gorduras_total, fiber: recipe.fibras_total, sodium: recipe.sodio_total },
-        }));
+        const transformedRecipes = data.map(recipe => {
+          // Get main image from receita_media if imagem_url is not set
+          let imageUrl = recipe.imagem_url;
+          if (!imageUrl && recipe.receita_media && recipe.receita_media.length > 0) {
+            const mainMedia = recipe.receita_media.find((m: any) => m.is_main);
+            imageUrl = mainMedia?.url || recipe.receita_media[0]?.url;
+          }
+          
+          return {
+            id: recipe.id,
+            titulo: recipe.titulo,
+            title: recipe.titulo,
+            descricao: recipe.descricao,
+            description: recipe.descricao,
+            imagem_url: imageUrl,
+            imageUrl: imageUrl,
+            tempo_preparo: recipe.tempo_preparo,
+            preparationTime: recipe.tempo_preparo,
+            porcoes: recipe.porcoes,
+            servings: recipe.porcoes,
+            dificuldade: recipe.dificuldade,
+            difficulty: recipe.dificuldade,
+            nota_media: recipe.nota_media,
+            rating: recipe.nota_media,
+            avaliacoes_count: recipe.avaliacoes_count,
+            created_at: recipe.created_at,
+            usuario_id: recipe.usuario_id,
+            author: {
+              id: recipe.usuario_id,
+              name: 'Você',
+              avatarUrl: profile?.avatar_url || '',
+            },
+            categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
+            macros: { calories: recipe.calorias_total, protein: recipe.proteinas_total, carbs: recipe.carboidratos_total, fat: recipe.gorduras_total, fiber: recipe.fibras_total, sodium: recipe.sodio_total },
+          };
+        });
         setUserRecipes(transformedRecipes);
       }
     } catch (error) {
@@ -166,7 +176,8 @@ const Dashboard: React.FC = () => {
         .select(`
           *,
           receitas(*,
-            profiles!usuario_id(nome, avatar_url)
+            profiles!usuario_id(nome, avatar_url),
+            receita_media(url, is_main, ordem)
           )
         `)
         .eq('usuario_id', user.id)
@@ -177,14 +188,22 @@ const Dashboard: React.FC = () => {
 
       const transformedRecipes = data?.map(savedRecipe => {
         const recipe = savedRecipe.receitas;
+        
+        // Get main image from receita_media if imagem_url is not set
+        let imageUrl = recipe.imagem_url;
+        if (!imageUrl && recipe.receita_media && recipe.receita_media.length > 0) {
+          const mainMedia = recipe.receita_media.find((m: any) => m.is_main);
+          imageUrl = mainMedia?.url || recipe.receita_media[0]?.url;
+        }
+        
         return {
           id: recipe.id,
           titulo: recipe.titulo,
           title: recipe.titulo,
           descricao: recipe.descricao,
           description: recipe.descricao,
-          imagem_url: recipe.imagem_url,
-          imageUrl: recipe.imagem_url,
+          imagem_url: imageUrl,
+          imageUrl: imageUrl,
           tempo_preparo: recipe.tempo_preparo,
           preparationTime: recipe.tempo_preparo,
           porcoes: recipe.porcoes,

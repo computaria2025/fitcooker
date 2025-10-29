@@ -80,7 +80,8 @@ export const useUSDAIngredients = () => {
         fat: fatNutrient?.value || 0,
         fiber: fiberNutrient?.value || 0,
         sodium: sodiumNutrient?.value || 0,
-        unit: 'g'
+        unit: 'g',
+        allergens: []
       };
     } catch (error) {
       console.error('Erro ao processar alimento USDA:', error);
