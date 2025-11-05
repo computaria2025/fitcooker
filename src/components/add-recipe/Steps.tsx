@@ -45,6 +45,14 @@ const Steps: React.FC<StepsProps> = ({
         .from('passos_videos')
         .getPublicUrl(filePath);
 
+        if (urlData?.publicUrl) {
+          console.log('✅ URL Pública Gerada com Sucesso:', urlData.publicUrl); // Adicionado para ver a URL
+          updateStepVideo(stepId, urlData.publicUrl);
+        } else {
+          console.error('❌ Falha ao obter publicUrl. Dados recebidos:', urlData); // Adicionado para ver se há dados incompletos
+          alert('Erro ao obter a URL do vídeo. Verifique as permissões do bucket.');
+        }
+
       if (urlData?.publicUrl) {
         updateStepVideo(stepId, urlData.publicUrl);
       }
