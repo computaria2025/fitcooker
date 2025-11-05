@@ -7,7 +7,7 @@ import { useDeleteRecipe } from '@/hooks/useDeleteRecipe';
 import { useUserStats } from '@/hooks/useUserStats';
 import { useFollowers } from '@/hooks/useFollowers';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import {Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import RecipeCard from '@/components/ui/RecipeCard';
@@ -623,7 +623,9 @@ const Profile: React.FC = () => {
                   Que tal criar sua primeira receita deliciosa?
                 </p>
                 <Button className="mt-4 bg-fitcooker-orange hover:bg-orange-600">
+                <Link to="/add-recipe">
                   Criar Receita
+                </Link>
                 </Button>
               </div>
             )}
