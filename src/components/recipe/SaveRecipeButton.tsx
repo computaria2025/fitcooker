@@ -33,7 +33,7 @@ const SaveRecipeButton: React.FC<SaveRecipeButtonProps> = ({ recipeId, className
         .select('id')
         .eq('usuario_id', user.id)
         .eq('receita_id', recipeId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error checking saved recipe:', error);

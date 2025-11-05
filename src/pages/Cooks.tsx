@@ -106,9 +106,6 @@ const Cooks: React.FC = () => {
       });
       setFollowingStates(initialFollowingStates);
       
-      console.log('Chefs data:', activeChefs);
-
-      
     } catch (error) {
       console.error('Error fetching chefs:', error);
       setError('Erro ao carregar chefs');

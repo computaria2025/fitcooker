@@ -129,11 +129,8 @@ const Profile: React.FC = () => {
           receitas (
             *,
             profiles!usuario_id(nome, avatar_url),
-            receita_categorias(categorias(nome))
-          )
-          receita_media(
-            url,
-            is_main
+            receita_categorias(categorias(nome)),
+            receita_media(url, is_main)
           )
         `)
         .eq('usuario_id', user.id);
@@ -142,7 +139,7 @@ const Profile: React.FC = () => {
 
       const formattedSavedRecipes: Recipe[] = (data || []).map((item: any) => {
         const recipe = item.receitas;
-        const mainMedia = item.receita_media.filter(media => media.is_main);
+        const mainMedia = recipe?.receita_media?.find(media => media.is_main) ?? {};
         return {
           id: recipe.id,
           titulo: recipe.titulo,
@@ -167,7 +164,7 @@ const Profile: React.FC = () => {
             name: recipe.profiles?.nome || 'Chef Anônimo',
             avatarUrl: recipe.profiles?.avatar_url || '/placeholder.svg'
           },
-          categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome).filter(Boolean) || [],
+          categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome)?.filter(Boolean) || [],
           macros: {
             calories: recipe.calorias_total || 0,
             protein: recipe.proteinas_total || 0,

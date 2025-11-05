@@ -33,8 +33,6 @@ export const useRecipes = () => {
         throw error;
       }
 
-      console.log('Raw recipes data:', data);
-
       const formattedRecipes: Recipe[] = (data || []).map((recipe) => ({
         // Campos originais do banco
         id: recipe.id,
@@ -74,7 +72,6 @@ export const useRecipes = () => {
         }
       }));
 
-      console.log('Formatted recipes:', formattedRecipes);
       setRecipes(formattedRecipes);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar receitas';

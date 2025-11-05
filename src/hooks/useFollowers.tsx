@@ -27,7 +27,7 @@ export const useFollowers = (userId?: string) => {
         .select('id')
         .eq('seguidor_id', user.id)
         .eq('seguido_id', userId)
-        .single();
+        .maybeSingle();
 
       setIsFollowing(!!data);
     } catch (error) {
