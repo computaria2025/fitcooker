@@ -33,35 +33,43 @@ export const useUserStats = (userId?: string) => {
       setLoading(true);
 
       // Get real recipe count
-      const { data: recipes } = await supabase
+      const { data: recipes, error: recipesError } = await supabase
         .from('receitas')
         .select('id')
         .eq('usuario_id', userId)
         .eq('status', 'ativa');
 
+      if (recipesError) console.log('Recipes error:', recipesError);
+
       const realRecipeCount = recipes?.length || 0;
 
       // Get real followers count
-      const { data: followers } = await supabase
+      const { data: followers, error: followersError } = await supabase
         .from('seguidores')
         .select('id')
         .eq('seguido_id', userId);
-
+      
+      if (followersError) console.log('Followers error:', followersError);
+    
       const realFollowersCount = followers?.length || 0;
 
       // Get real following count
-      const { data: following } = await supabase
+      const { data: following, error: followingError } = await supabase
         .from('seguidores')
         .select('id')
         .eq('seguidor_id', userId);
 
+      if (followingError) console.log('Following error:', followingError);
+
       const realFollowingCount = following?.length || 0;
 
       // Get total evaluations received on user's recipes
-      const { data: evaluations } = await supabase
+      const { data: evaluations, error: evaluationsError } = await supabase
         .from('avaliacoes')
         .select('nota, receitas!inner(usuario_id)')
         .eq('receitas.usuario_id', userId);
+
+      if (evaluationsError) console.log('Evaluations error:', evaluationsError);
 
       let avaliacoes_count = 0;
       let nota_media = null;
