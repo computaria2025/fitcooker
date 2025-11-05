@@ -46,12 +46,13 @@ const Dashboard: React.FC = () => {
     if (!user) return;
 
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('created_at')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
 
+      if (error) console.log('Error checking user registration date:', error);
       if (data) {
         const cadastroDate = new Date(data.created_at);
         const now = new Date();
