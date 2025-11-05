@@ -108,6 +108,7 @@ const Login: React.FC = () => {
                       placeholder="seu@email.com"
                       className="pl-10 h-12"
                       required
+                      autoComplete='email'
                     />
                   </div>
                 </div>
@@ -128,6 +129,7 @@ const Login: React.FC = () => {
                       placeholder="Sua senha"
                       className="pl-10 pr-10 h-12"
                       required
+                      autoComplete='current-password'
                     />
                     <button
                       type="button"
