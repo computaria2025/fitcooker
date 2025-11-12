@@ -10,8 +10,10 @@ import RecipeCard from '@/components/ui/RecipeCard';
 import RecipeCardSkeleton from '@/components/ui/RecipeCardSkeleton';
 import RecipeFilters from '@/components/recipes/RecipeFilters';
 import SectionTitle from '@/components/ui/SectionTitle';
+import { useAuth } from '@/hooks/useAuth';
 
 const Recipes: React.FC = () => {
+  const { user } = useAuth();
 	const { data: recipes, loading } = useRecipes();
   const [ filteredRecipes, setFilteredRecipes ] = React.useState<Recipe[]>(recipes || []);
 
@@ -30,7 +32,7 @@ const Recipes: React.FC = () => {
 					/>
 
 					{/* Filters */}
-          <RecipeFilters recipes={recipes} onFilter={setFilteredRecipes} />
+          <RecipeFilters recipes={recipes} onFilter={setFilteredRecipes} user={user} />
 
 					{/* Results */}
 					{loading ? (

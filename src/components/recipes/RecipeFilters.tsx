@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { useCategories } from '@/hooks/useCategories';
 import { Recipe } from '@/types/recipe';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 const defaultTimeRange = [0, 181];
 const defaultServingsRange = [1, 12];
@@ -15,18 +18,55 @@ const defaultServingsRange = [1, 12];
 interface RecipeFiltersProps {
 	recipes: Recipe[];
 	onFilter: (filtered: Recipe[]) => void;
+	user: User | null;
 }
 
-const RecipeFilters: React.FC<RecipeFiltersProps> = ({ recipes, onFilter }) => {
+const RecipeFilters: React.FC<RecipeFiltersProps> = ({ recipes, onFilter, user }) => {
 	const [searchTerm, setSearchTerm] = useState('');
+	const { data: categories } = useCategories();
 	const [selectedCategory, setSelectedCategory] = useState('all');
 	const [selectedDifficulty, setSelectedDifficulty] = useState('all');
 	const [sortBy, setSortBy] = useState('newest');
 	const [timeRange, setTimeRange] = useState(defaultTimeRange);
 	const [servingsRange, setServingsRange] = useState(defaultServingsRange);
 	const [showAdvanced, setShowAdvanced] = useState(false);
-	const { data: categories } = useCategories();
+	const [allAllergenics, setAllAllergenics] = useState<string[]>([]);
+	const [selectedAllergenics, setSelectedAllergenics] = useState<string[]>([]);
+	const [userAllergies, setUserAllergies] = useState<string[]>([]);
+	const [useAllergyFilter, setUseAllergyFilter] = useState(true);
 
+	useEffect(() => {
+		if (!user) return;
+		const fetchAllergies = async () => {
+			const { data, error } = await supabase
+				.from('user_alergenio')
+				.select('alergenios(name)')
+				.eq('usuario', user.id);
+	
+			if (error) console.error(error);
+			else {
+				const allergies = data.map((a) => a.alergenios.name);
+				setUserAllergies(allergies);
+				setSelectedAllergenics(allergies);
+			}
+		};
+
+		const fetchAllergenics = async () => {
+			const { data, error } = await supabase
+				.from('alergenios')
+				.select('name');
+	
+			if (error) console.error(error);
+			else {
+				const allergenics = data.map((a) => a.name);
+				setAllAllergenics(allergenics);
+			}
+		};
+	
+		fetchAllergies();
+		fetchAllergenics();
+	}, [user]);
+	
 	// Filter + sort logic
 	const filteredRecipes = useMemo(() => {
 		if (!recipes?.length) return [];
@@ -50,13 +90,16 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({ recipes, onFilter }) => {
 				const matchesServings =
 					recipe.porcoes >= servingsRange[0] &&
 					recipe.porcoes <= servingsRange[1];
-
+				const alergens = new Set(recipe.alergens);
+				const intersect = selectedAllergenics.filter(al => alergens.has(al));
+				const matchesAllergenics = !(useAllergyFilter && intersect.length > 0);
 				return (
 					matchesSearch &&
 					matchesCategory &&
 					matchesDifficulty &&
 					matchesTime &&
-					matchesServings
+					matchesServings &&
+					matchesAllergenics
 				);
 			})
 			.sort((a, b) => {
@@ -86,7 +129,8 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({ recipes, onFilter }) => {
 		timeRange[0] > defaultTimeRange[0] ||
 		timeRange[1] < defaultTimeRange[1] ||
 		servingsRange[0] > defaultServingsRange[0] ||
-		servingsRange[1] < defaultServingsRange[1];
+		servingsRange[1] < defaultServingsRange[1] ||
+		(useAllergyFilter && selectedAllergenics.length);
 
 	const clearFilters = () => {
 		setSearchTerm('');
@@ -95,6 +139,8 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({ recipes, onFilter }) => {
 		setSortBy('newest');
 		setTimeRange(defaultTimeRange);
 		setServingsRange(defaultServingsRange);
+		setSelectedAllergenics(userAllergies);
+		setUseAllergyFilter(true);
 	};
 
 	return (
@@ -166,6 +212,50 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({ recipes, onFilter }) => {
 							))}
 						</SelectContent>
 					</Select>
+
+					{/* === Allergy Filter === */}
+					<div className="md:col-span-3">
+						<label className="text-sm font-medium text-gray-700 mb-3 block">Alergênicos</label>
+
+						<div className="flex items-center mb-2">
+							<input
+								type="checkbox"
+								checked={useAllergyFilter}
+								onChange={(e) => setUseAllergyFilter(e.target.checked)}
+								className="mr-2 accent-fitcooker-orange"
+							/>
+							<span className="text-gray-700 text-sm">Filtrar por alérgenos</span>
+						</div>
+
+						{useAllergyFilter && (
+							<div className="flex flex-wrap gap-2">
+								{allAllergenics.length === 0 ? (
+									<p className="text-sm text-gray-500 italic">Nenhum alérgeno cadastrado</p>
+								) : (
+									allAllergenics.map((allergenic) => (
+										<span
+											key={allergenic}
+											onClick={() =>
+												setSelectedAllergenics((prev) =>
+													prev.includes(allergenic)
+														? prev.filter((a) => a !== allergenic)
+														: [...prev, allergenic]
+												)
+											}
+											className={`cursor-pointer border-2 px-2 py-1 rounded-lg text-sm transition ${
+												selectedAllergenics.includes(allergenic)
+													? 'bg-fitcooker-orange text-white border-fitcooker-orange'
+													: 'border-fitcooker-orange/40 text-fitcooker-orange hover:bg-fitcooker-orange/10'
+											}`}
+										>
+											{allergenic}
+										</span>
+									))
+								)}
+							</div>
+						)}
+					</div>
+
 
 					{/* Sort */}
 					<Select value={sortBy} onValueChange={setSortBy}>
