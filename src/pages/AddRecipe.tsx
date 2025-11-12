@@ -192,9 +192,9 @@ const AddRecipe: React.FC = () => {
     setMediaItems(updatedMediaItems);
   };
 
-  const updateStepVideo = (stepID: string, videoUrl: string) => {
+  const updateStepVideo = (stepID: string, video_url: string) => {
     setSteps(prev => prev.map(step => 
-      step.id === stepID ? { ...step, videoUrl } : step
+      step.id === stepID ? { ...step, video_url } : step
     ));
   };
 
