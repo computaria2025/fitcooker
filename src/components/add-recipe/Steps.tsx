@@ -53,9 +53,6 @@ const Steps: React.FC<StepsProps> = ({
           alert('Erro ao obter a URL do vídeo. Verifique as permissões do bucket.');
         }
 
-      if (urlData?.publicUrl) {
-        updateStepVideo(stepId, urlData.publicUrl);
-      }
     } catch (error) {
       console.error('Erro ao enviar vídeo:', error);
       alert('Erro ao enviar vídeo. Tente novamente.');
