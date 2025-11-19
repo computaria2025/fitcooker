@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, MapPin, Calendar, Users, ChefHat, Star, Trash2, Edit, Heart, UserPlus, UserMinus, Lock } from 'lucide-react';
+import { Camera, MapPin, Calendar, Users, ChefHat, Star, Trash2, Edit, Heart, UserPlus, UserMinus, Lock, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useDeleteRecipe } from '@/hooks/useDeleteRecipe';
 import { useUserStats } from '@/hooks/useUserStats';
 import { useFollowers } from '@/hooks/useFollowers';
 import { supabase } from '@/integrations/supabase/client';
-import {Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import RecipeCard from '@/components/ui/RecipeCard';
@@ -39,6 +39,7 @@ const Profile: React.FC = () => {
   const navigate = useNavigate();
 
   const [userRecipes, setUserRecipes] = useState<Recipe[]>([]);
+  const [draftRecipes, setDraftRecipes] = useState<Recipe[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
   const [editingProfile, setEditingProfile] = useState(false);
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
@@ -64,6 +65,7 @@ const Profile: React.FC = () => {
 
   const fetchUserRecipes = async () => {
     if (!user) return;
+    // allRecipes já vem filtrado por status='ativa' no hook useRecipes, então aqui filtramos apenas pelo usuário
     const userRecipes : Recipe[] = allRecipes.filter(recipe => recipe.usuario_id === user.id);
     try {
       for (const recipe of userRecipes) {
@@ -82,19 +84,10 @@ const Profile: React.FC = () => {
     }
   }
 
-  useEffect(() => {
-    if (profile) {
-      setProfileData({
-        nome: profile.nome || '',
-        bio: profile.bio || '',
-        avatar_url: profile.avatar_url || '',
-        preferencias: (profile.restricoes_alimentares as string[] | undefined) || []
-      });
-    }
-  }, [profile]);
-
+  // Novo efeito para buscar rascunhos
   useEffect(() => {
     if (user) {
+      fetchDraftRecipes();
       fetchSavedRecipes();
 
       const fetchUserAlergenios = async () => {
@@ -115,8 +108,83 @@ const Profile: React.FC = () => {
     
       fetchUserAlergenios();
       fetchAvailableAlergenios();
-    };
+    }
   }, [user]);
+
+  useEffect(() => {
+    if (profile) {
+      setProfileData({
+        nome: profile.nome || '',
+        bio: profile.bio || '',
+        avatar_url: profile.avatar_url || '',
+        preferencias: (profile.restricoes_alimentares as string[] | undefined) || []
+      });
+    }
+  }, [profile]);
+
+  const fetchDraftRecipes = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('receitas')
+        .select(`
+          *,
+          receita_categorias(categorias(nome)),
+          receita_media(url, is_main)
+        `)
+        .eq('usuario_id', user.id)
+        .eq('status', 'rascunho')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedDrafts: Recipe[] = (data || []).map((recipe: any) => {
+        const mainMedia = recipe.receita_media?.find((media: any) => media.is_main) || {};
+        return {
+          id: recipe.id,
+          titulo: recipe.titulo || 'Rascunho sem título',
+          descricao: recipe.descricao || '',
+          imagem_url: mainMedia.url || '/placeholder.svg',
+          tempo_preparo: recipe.tempo_preparo || 0,
+          porcoes: recipe.porcoes || 0,
+          dificuldade: recipe.dificuldade || 'Fácil',
+          nota_media: 0,
+          avaliacoes_count: 0,
+          created_at: recipe.created_at,
+          usuario_id: recipe.usuario_id,
+          status: 'rascunho',
+          
+          title: recipe.titulo || 'Rascunho sem título',
+          description: recipe.descricao || '',
+          imageUrl: mainMedia.url || '/placeholder.svg',
+          preparationTime: recipe.tempo_preparo || 0,
+          servings: recipe.porcoes || 0,
+          difficulty: recipe.dificuldade || 'Fácil',
+          rating: 0,
+          
+          author: {
+            id: user.id,
+            name: profile?.nome || 'Chef',
+            avatarUrl: profile?.avatar_url || ''
+          },
+          categories: recipe.receita_categorias?.map((rc: any) => rc.categorias?.nome)?.filter(Boolean) || [],
+          macros: {
+            calories: recipe.calorias_total || 0,
+            protein: recipe.proteinas_total || 0,
+            carbs: recipe.carboidratos_total || 0,
+            fat: recipe.gorduras_total || 0,
+            fiber: recipe.fibras_total || 0,
+            sodium: recipe.sodio_total || 0,
+          }
+        };
+      });
+
+      setDraftRecipes(formattedDrafts);
+    } catch (error) {
+      console.error('Error fetching drafts:', error);
+    }
+  };
 
   const fetchSavedRecipes = async () => {
     if (!user) return;
@@ -186,6 +254,8 @@ const Profile: React.FC = () => {
     const success = await deleteRecipe(recipeId);
     if (success) {
       setUserRecipes(prev => prev.filter(recipe => recipe.id !== recipeId));
+      // Também remove dos rascunhos se for um rascunho
+      setDraftRecipes(prev => prev.filter(recipe => recipe.id !== recipeId));
       refetch();
       refetchStats();
     }
@@ -551,6 +621,74 @@ const Profile: React.FC = () => {
             </motion.div>
           </div>
 
+          {/* Meus Rascunhos - Seção Nova */}
+          {draftRecipes.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+              className="bg-white rounded-3xl shadow-lg p-8 mb-8 border-2 border-dashed border-gray-200"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <FileText className="w-6 h-6 text-gray-500" />
+                <h2 className="text-2xl font-bold text-gray-900">Meus Rascunhos</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {draftRecipes.map((recipe) => (
+                  <div key={recipe.id} className="relative group opacity-75 hover:opacity-100 transition-opacity">
+                    {/* Helper badge for draft */}
+                    <div className="absolute top-3 left-3 z-20 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
+                      Rascunho
+                    </div>
+                    
+                    <RecipeCard recipe={recipe} />
+                    
+                    <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <button
+                        onClick={() => handleEditRecipe(recipe.id)}
+                        className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors shadow-sm"
+                        title="Continuar editando"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-sm"
+                            title="Excluir rascunho"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir Rascunho</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir este rascunho "{recipe.titulo}"?
+                              <br />
+                              Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteRecipe(recipe.id)}
+                              className="bg-red-500 hover:bg-red-600"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           {/* User Recipes */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -558,7 +696,7 @@ const Profile: React.FC = () => {
             transition={{ delay: 0.4 }}
             className="bg-white rounded-3xl shadow-lg p-8 mb-8"
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Minhas Receitas</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Minhas Receitas Publicadas</h2>
             
             {loading ? (
               <div className="text-center py-8">
@@ -573,7 +711,7 @@ const Profile: React.FC = () => {
                     <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <button
                         onClick={() => handleEditRecipe(recipe.id)}
-                        className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors"
+                        className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors shadow-sm"
                         title="Editar receita"
                       >
                         <Edit className="w-4 h-4" />
@@ -582,7 +720,7 @@ const Profile: React.FC = () => {
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button
-                            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-sm"
                             disabled={isDeleting}
                             title="Excluir receita"
                           >
@@ -617,7 +755,7 @@ const Profile: React.FC = () => {
               <div className="text-center py-16">
                 <ChefHat className="w-20 h-20 text-gray-300 mx-auto mb-6" />
                 <h3 className="text-xl font-bold text-gray-600 mb-3">
-                  Nenhuma receita encontrada
+                  Nenhuma receita publicada
                 </h3>
                 <p className="text-gray-500">
                   Que tal criar sua primeira receita deliciosa?
@@ -649,7 +787,7 @@ const Profile: React.FC = () => {
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <button
-                          className="absolute top-3 right-3 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
+                          className="absolute top-3 right-3 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10 shadow-sm"
                         >
                           <Heart className="w-4 h-4 fill-current" />
                         </button>
