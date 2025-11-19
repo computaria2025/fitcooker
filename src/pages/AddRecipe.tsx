@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
 // Import components
 import BasicInformation from '@/components/add-recipe/BasicInformation';
@@ -338,70 +337,183 @@ const AddRecipe: React.FC = () => {
 
   const handleSaveDraft = async () => {
     if (!user) {
-      setShowLoginPrompt(true);
+      toast({
+        title: "Login necessário",
+        description: "Você precisa estar logado para salvar um rascunho.",
+        variant: "destructive",
+      });
       return;
     }
-    
+
     setIsSubmitting(true);
+
     try {
-      const mainImage = mediaItems.find(item => item.isMain);
-      
-      const { data: recipeData, error: recipeError } = await supabase
-        .from('receitas')
-        .insert({
-          titulo: title || 'Rascunho sem título',
-          descricao: description || '',
-          tempo_preparo: preparationTime ? parseInt(preparationTime) : 0,
-          porcoes: servings ? parseInt(servings) : 1,
-          dificuldade: difficulty || 'Fácil',
-          imagem_url: mainImage?.file ? '' : null,
-          usuario_id: user.id,
-          status: 'rascunho',
-          calorias_total: totalMacros.calories,
-          proteinas_total: totalMacros.protein,
-          carboidratos_total: totalMacros.carbs,
-          gorduras_total: totalMacros.fat,
-          fibras_total: totalMacros.fiber,
-          sodio_total: totalMacros.sodium,
+      // 1. Upload images first to get URLs
+      const uploadedMedia = await Promise.all(
+        mediaItems.map(async (item) => {
+          if (item.file && !item.url) {
+            const fileExt = item.file.name.split('.').pop();
+            const fileName = `${Math.random()}.${fileExt}`;
+            // Ajustado para manter o padrão de caminho usado em updateMediaFiles
+            const filePath = `${user.id}/recipes/${fileName}`;
+
+            // CORREÇÃO: Alterado de 'receitas' para 'recipe-images'
+            const { error: uploadError } = await supabase.storage
+              .from('recipe-images')
+              .upload(filePath, item.file);
+
+            if (uploadError) throw uploadError;
+
+            // CORREÇÃO: Alterado de 'receitas' para 'recipe-images'
+            const { data } = supabase.storage.from('recipe-images').getPublicUrl(filePath);
+            return { ...item, url: data.publicUrl };
+          }
+          return item;
         })
+      );
+
+      // 2. Prepare recipe data
+      // Usamos valores padrão para campos vazios para satisfazer as restrições NOT NULL do banco
+      const recipeData = {
+        usuario_id: user.id,
+        titulo: title || 'Rascunho sem título',
+        descricao: description || '',
+        tempo_preparo: parseInt(preparationTime) || 0,
+        porcoes: parseInt(servings) || 1,
+        dificuldade: difficulty || 'Médio',
+        status: 'rascunho',
+        calorias_total: totalMacros.calories,
+        proteinas_total: totalMacros.protein,
+        carboidratos_total: totalMacros.carbs,
+        gorduras_total: totalMacros.fat,
+        fibras_total: totalMacros.fiber,
+        sodio_total: totalMacros.sodium,
+        imagem_url: uploadedMedia.find(m => m.isMain)?.url || uploadedMedia[0]?.url || '', 
+      };
+
+      // 3. Insert Recipe
+      const { data: recipe, error: recipeError } = await supabase
+        .from('receitas')
+        .insert(recipeData)
         .select()
         .single();
 
       if (recipeError) throw recipeError;
 
-      if (mainImage?.file) {
-        const fileExt = mainImage.file.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `${user.id}/recipes/${fileName}`;
-        const { error: uploadError } = await supabase.storage
-          .from('recipe-images')
-          .upload(filePath, mainImage.file);
+      const recipeId = recipe.id;
 
-        if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('recipe-images')
-            .getPublicUrl(filePath);
+      // 4. Insert Categories
+      if (selectedCategories.length > 0) {
+        const categoryInserts = selectedCategories.map(catId => ({
+          receita_id: recipeId,
+          categoria_id: parseInt(catId)
+        }));
+        
+        const { error: catError } = await supabase
+          .from('receita_categorias')
+          .insert(categoryInserts);
+          
+        if (catError) throw catError;
+      }
 
-          await supabase
-            .from('receitas')
-            .update({ imagem_url: publicUrl })
-            .eq('id', recipeData.id);
+      // 5. Insert Ingredients
+      for (const ing of ingredients) {
+        if (!ing.name.trim()) continue;
+
+        let ingredientId;
+        
+        // Tenta encontrar ingrediente existente pelo nome
+        const { data: existingIng } = await supabase
+          .from('ingredientes')
+          .select('id')
+          .eq('nome', ing.name)
+          .single();
+
+        if (existingIng) {
+          ingredientId = existingIng.id;
+        } else {
+          // Cria novo ingrediente se não existir
+          // Calcula valores por 100g se a quantidade for > 0
+          const factor = ing.quantity > 0 ? (100 / ing.quantity) : 0;
+          
+          const { data: newIng, error: createIngError } = await supabase
+            .from('ingredientes')
+            .insert({
+              nome: ing.name,
+              criado_por: user.id,
+              calorias_por_100g: ing.calories * factor,
+              proteinas_por_100g: ing.protein * factor,
+              carboidratos_por_100g: ing.carbs * factor,
+              gorduras_por_100g: ing.fat * factor,
+              fibras_por_100g: ing.fiber * factor,
+              sodio_por_100g: ing.sodium * factor,
+            })
+            .select()
+            .single();
+            
+           if (createIngError) throw createIngError;
+           ingredientId = newIng.id;
         }
+
+        await supabase.from('receita_ingredientes').insert({
+          receita_id: recipeId,
+          ingrediente_id: ingredientId,
+          quantidade: ing.quantity,
+          unidade: ing.unit,
+          ordem: ingredients.indexOf(ing) + 1
+        });
+      }
+
+      // 6. Insert Steps
+      const validSteps = steps.filter(s => s.description.trim());
+      if (validSteps.length > 0) {
+        const stepsInsert = validSteps.map((step, index) => ({
+          receita_id: recipeId,
+          numero_passo: index + 1,
+          descricao: step.description,
+          // @ts-ignore - acessando propriedade de vídeo se existir no objeto step
+          video_passo_url: step.videoUrl || null
+        }));
+        
+        const { error: stepsError } = await supabase
+          .from('receita_passos')
+          .insert(stepsInsert);
+          
+        if (stepsError) throw stepsError;
+      }
+
+      // 7. Insert Media
+      if (uploadedMedia.length > 0) {
+         const mediaInsert = uploadedMedia.map((m, index) => ({
+           receita_id: recipeId,
+           url: m.url!,
+           // CORREÇÃO: Usar m.type diretamente ('image' ou 'video')
+           // O banco rejeita 'imagem' pois o enum espera 'image'
+           tipo: m.type, 
+           is_main: m.isMain,
+           ordem: index + 1
+         }));
+
+         const { error: mediaError } = await supabase
+           .from('receita_media')
+           .insert(mediaInsert);
+           
+         if (mediaError) throw mediaError;
       }
 
       toast({
-        title: 'Rascunho salvo!',
-        description: 'Você pode continuar editando depois.',
-        duration: 3000,
+        title: "Rascunho salvo!",
+        description: "Sua receita foi salva como rascunho com sucesso.",
       });
+      
       navigate('/profile');
-    } catch (error: any) {
+
+    } catch (error) {
       console.error('Error saving draft:', error);
       toast({
-        title: 'Erro ao salvar rascunho',
-        description: error.message,
-        variant: 'destructive',
-        duration: 3000,
+        title: "Erro ao salvar",
+        description: "Ocorreu um erro ao salvar o rascunho.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
