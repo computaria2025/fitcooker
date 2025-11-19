@@ -33,6 +33,7 @@ export interface Recipe {
     fiber: number;
     sodium: number;
   };
+  alergens?: string[];
 }
 
 export interface Category {

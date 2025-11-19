@@ -23,7 +23,22 @@ export const useRecipes = () => {
           *,
           profiles!usuario_id(nome, avatar_url),
           receita_categorias(categorias(nome)),
-          receita_media(url, is_main)
+          receita_media(url, is_main),
+          receita_ingredientes(
+            id,
+            ingredientes(
+              id,
+              nome,
+              ingrediente_alergenio_ingrediente_fkey(
+                ingrediente,
+                alergenio,
+                ingrediente_alergenio_alergenio_fkey(
+                  id,
+                  name
+                )
+              )
+            )
+          )
         `)
         .eq('status', 'ativa')
         .order('created_at', { ascending: false });
@@ -69,7 +84,15 @@ export const useRecipes = () => {
           fat: recipe.gorduras_total || 0,
           fiber: recipe.fibras_total || 0,
           sodium: recipe.sodio_total || 0,
-        }
+        },
+        alergens: [
+          ...new Set(
+            recipe.receita_ingredientes
+              .flatMap(ri => 
+                ri.ingredientes?.ingrediente_alergenio_ingrediente_fkey?.map(a => a.ingrediente_alergenio_alergenio_fkey.name) || []
+              )
+          )
+        ],
       }));
 
       setRecipes(formattedRecipes);
