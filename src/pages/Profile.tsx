@@ -531,9 +531,22 @@ const Profile: React.FC = () => {
                 {/* Display preferences */}
                 {profileData.preferencias && profileData.preferencias.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
+                    Preferências:
                     {profileData.preferencias.map((preference, index) => (
                       <Badge key={index} variant="outline" className="text-fitcooker-orange border-fitcooker-orange">
                         {preference}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* Display allergenics */}
+                {userAlergenios && userAlergenios.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    Alérgenos:
+                    {userAlergenios.map((al, index) => (
+                      <Badge key={index} variant="outline" className="text-fitcooker-orange border-fitcooker-orange">
+                        {al.alergenios?.name || al.alergenio}
                       </Badge>
                     ))}
                   </div>
