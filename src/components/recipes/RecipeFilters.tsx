@@ -116,7 +116,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({ recipes, onFilter, user }
 						return 0;
 				}
 			});
-	}, [recipes, searchTerm, selectedCategory, selectedDifficulty, sortBy, timeRange, servingsRange]);
+	}, [recipes, searchTerm, selectedCategory, selectedDifficulty, sortBy, timeRange, servingsRange, selectedAllergenics, useAllergyFilter]);
 
 	useEffect(() => {
 		onFilter(filteredRecipes);
@@ -215,7 +215,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({ recipes, onFilter, user }
 
 					{/* === Allergy Filter === */}
 					<div className="md:col-span-3">
-						<label className="text-sm font-medium text-gray-700 mb-3 block">Alergênicos</label>
+						<label className="text-sm font-medium text-gray-700 mb-3 block">Alérgenos</label>
 
 						<div className="flex items-center mb-2">
 							<input
@@ -342,6 +342,12 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({ recipes, onFilter, user }
 								<Badge variant="outline" className="bg-fitcooker-orange/10 border-fitcooker-orange text-fitcooker-orange hover:bg-fitcooker-orange hover:text-white transition-colors">
 									{selectedDifficulty}
 									<button onClick={() => setSelectedDifficulty('all')} className="ml-2">×</button>
+								</Badge>
+							)}
+							{useAllergyFilter === true && (
+								<Badge variant="outline" className="bg-fitcooker-orange/10 border-fitcooker-orange text-fitcooker-orange hover:bg-fitcooker-orange hover:text-white transition-colors">
+									Alérgenos
+									<button onClick={() => setUseAllergyFilter(false)} className="ml-2">×</button>
 								</Badge>
 							)}
 						</div>
