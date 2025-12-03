@@ -61,7 +61,7 @@ const NutritionDisplay: React.FC<NutritionDisplayProps> = ({
     {
       name: 'Sódio',
       value: sodium,
-      unit: 'g',
+      unit: 'mg',
       color: 'bg-gradient-to-r from-gray-500 to-lightgray-500',
       textColor: 'text-gray600'
       }
