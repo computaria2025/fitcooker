@@ -46,14 +46,14 @@ const RateRecipeButton: React.FC<RateRecipeButtonProps> = ({
         .select('*')
         .eq('usuario_id', user.id)
         .eq('receita_id', recipeId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching user rating:', error);
         return;
       }
 
-      if (data) {
+      if (data?.id) {
         setUserRating(data);
         setRating(data.nota);
         setComment(data.comentario || '');
