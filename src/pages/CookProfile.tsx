@@ -41,8 +41,8 @@ const CookProfile: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      fetchChefProfile();
-      fetchChefRecipes();
+      let chefData = fetchChefProfile();
+      fetchChefRecipes(chefData);
     }
   }, [id]);
 
@@ -105,7 +105,7 @@ const CookProfile: React.FC = () => {
         }
       }
 
-      setChef({
+      let chefData : ChefProfile = {
         id: profileData.user_id,
         nome: profileData.nome,
         bio: profileData.bio,
@@ -117,17 +117,21 @@ const CookProfile: React.FC = () => {
         seguidores_count: realFollowersCount,
         seguindo_count: realFollowingCount,
         nota_media: averageRating ? Number(averageRating.toFixed(1)) : null
-      });
+      };
+      setChef(chefData);
+      return chefData;
     } catch (err) {
       console.error('Unexpected error:', err);
       setError('Erro ao carregar perfil do chef');
+      return null;
     }
   };
 
-  const fetchChefRecipes = async () => {
+  const fetchChefRecipes = async (chefPromise : Promise<ChefProfile>) => {
     if (!id) return;
 
     try {
+      let chefData : ChefProfile = await chefPromise;
       const { data, error } = await supabase
         .from('receitas')
         .select('*')
@@ -159,8 +163,8 @@ const CookProfile: React.FC = () => {
         status: recipe.status,
         author: {
           id: recipe.usuario_id,
-          name: chef?.nome || 'Chef Anônimo',
-          avatarUrl: chef?.avatar_url || '',
+          name: chefData?.nome || 'Chef Anônimo',
+          avatarUrl: chefData?.avatar_url || '',
         },
         categories: [],
         macros: {
