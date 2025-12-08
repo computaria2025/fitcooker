@@ -1,182 +1,207 @@
-# FitCooker: Sua Plataforma Completa de Receitas e Nutrição 🍳💪
+# 🥗 FitCooker - Sua Jornada Culinária Saudável
 
 <div align="center">
 
-[![React](https://img.shields.io/badge/React-18.3-%2361DAFB?logo=react)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-5.4-%23646CFF?logo=vite)](https://vitejs.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-%233178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-2.50-darkgreen?logo=supabase)](https://supabase.io/)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-3.4-%2306B6D4?logo=tailwindcss)](https://tailwindcss.com/)
-
 </div>
 
-**FitCooker** é uma plataforma web moderna e interativa, desenhada para entusiastas da culinária e da vida saudável. Crie, descubra e compartilhe receitas, com cálculo automático de macronutrientes, interaja com uma comunidade de chefs e organize sua jornada para uma alimentação melhor.
+FitCooker é uma plataforma completa voltada para a alimentação saudável e engajamento comunitário. Mais do que um simples repositório de receitas, é uma rede social culinária que combina compartilhamento de pratos, ferramentas avançadas de análise nutricional e interação entre cozinheiros amadores e profissionais.
 
-### ✨ [Acesse o Projeto Online clicando aqui!](https://fit-cooker.lovable.app)
-![FitCooker Home Page](/public/equipe.jpg)
-
----
-
-## 📋 Índice
-
-* [🌟 Sobre o Projeto](#-sobre-o-projeto)
-    * [Principais Funcionalidades](#-principais-funcionalidades)
-    * [Construído Com](#-construído-com)
-* [🚀 Começando](#-começando)
-    * [Pré-requisitos](#-pré-requisitos)
-    * [Instalação e Configuração](#-instalação-e-configuração)
-* [📂 Estrutura do Projeto](#-estrutura-do-projeto)
-* [🤝 Contribuições](#-contribuições)
-* [📧 Contato](#-contato)
+🔗 **Acesse o projeto online:** [fit-cooker.lovable.app](https://fit-cooker.lovable.app)
 
 ---
 
-## 🌟 Sobre o Projeto
+## 🚀 Funcionalidades Principais
 
-O FitCooker foi criado para resolver a dificuldade de encontrar e gerenciar receitas que se alinham a objetivos de saúde e fitness. A plataforma oferece ferramentas para que qualquer pessoa, de chefs experientes a cozinheiros de primeira viagem, possa não apenas preparar pratos deliciosos, mas também entender seu valor nutricional de forma automática e intuitiva.
+### 🍳 Gestão de Receitas Avançada
 
-### 🔥 Principais Funcionalidades
+- **Criação Detalhada:** Editor completo de receitas com suporte a upload de imagens (capa e galeria), categorização, tempo de preparo, dificuldade e porções.
+- **Informações Nutricionais:** Cálculo automático e exibição de macros (proteínas, carboidratos, gorduras) e calorias por porção.
+- **Filtros Inteligentes:** Busca refinada por ingredientes, restrições alimentares (vegano, sem glúten, etc.) e categorias.
+- **Interatividade:** Sistema de avaliações (estrelas), favoritos e histórico de visualização.
 
-* **👨‍🍳 Gestão de Receitas:** Crie, edite e compartilhe suas receitas com um formulário completo e intuitivo.
-* **📊 Cálculo Automático de Nutrientes:** Ao adicionar ingredientes, os macronutrientes (calorias, proteínas, carboidratos, gorduras) são calculados automaticamente.
-* **🌐 Comunidade Interativa:** Siga seus chefs favoritos, salve receitas, avalie e comente nos pratos que você experimentou.
-* **🔍 Busca e Filtros Avançados:** Encontre receitas por nome, ingredientes, categorias, dificuldade, tempo de preparo e mais.
-* **🛠️ Ferramentas Fitness:** Calculadoras de IMC, Macronutrientes e Conversor de Unidades para auxiliar no seu planejamento.
-* **👤 Perfil de Usuário:** Acompanhe suas estatísticas, receitas criadas, favoritas e sua atividade na comunidade.
-* **🔐 Autenticação Segura:** Sistema completo de login, cadastro e recuperação de senha utilizando Supabase Auth.
-* **📱 Design Responsivo:** Experiência otimizada para desktop, tablets e smartphones.
+### 🤝 Rede Social & Comunidade
 
-### 🛠️ Construído Com
+- **Perfil do Cozinheiro:** Página de perfil personalizada com foto, bio e estatísticas do usuário (receitas criadas, seguidores).
+- **Sistema de Seguidores:** Siga outros chefs e acompanhe suas novas criações no feed.
+- **Comentários:** Sistema robusto de comentários em receitas para feedback, dúvidas e dicas.
+- **Gamificação:** Rankings e destaques para os cozinheiros mais ativos e receitas mais populares.
 
-Esta seção lista as principais tecnologias e bibliotecas que dão vida ao FitCooker.
+### 🧮 Ferramentas de Saúde (Health Tools)
 
-| **Tecnologia**/**Framework Principal** | **Descrição** |
-| :--- | :--- |
-| [React](https://react.dev/) | Biblioteca principal para a construção da interface de usuário. |
-| [Vite](https://vitejs.dev/) | Ferramenta de build moderna e ultra-rápida para o desenvolvimento frontend. |
-| [TypeScript](https://www.typescriptlang.org/) | Superset do JavaScript que adiciona tipagem estática ao código. |
-| **Backend & Banco de Dados** | **Descrição** |
-| [Supabase](https://supabase.io/) | Plataforma open-source que oferece banco de dados Postgres, autenticação, armazenamento e APIs. |
-| **Estilização e UI** | **Descrição** |
-| [Tailwind CSS](https://tailwindcss.com/) | Framework CSS utility-first para estilização rápida e consistente. |
-| [shadcn/ui](https://ui.shadcn.com/) | Coleção de componentes de UI reusáveis e acessíveis. |
-| [Framer Motion](https://www.framer.com/motion/) | Biblioteca para criar animações fluidas e complexas. |
-| **Gerenciamento de Dados e Estado** | **Descrição** |
-| [React Query](https://tanstack.com/query/latest) | Gerenciamento de estado de servidor, cache, e sincronização de dados. |
-| [React Router](https://reactrouter.com/) | Para gerenciamento de rotas na aplicação. |
-| [React Hook Form](https://react-hook-form.com/) | Gerenciamento de formulários performático e flexível. |
-| [Trello](https://trello.com/b/DRs6BPdI/projeto-integrador-2-melhorias-evolucao-do-fitcooker) | Gerenciamento de issues e backlog. |
+O FitCooker integra ferramentas essenciais para quem busca um estilo de vida saudável:
+
+- **Calculadora de IMC:** Avaliação rápida do Índice de Massa Corporal com classificação oficial.
+- **Calculadora de Macros:** Estimativa de necessidades diárias de macronutrientes baseada em objetivos (perda de peso, ganho de massa, manutenção).
+- **Conversor de Unidades Culinárias:** Facilita a adaptação de medidas (xícaras para gramas, colheres para ml).
+- **Calculadora de Nutrientes:** Análise detalhada de ingredientes individuais usando bases de dados confiáveis (USDA/OpenFoodFacts).
+
+### 🔐 Segurança e Autenticação
+
+- **Login Seguro:** Autenticação gerenciada via Supabase (Email/Senha e provedores sociais).
+- **Proteção de Dados (RLS):** Implementação rigorosa de Row Level Security no PostgreSQL, garantindo que usuários só possam modificar ou deletar seus próprios dados.
+- **Gestão de Sessão:** Controle de acesso a rotas protegidas e persistência de login.
 
 ---
 
-## 🚀 Começando
+## 🛠️ Stack Tecnológica
 
-Para rodar o projeto localmente, siga os passos abaixo.
+O projeto foi construído utilizando as tecnologias mais modernas e performáticas do ecossistema JavaScript/TypeScript.
 
-### ✅ Pré-requisitos
+### Frontend
 
-* **Node.js**: Versão 18.x ou superior. ([Baixe aqui](https://nodejs.org/))
-* **npm** ou **yarn**: Gerenciador de pacotes.
-* **Supabase Account**: Você precisará de uma conta gratuita no [Supabase](https://supabase.com/).
-* **Supabase CLI**: Para aplicar as migrações do banco de dados. ([Guia de instalação](https://supabase.com/docs/guides/cli/getting-started))
+- **React 18:** Biblioteca principal para construção de interfaces reativas.
+- **TypeScript:** Tipagem estática para maior segurança, autocompletar inteligente e manutenibilidade.
+- **Vite:** Build tool de última geração para desenvolvimento ultrarrápido (HMR instantâneo).
+- **Tailwind CSS:** Framework utility-first para estilização ágil e responsiva.
+- **Shadcn UI:** Coleção de componentes de UI reutilizáveis, acessíveis e customizáveis (baseados em Radix UI).
+- **TanStack Query (React Query):** Gerenciamento poderoso de estado assíncrono, cache e sincronização de dados.
+- **React Router Dom:** Roteamento dinâmico para Single Page Application (SPA).
+- **Zod + React Hook Form:** Validação de esquemas robusta e gerenciamento de formulários complexos.
+- **Recharts:** Biblioteca para visualização de dados (gráficos de macros e estatísticas).
+- **Lucide React:** Biblioteca de ícones leve e moderna.
 
-### ⚙️ Instalação e Configuração
+### Backend & Infraestrutura (BaaS)
 
-1.  **Clone o repositório:**
-    ```sh
-    git clone [https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git](https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git)
-    cd SEU_REPOSITORIO
-    ```
+- **Supabase:** Plataforma Backend-as-a-Service open-source.
+- **PostgreSQL:** Banco de dados relacional robusto.
+- **Auth:** Autenticação e gestão de usuários.
+- **Storage:** Armazenamento de arquivos (imagens de receitas e avatares).
+- **Edge Functions:** Lógica de backend serverless para operações sensíveis (ex: deleção de conta).
+- **Bun:** Runtime JavaScript moderno utilizado para gerenciamento de pacotes e scripts (evidenciado pelo bun.lockb).
 
-2.  **Instale as dependências:**
-    ```sh
-    npm install
-    ```
+### Qualidade de Código & Testes
 
-3.  **Configure o Supabase:**
-    * Acesse sua conta no [Supabase](https://supabase.com/) e crie um novo projeto.
-    * No painel do seu projeto, vá para **Project Settings > API**.
-    * Copie o **Project URL** e a **Project API Key (anon public)**.
-
-4.  **Configure as Variáveis de Ambiente:**
-    * Crie um arquivo `.env` na raiz do projeto.
-    * Adicione as chaves do Supabase que você copiou:
-        ```env
-        VITE_SUPABASE_URL=https://SEU_URL_DO_PROJETO.supabase.co
-        VITE_SUPABASE_ANON_KEY=SUA_CHAVE_ANON_PUBLICA
-        ```
-
-5.  **Aplique as Migrações do Banco de Dados:**
-    * Faça o login na CLI do Supabase:
-        ```sh
-        supabase login
-        ```
-    * Vincule seu projeto local ao projeto remoto:
-        ```sh
-        supabase link --project-ref SEU_ID_DO_PROJETO
-        ```
-        (Você encontra o `project-ref` na URL do seu painel Supabase: `https://app.supabase.com/project/SEU_ID_DO_PROJETO`)
-    * Envie as migrações para criar as tabelas no seu banco de dados:
-        ```sh
-        supabase db push
-        ```
-    * **Observação:** As políticas de segurança (RLS) e os triggers já estão incluídos nas migrações e serão aplicados automaticamente.
-
-6.  **Inicie o servidor de desenvolvimento:**
-    ```sh
-    npm run dev
-    ```
-
-7.  Abra seu navegador e acesse `http://localhost:8080` (ou a porta indicada no terminal) para ver o projeto em ação!
+- **Vitest:** Framework de testes unitários de alta performance (compatível com a API do Jest).
+- **ESLint:** Linter para padronização e detecção de erros no código.
 
 ---
 
 ## 📂 Estrutura do Projeto
 
-A estrutura de pastas foi organizada para facilitar a manutenção e escalabilidade do projeto.
+A arquitetura do projeto segue padrões de modularização para facilitar a escalabilidade e manutenção.
 
-```
-/
-├── public/                # Arquivos estáticos
-├── src/
-│   ├── components/        # Componentes reutilizáveis
-│   │   ├── add-recipe/    # Componentes da página de adicionar receita
-│   │   ├── home/          # Componentes da página inicial pública
-│   │   ├── layout/        # Componentes de layout (Navbar, Footer)
-│   │   ├── recipe/        # Componentes de detalhes de receita
-│   │   └── ui/            # Componentes de UI genéricos (shadcn)
-│   ├── hooks/             # Hooks customizados
-│   ├── integrations/      # Integrações com serviços externos (Supabase)
-│   ├── lib/               # Funções utilitárias
-│   ├── pages/             # Componentes de página (rotas)
-│   └── types/             # Definições de tipos TypeScript
-├── supabase/
-│   └── migrations/        # Migrações do banco de dados SQL
-├── .env.example           # Exemplo de variáveis de ambiente
-├── package.json
-└── README.md
+```bash
+src/
+├── __tests__/          # Testes unitários e de integração
+├── components/         # Componentes React modularizados
+│   ├── add-recipe/     # Componentes do fluxo de criação de receitas (Wizard)
+│   ├── ferramentas/    # Calculadoras de saúde e conversores
+│   ├── home/           # Componentes da página inicial
+│   ├── layout/         # Estrutura global (Navbar, Footer, Sidebar)
+│   ├── recipe/         # Componentes de visualização e interação com receitas
+│   ├── recipes/        # Listagens e filtros de receitas
+│   └── ui/             # Componentes base do Design System (Shadcn)
+├── data/               # Dados estáticos e mocks para desenvolvimento
+├── hooks/              # Custom Hooks (Lógica de negócio encapsulada)
+│   ├── useAuth.tsx     # Contexto e lógica de autenticação
+│   ├── useRecipes.tsx  # Hooks para CRUD de receitas
+│   ├── useUserStats.tsx # Hooks para estatísticas do usuário
+│   └── ...
+├── integrations/       # Configuração de serviços externos (Cliente Supabase)
+├── lib/                # Funções utilitárias e helpers (utils.ts)
+├── pages/              # Páginas da aplicação (Roteamento)
+├── services/           # Camada de serviço (ex: Processamento de Ingredientes)
+└── types/              # Definições de tipos TypeScript globais
+supabase/
+├── migrations/         # Scripts SQL para versionamento do esquema do banco
+└── functions/          # Edge Functions (Deno/Node)
 ```
 
 ---
 
-## 🤝 Contribuições
+## 🚀 Instalação e Execução
 
-Contribuições são o que tornam a comunidade de código aberto um lugar incrível para aprender, inspirar e criar. Qualquer contribuição que você fizer será **muito bem-vinda**.
+Siga os passos abaixo para rodar o projeto em seu ambiente local.
 
-1.  **Faça um Fork** do projeto.
-2.  Crie uma nova Branch (`git checkout -b feature/FuncionalidadeIncrivel`).
-3.  Faça o **Commit** de suas alterações (`git commit -m 'Adiciona FuncionalidadeIncrivel'`).
-4.  Faça o **Push** para a Branch (`git push origin feature/FuncionalidadeIncrivel`).
-5.  Abra um **Pull Request**.
+### Pré-requisitos
+
+- **Node.js (v18+)** ou **Bun (v1.0+)** instalado.
+- Uma conta no **Supabase** (para obter as chaves de API).
+
+### Passo a Passo
+
+1. **Clone o repositório**
+
+   ```bash
+   git clone https://github.com/seu-usuario/fitcooker.git
+   cd fitcooker
+   ```
+
+2. **Instale as dependências**
+
+   Utilizando npm:
+   ```bash
+   npm install
+   ```
+
+   Ou preferencialmente com Bun (recomendado):
+   ```bash
+   bun install
+   ```
+
+3. **Configuração de Variáveis de Ambiente**
+
+   Crie um arquivo `.env` na raiz do projeto e preencha com suas credenciais do Supabase:
+
+   ```env
+   VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+   VITE_SUPABASE_ANON_KEY=sua-chave-anonima-publica
+   ```
+
+4. **Execute o servidor de desenvolvimento**
+
+   ```bash
+   npm run dev
+   # ou
+   bun run dev
+   ```
+
+5. **Acesse a aplicação**
+
+   Abra o navegador em `http://localhost:8080` (ou a porta indicada no terminal).
 
 ---
 
-## 📧 Contato
+## 🧪 Rodando os Testes
 
-Ígor Tavares Rocha
+Para garantir a integridade das funcionalidades principais e cálculos nutricionais:
 
-* **LinkedIn**: [igortrocha](https://www.linkedin.com/in/igor-roch4/)
-* **GitHub**: [https://github.com/igorr0cha](https://github.com/igorr0cha)
-* **Email**: [igort10rocha@gmail.com](mailto:igort10rocha@gmail.com)
+```bash
+# Rodar testes uma vez
+npm run test
 
-Link do Projeto: [fitcooker-project](https://github.com/computaria2025/fitcooker)
+# Rodar em modo watch (desenvolvimento)
+npm run test:watch
+```
+
+---
+
+## 🔒 Segurança (RLS & Policies)
+
+Este projeto utiliza PostgreSQL Row Level Security (RLS) para proteção granular de dados.
+
+- **Leitura:** A maioria das receitas é pública, mas dados sensíveis de usuário são restritos.
+- **Escrita:** Usuários só podem criar registros vinculados ao seu `auth.uid()`.
+- **Edição/Exclusão:** Políticas estritas garantem que apenas o autor da receita ou do comentário possa modificá-lo.
+
+---
+
+## 🤝 Contribuição
+
+Contribuições são muito bem-vindas! Se você deseja melhorar o FitCooker:
+
+1. Faça um **Fork** do projeto.
+2. Crie uma **Branch** para sua feature (`git checkout -b feature/NovaFeature`).
+3. **Commit** suas mudanças (`git commit -m 'feat: Adiciona NovaFeature'`).
+4. **Push** para a Branch (`git push origin feature/NovaFeature`).
+5. Abra um **Pull Request**.
+
+---
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+<p align="center">
+  Desenvolvido com 💚 e código limpo pela equipe FitCooker.
+</p>
